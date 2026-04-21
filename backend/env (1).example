@@ -1,0 +1,10 @@
+# ── BookSwipe — copia esto como .env ───────────────────────────────────────
+
+# MongoDB Atlas connection string
+MONGODB_URI=mongodb+srv://<usuario>:<clave>@cluster0.xxxxx.mongodb.net/bookswipe?retryWrites=true&w=majority
+
+# JWT Secret (cadena larga y aleatoria, mínimo 32 caracteres)
+JWT_SECRET=pon_aqui_un_secreto_muy_largo_y_seguro_1234567890abcdef
+
+# Puerto (Render lo asigna automáticamente, no tocar en producción)
+PORT=4000
