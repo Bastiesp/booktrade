@@ -7,19 +7,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{height:100%;background:#0D0906;font-family:'DM Sans',sans-serif;color:#F0E4CD;overflow:hidden}
+    html,body{
+  height:100%;
+  background:#FFFFFF;
+  font-family:'DM Sans',sans-serif;
+  color:#111827;
+  overflow:hidden
+}
     /* App ocupa toda la pantalla */
     #app{position:fixed;inset:0;max-width:480px;margin:0 auto;overflow:hidden}
     /* Área scrollable deja espacio para el nav fijo */
     #view{position:absolute;top:0;left:0;right:0;bottom:68px;overflow-y:auto;overflow-x:hidden}
     #view::-webkit-scrollbar{display:none}
     /* Nav FIJO en el fondo — nunca se mueve */
-    #nav{position:absolute;bottom:0;left:0;right:0;height:68px;background:#1A1210;border-top:1px solid #3A2820;display:flex;align-items:center;padding:0 4px;z-index:999}
-    .nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:100%;border:none;background:transparent;cursor:pointer;color:#604840;font-size:10px;font-weight:500;font-family:inherit;transition:color .2s;padding:0}
-    .nb.active{color:#D4A843}
+    #nav{position:absolute;bottom:0;left:0;right:0;height:68px;background:#FFFFFF;border-top:1px solid #FED7AA;display:flex;align-items:center;padding:0 4px;z-index:999}
+    .nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:100%;border:none;background:transparent;cursor:pointer;color:#9CA3AF;font-size:10px;font-weight:500;font-family:inherit;transition:color .2s;padding:0}
+    .nb.active{color:#F97316}
     .nb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     /* Spinner */
-    .spin{width:32px;height:32px;border:3px solid #3A2820;border-top-color:#D4A843;border-radius:50%;animation:spin .7s linear infinite}
+    .spin{width:32px;height:32px;border:3px solid #3A2820;border-top-color:#F97316;border-radius:50%;animation:spin .7s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     @keyframes matchPop{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
     input,textarea,select{font-family:'DM Sans',sans-serif}

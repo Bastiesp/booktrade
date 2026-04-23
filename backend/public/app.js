@@ -90,8 +90,8 @@ function showAuth(tab){
 
   setView(`
     <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;
-      background:url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=85&w=1400&auto=format') center 30%/cover">
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.80),rgba(255,247,237,.72),rgba(255,255,255,.92))"></div>
+      background:url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=85&w=1400&auto=format') center center/cover">
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.45),rgba(255,247,237,.35),rgba(255,255,255,.55))"></div>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         <div style="font-size:52px;filter:drop-shadow(0 0 20px rgba(249,115,22,.5))">📚</div>
         <div style="font-family:'Fraunces',serif;font-size:38px;font-weight:700;color:#111827;letter-spacing:-1px;margin-top:10px">Book<span style="color:#F97316">Swipe</span></div>
