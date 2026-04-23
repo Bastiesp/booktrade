@@ -42,6 +42,31 @@ async function api(method,path,body){
   return d;
 }
 
+function jwtPayload(token){
+  try{
+    const part=String(token||'').split('.')[1];
+    if(!part)return {};
+    return JSON.parse(atob(part.replace(/-/g,'+').replace(/_/g,'/')));
+  }catch{return {};}
+}
+
+function rememberUser(u){
+  if(!u)return;
+  ME=u;
+  try{localStorage.setItem('bs_user',JSON.stringify(u));}catch{}
+}
+
+function getCurrentUserId(){
+  const saved=(()=>{try{return JSON.parse(localStorage.getItem('bs_user')||'{}');}catch{return {};}})();
+  const jwt=jwtPayload(TOKEN);
+  const candidates=[
+    ME?._id,ME?.id,ME?.userId,ME?.uid,
+    saved?._id,saved?.id,saved?.userId,saved?.uid,
+    jwt._id,jwt.id,jwt.userId,jwt.uid,jwt.sub
+  ].filter(Boolean);
+  return candidates.length?String(candidates[0]):'';
+}
+
 /* ── Toast ──────────────────────────────────────── */
 function toast(msg,type){
   const box=$('toasts');if(!box)return;
@@ -114,7 +139,7 @@ async function doLogin(){
   const btn=$('btn-login');if(btn){btn.disabled=true;btn.textContent='Ingresando...';}
   try{
     const d=await api('POST','/api/auth/login',{identifier:id,password:pw});
-    TOKEN=d.token;ME=d.user;localStorage.setItem('bs_token',TOKEN);
+    TOKEN=d.token;localStorage.setItem('bs_token',TOKEN);rememberUser(d.user);
     await launchApp();
   }catch(e){
     toast(e.message,'error');
@@ -128,7 +153,7 @@ async function doRegister(){
   const btn=$('btn-reg');if(btn){btn.disabled=true;btn.textContent='Creando cuenta...';}
   try{
     const d=await api('POST','/api/auth/register',{username:u,email:e,password:p});
-    TOKEN=d.token;ME=d.user;localStorage.setItem('bs_token',TOKEN);
+    TOKEN=d.token;localStorage.setItem('bs_token',TOKEN);rememberUser(d.user);
     toast('¡Bienvenido a BookSwipe! 📚','success');
     await launchApp();
   }catch(e2){
@@ -141,6 +166,7 @@ function doLogout(){
   if(!confirm('¿Cerrar sesión?'))return;
   TOKEN='';ME=null;MATCHES=[];MY_BOOKS=[];QUEUE=[];
   localStorage.removeItem('bs_token');
+  localStorage.removeItem('bs_user');
   SOCKET?.disconnect();SOCKET=null;
   showAuth('login');
 }
@@ -154,7 +180,7 @@ async function launchApp(){
   /* Restaurar #view con espacio para nav */
   const view=VIEW();if(view)view.style.bottom='68px';
 
-  try{if(!ME)ME=await api('GET','/api/users/me');}
+  try{if(!ME){try{ME=JSON.parse(localStorage.getItem('bs_user')||'null');}catch{};}if(!ME)rememberUser(await api('GET','/api/users/me'));}
   catch(e){localStorage.removeItem('bs_token');TOKEN='';showAuth('login');return;}
   try{MATCHES=await api('GET','/api/swipes/matches')||[];}catch{}
   try{initSocket();}catch{}
@@ -401,8 +427,8 @@ function openBookModal(idOrNull){
   window.bmClose=()=>{ov.style.opacity='0';$('bm').style.transform='translateY(30px)';setTimeout(()=>ov.remove(),280);};
   window.bmSave=async()=>{
     if(!ME)return toast('Usuario no cargado. Cierra sesión e ingresa nuevamente.','error');
-    const uid=(ME._id||ME.id||ME.userId||'').toString();
-    if(!uid)return toast('Usuario requerido. Cierra sesión e ingresa nuevamente.','error');
+    const uid=getCurrentUserId();
+    if(!uid)return toast('Dueño requerido: no se pudo identificar tu usuario. Cierra sesión e ingresa nuevamente.','error');
 
     const cleanPhotos=state.photos.filter(Boolean);
     const p={
@@ -415,13 +441,24 @@ function openBookModal(idOrNull){
       photos:cleanPhotos,
 
       // Compatibilidad con distintos backends/schemas:
-      // algunos esperan owner, otros user/usuario.
+      // algunos esperan owner, otros user/usuario/dueno/dueño.
       owner:uid,
       ownerId:uid,
+      owner_id:uid,
       user:uid,
       userId:uid,
+      user_id:uid,
       usuario:uid,
-      usuarioId:uid
+      usuarioId:uid,
+      usuario_id:uid,
+      dueno:uid,
+      duenoId:uid,
+      dueno_id:uid,
+      duenio:uid,
+      duenioId:uid,
+      duenio_id:uid,
+      'dueño':uid,
+      'dueñoId':uid
     };
     if(!p.title||!p.author)return toast('Título y autor son requeridos','error');
     if(cleanPhotos.length<1)return toast('Agrega al menos 1 foto 📷','error');
@@ -567,7 +604,7 @@ async function showProfile(){
   document.querySelector('.fab-btn')?.remove();
   setView(`<div style="display:flex;justify-content:center;padding:60px"><div class="spin"></div></div>`);
   try{
-    const u=await api('GET','/api/users/me');ME={...ME,...u};
+    const u=await api('GET','/api/users/me');rememberUser({...ME,...u});
     let sg=[...(u.favoriteGenres||[])];
     setView(`
       <div style="padding:0 16px 80px">
