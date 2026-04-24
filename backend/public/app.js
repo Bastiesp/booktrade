@@ -594,14 +594,16 @@ function drawMatches(){
    ══════════════════════════════════════════════════ */
 function openChat(idx){
   const m=MATCHES[idx];if(!m)return;
+  window.__CHAT_OPEN__=true;
+  const navChat=$('nav');if(navChat)navChat.style.setProperty('display','none','important');
   const myId=(ME?._id||ME?.id||'').toString();
   const room=roomId(myId,m.matchedUser.id);
   delete UNREAD[room];updateBadge();
 
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:600;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:480px;left:50%;transform:translateX(-50%)';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:480px;left:50%;transform:translateX(-50%)';
   ov.innerHTML=`
-    <div id="cp" style="width:100%;height:88vh;background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #FED7AA;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
+    <div id="cp" style="width:100%;height:min(88vh,calc(100vh - 24px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #FED7AA;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #FED7AA;flex-shrink:0;position:relative">
         <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#FDBA74;border-radius:2px"></div>
         <div style="width:38px;height:38px;border-radius:50%;background:#F97316;color:#FFFFFF;font-family:Fraunces,serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">${ini(m.matchedUser.username)}</div>
@@ -611,7 +613,7 @@ function openChat(idx){
       <div id="cmsgs" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;scrollbar-width:none">
         <div style="display:flex;justify-content:center;padding:20px"><div class="spin"></div></div>
       </div>
-      <div style="display:flex;gap:10px;padding:12px 16px;border-top:1px solid #FED7AA;background:#FFF7ED;flex-shrink:0">
+      <div style="display:flex;gap:10px;padding:12px 16px max(18px,env(safe-area-inset-bottom));border-top:1px solid #FED7AA;background:#FFF7ED;flex-shrink:0;position:relative;z-index:2">
         <textarea id="cin2" rows="1" placeholder="Escribe un mensaje..."
           style="flex:1;background:#FFFFFF;border:1px solid #FED7AA;border-radius:22px;padding:10px 16px;font-size:14px;color:#111827;outline:none;resize:none;max-height:100px;line-height:1.4;font-family:inherit"
           onfocus="this.style.borderColor='#F97316'" onblur="this.style.borderColor='#FED7AA'"
@@ -623,7 +625,7 @@ function openChat(idx){
   document.body.appendChild(ov);
   requestAnimationFrame(()=>{ov.style.opacity='1';$('cp').style.transform='translateY(0)';});
 
-  const closeChat=()=>{ov.style.opacity='0';$('cp').style.transform='translateY(40px)';setTimeout(()=>{ov.remove();window._cRoom=null;},280);};
+  const closeChat=()=>{ov.style.opacity='0';$('cp').style.transform='translateY(40px)';setTimeout(()=>{ov.remove();window._cRoom=null;window.__CHAT_OPEN__=false;if(typeof forceShowNav==='function')forceShowNav();},280);};
   $('chat-close-btn').onclick=closeChat;
   ov.addEventListener('click',e=>{if(e.target===ov)closeChat();});
 

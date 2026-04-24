@@ -50,7 +50,7 @@ window.__BOOKSWIPE_VERSION__ = "1776997209";
 setInterval(function(){
   var nav=document.getElementById('nav');
   var view=document.getElementById('view');
-  if(nav){nav.style.setProperty('display','flex','important');nav.style.setProperty('z-index','999999','important');}
+  if(nav && !window.__CHAT_OPEN__){nav.style.setProperty('display','flex','important');nav.style.setProperty('z-index','999999','important');}
   if(view){view.style.setProperty('bottom','68px','important');}
 },500);
 </script>
