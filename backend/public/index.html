@@ -54,7 +54,12 @@ setInterval(function(){
   if(view){view.style.setProperty('bottom','68px','important');}
 },500);
 </script>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+if (typeof io === 'undefined') {
+  document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>');
+}
+</script>
 <script src="./app.js?v=1776997209"></script>
 </body>
 </html>

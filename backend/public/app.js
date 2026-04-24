@@ -630,9 +630,51 @@ function openChat(idx){
   ov.addEventListener('click',e=>{if(e.target===ov)closeChat();});
 
   window._cRoom=room;window._cMyId=myId;
-  if(SOCKET)SOCKET.emit('join-chat',room);
+  if (SOCKET?.connected) {
+    SOCKET.emit('join-chat', room, (res) => {
+      if (!res?.ok) console.warn('No se pudo unir a la sala:', res?.error);
+    });
+  }
 
-  window.chatSend2=()=>{const i=$('cin2');const t=i?.value?.trim();if(!t)return;i.value='';i.style.height='auto';if(SOCKET)SOCKET.emit('send-message',{roomId:room,text:t});};
+  window.chatSend2 = () => {
+    const i = $('cin2');
+    const t = i?.value?.trim();
+
+    if (!t) return;
+
+    i.value = '';
+    i.style.height = 'auto';
+
+    const clientId = 'msg_' + Date.now() + '_' + Math.random().toString(16).slice(2);
+
+    const tempMsg = {
+      _id: clientId,
+      clientId,
+      roomId: room,
+      text: t,
+      createdAt: new Date().toISOString(),
+      sender: window._cMyId,
+      pending: true
+    };
+
+    appendMsg2(tempMsg);
+
+    if (!SOCKET?.connected) {
+      toast('Chat reconectando. Intenta nuevamente.', 'error');
+      return;
+    }
+
+    SOCKET.timeout(5000).emit(
+      'send-message',
+      { roomId: room, text: t, clientId },
+      (err, response) => {
+        if (err || !response?.ok) {
+          toast(response?.error || 'No se pudo enviar el mensaje', 'error');
+          return;
+        }
+      }
+    );
+  };
 
   api('GET','/api/chat/'+room).then(msgs=>{
     const b=$('cmsgs');if(!b)return;
@@ -642,12 +684,26 @@ function openChat(idx){
 }
 
 function appendMsg2(msg){
-  const b=$('cmsgs');if(!b)return;
-  const mine=(msg.sender?._id||msg.sender)?.toString()===(window._cMyId||'').toString();
-  const el=document.createElement('div');
-  el.style.cssText=`max-width:78%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.4;word-break:break-word;align-self:${mine?'flex-end':'flex-start'};${mine?'background:#F97316;color:#FFFFFF;border-bottom-right-radius:4px':'background:#FFEDD5;color:#111827;border:1px solid #FED7AA;border-bottom-left-radius:4px'}`;
-  el.innerHTML=`<div>${esc(msg.text)}</div><div style="font-size:10px;opacity:.6;margin-top:3px;${mine?'text-align:right':''}">${fmtT(msg.createdAt)}</div>`;
-  b.appendChild(el);b.scrollTop=b.scrollHeight;
+  const b = $('cmsgs');
+  if (!b) return;
+
+  const mid = msg.clientId || msg._id;
+
+  if (mid && b.querySelector(`[data-mid="${String(mid)}"]`)) {
+    return;
+  }
+
+  const mine = (msg.sender?._id || msg.sender?.id || msg.sender)?.toString() === (window._cMyId || '').toString();
+
+  const el = document.createElement('div');
+  el.dataset.mid = String(mid || Date.now() + Math.random());
+
+  el.style.cssText = `max-width:78%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.4;word-break:break-word;align-self:${mine?'flex-end':'flex-start'};${mine?'background:#F97316;color:#FFFFFF;border-bottom-right-radius:4px':'background:#FFEDD5;color:#111827;border:1px solid #FED7AA;border-bottom-left-radius:4px'}`;
+
+  el.innerHTML = `<div>${esc(msg.text)}</div><div style="font-size:10px;opacity:.6;margin-top:3px;${mine?'text-align:right':''}">${fmtT(msg.createdAt || new Date())}</div>`;
+
+  b.appendChild(el);
+  b.scrollTop = b.scrollHeight;
 }
 
 /* ══════════════════════════════════════════════════
@@ -722,20 +778,63 @@ function showMatchModal(match){
 
 /* ── Socket.io ──────────────────────────────────── */
 function initSocket(){
-  try{
-    if(typeof io==='undefined')return;
-    if(SOCKET?.connected)return;
-    SOCKET=io(window.location.origin,{auth:{token:TOKEN},transports:['websocket','polling'],reconnection:true});
-    SOCKET.on('connect_error',err=>console.warn('Socket.IO no conectado:',err?.message||err));
-    SOCKET.on('new-message',msg=>{
-      const myId=(ME?._id||ME?.id||'').toString();
-      const senderId=(msg.sender?._id||msg.sender||'').toString();
-      if(!senderId)return;
-      const r=roomId(myId,senderId);
-      if(window._cRoom===r)appendMsg2(msg);
-      else{UNREAD[r]=(UNREAD[r]||0)+1;updateBadge();}
+  try {
+    if (typeof io === 'undefined') {
+      console.warn('Socket.IO cliente no cargado');
+      return;
+    }
+
+    if (SOCKET?.connected) return;
+
+    SOCKET = io(window.location.origin, {
+      auth: { token: TOKEN },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 3000,
+      timeout: 8000
     });
-  }catch(err){console.warn('Socket.IO desactivado:',err?.message||err);}
+
+    SOCKET.on('connect', () => {
+      console.log('🟢 Socket conectado:', SOCKET.id);
+
+      if (window._cRoom) {
+        SOCKET.emit('join-chat', window._cRoom);
+      }
+    });
+
+    SOCKET.on('disconnect', (reason) => {
+      console.log('🔴 Socket desconectado:', reason);
+    });
+
+    SOCKET.on('connect_error', (err) => {
+      console.warn('Socket.IO error:', err?.message || err);
+    });
+
+    SOCKET.on('new-message', (msg) => {
+      const myId = (ME?._id || ME?.id || '').toString();
+      const senderId = (msg.sender?._id || msg.sender?.id || msg.sender || '').toString();
+
+      if (!senderId) return;
+
+      const r = msg.roomId || roomId(myId, senderId);
+
+      if (window._cRoom === r) {
+        appendMsg2(msg);
+      } else {
+        UNREAD[r] = (UNREAD[r] || 0) + 1;
+        updateBadge();
+      }
+    });
+
+    SOCKET.on('message-error', (data) => {
+      toast(data?.error || 'Error al enviar mensaje', 'error');
+    });
+
+  } catch (err) {
+    console.warn('Socket.IO desactivado:', err?.message || err);
+  }
 }
 
 /* ══════════════════════════════════════════════════
