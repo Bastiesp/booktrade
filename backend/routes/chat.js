@@ -1,26 +1,51 @@
 const express = require('express');
-const auth    = require('../middleware/auth');
+const auth = require('../middleware/auth');
 const Message = require('../models/Message');
-const router  = express.Router();
 
-function canAccess(userId, roomId) {
-  const parts = roomId.split('_');
-  return parts.length === 2 && parts.includes(userId.toString());
-}
+const router = express.Router();
 
 /* GET /api/chat/:roomId — historial de mensajes */
 router.get('/:roomId', auth, async (req, res) => {
   try {
-    if (!canAccess(req.userId, req.params.roomId))
-      return res.status(403).json({ error: 'Sin acceso' });
+    const { roomId } = req.params;
 
-    const msgs = await Message.find({ roomId: req.params.roomId })
-      .populate('sender', 'username')
+    if (!roomId) {
+      return res.status(400).json({ error: 'Sala requerida' });
+    }
+
+    const messages = await Message.find({ roomId })
       .sort({ createdAt: 1 })
-      .limit(100);
+      .limit(100)
+      .populate('sender', 'username email');
 
-    res.json(msgs);
-  } catch {
+    res.json(messages);
+  } catch (err) {
+    console.error('GET /api/chat/:roomId error:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
+/* POST /api/chat/:roomId — fallback HTTP, por si el socket se desconecta */
+router.post('/:roomId', auth, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { text } = req.body;
+
+    if (!roomId || !text || !text.trim()) {
+      return res.status(400).json({ error: 'Mensaje vacío' });
+    }
+
+    const msg = await Message.create({
+      roomId,
+      sender: req.userId,
+      text: text.trim().slice(0, 500)
+    });
+
+    await msg.populate('sender', 'username email');
+
+    res.status(201).json(msg);
+  } catch (err) {
+    console.error('POST /api/chat/:roomId error:', err);
     res.status(500).json({ error: 'Error del servidor' });
   }
 });
