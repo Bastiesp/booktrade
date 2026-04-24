@@ -24,35 +24,21 @@ const roomId=(...a)=>a.map(String).sort().join('_');
 function forceShowNav(){
   const nav=document.getElementById('nav');
   const view=document.getElementById('view');
-  const app=document.getElementById('app');
-  const small=window.innerWidth<=720;
-  const side=small?'78px':'96px';
-  if(app){app.style.setProperty('max-width','1180px','important');app.style.setProperty('width','100%','important');}
   if(nav){
     nav.style.setProperty('display','flex','important');
     nav.style.setProperty('position','fixed','important');
-    nav.style.setProperty('top','0','important');
-    nav.style.setProperty('bottom','auto','important');
-    nav.style.setProperty('left',small?'0':'max(0px,calc(50% - 590px))','important');
-    nav.style.setProperty('transform','none','important');
-    nav.style.setProperty('width',side,'important');
-    nav.style.setProperty('max-width',side,'important');
-    nav.style.setProperty('height','100vh','important');
+    nav.style.setProperty('bottom','0','important');
+    nav.style.setProperty('left','50%','important');
+    nav.style.setProperty('transform','translateX(-50%)','important');
+    nav.style.setProperty('width','100%','important');
+    nav.style.setProperty('max-width','480px','important');
+    nav.style.setProperty('height','68px','important');
     nav.style.setProperty('background','#FFFFFF','important');
-    nav.style.setProperty('border-top','none','important');
-    nav.style.setProperty('border-right','1px solid #FED7AA','important');
+    nav.style.setProperty('border-top','1px solid #FED7AA','important');
     nav.style.setProperty('z-index','999999','important');
-    nav.style.setProperty('flex-direction','column','important');
-    nav.style.setProperty('justify-content','center','important');
-    nav.style.setProperty('gap','4px','important');
-    nav.style.setProperty('box-shadow','8px 0 24px rgba(17,24,39,.06)','important');
   }
   if(view){
-    view.style.setProperty('top','0','important');
-    view.style.setProperty('bottom','0','important');
-    view.style.setProperty('left',side,'important');
-    view.style.setProperty('right','0','important');
-    view.style.setProperty('background','#FFFFFF','important');
+    view.style.setProperty('bottom','68px','important');
   }
 }
 
@@ -91,6 +77,53 @@ function setNav(id){
 
 
 function levelFor(n){n=Number(n||0);if(n>=35)return 'Oro';if(n>=15)return 'Plata';if(n>=7)return 'Bronce';return 'Aficionado';}
+
+function nextLevelInfo(n){
+  n=Number(n||0);
+  if(n>=35)return {current:'Oro',next:null,currentMin:35,nextAt:null,remaining:0,percent:100};
+  if(n>=15)return {current:'Plata',next:'Oro',currentMin:15,nextAt:35,remaining:35-n,percent:Math.round(((n-15)/20)*100)};
+  if(n>=7)return {current:'Bronce',next:'Plata',currentMin:7,nextAt:15,remaining:15-n,percent:Math.round(((n-7)/8)*100)};
+  return {current:'Aficionado',next:'Bronce',currentMin:0,nextAt:7,remaining:7-n,percent:Math.round((n/7)*100)};
+}
+function ratingText(u){
+  const avg=Number(u?.ratingAvg||0);
+  const count=Number(u?.ratingCount||0);
+  return count>0?`⭐ ${avg.toFixed(1)} (${count})`:'⭐ Sin calificaciones';
+}
+async function openPublicProfile(userId){
+  try{
+    const u=await api('GET','/api/users/'+userId+'/public');
+    const p=u.levelProgress||nextLevelInfo(u.completedExchanges);
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000003;display:flex;align-items:flex-end;max-width:1180px;margin:0 auto;left:50%;transform:translateX(-50%)';
+    ov.innerHTML=`<div style="width:100%;background:#FFFFFF;border-radius:24px 24px 0 0;border:1px solid #FED7AA;padding:24px;max-height:86vh;overflow:auto">
+      <div style="width:44px;height:4px;background:#FDBA74;border-radius:8px;margin:0 auto 18px"></div>
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
+        <div style="width:76px;height:76px;border-radius:50%;background:#F97316;color:#fff;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;overflow:hidden">${u.profilePhoto?`<img src="${esc(u.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(u.username)}</div>
+        <div style="flex:1">
+          <div style="font-family:Fraunces,serif;font-size:24px;font-weight:800;color:#111827">@${esc(u.username)}</div>
+          <div style="font-size:13px;color:#6B7280;margin-top:3px">📍 ${esc(u.location||'Sin comuna')} · ${u.verificationStatus==='verified'?'✅ Verificado':'🕒 No verificado'}</div>
+          <div style="font-size:13px;color:#6B7280;margin-top:3px">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))} · ${ratingText(u)}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:900;color:#F97316">${u.totalBooks||0}</div><div style="font-size:11px;color:#6B7280">Libros</div></div>
+        <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:900;color:#F97316">${u.completedExchanges||0}</div><div style="font-size:11px;color:#6B7280">Intercambios</div></div>
+        <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:900;color:#F97316">${Number(u.ratingAvg||0).toFixed(1)}</div><div style="font-size:11px;color:#6B7280">Rating</div></div>
+      </div>
+      <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;color:#6B7280;font-weight:800;text-transform:uppercase;margin-bottom:6px">Progreso de nivel</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#111827;font-weight:800"><span>${levelEmoji(u.level)} ${esc(u.level)}</span><span>${p.next?`Faltan ${p.remaining} para ${p.next}`:'Nivel máximo'}</span></div>
+        <div style="height:10px;background:#FFEDD5;border-radius:999px;overflow:hidden;margin-top:8px"><div style="height:100%;width:${Math.max(0,Math.min(100,p.percent||0))}%;background:#F97316;border-radius:999px"></div></div>
+      </div>
+      <div style="font-size:13px;color:#6B7280;line-height:1.5;margin-bottom:18px">${esc(u.bio||'Sin biografía todavía.')}</div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:13px;border:none;border-radius:12px;background:#F97316;color:#fff;font-weight:800">Cerrar</button>
+    </div>`;
+    document.body.appendChild(ov);
+    ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+  }catch(e){toast(e.message,'error');}
+}
+
 function levelEmoji(l){return l==='Oro'?'🥇':l==='Plata'?'🥈':l==='Bronce'?'🥉':'📚';}
 async function loadNotifications(){if(!TOKEN)return;try{NOTIFS=await api('GET','/api/notifications');updateNotificationBadge();}catch{}}
 function updateNotificationBadge(){const el=$('nb-notif-badge');if(!el)return;const n=NOTIFS?.unread||0;el.style.display=n>0?'inline-flex':'none';el.textContent=n>9?'9+':String(n);}
@@ -154,19 +187,19 @@ function showAuth(tab){
   forceShowNav();
   tab=tab||'login';
   const nav=$('nav');if(nav)nav.style.display='flex';
-  const view=VIEW();if(view){view.style.bottom='0';view.style.left=(window.innerWidth<=720?'78px':'96px');}
+  const view=VIEW();if(view){view.style.bottom='68px';}
 
   setView(`
-    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;position:relative;overflow:hidden;
+    <div style="min-height:calc(100vh - 68px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;
       background:url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=85&w=1400&auto=format') center center/cover">
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.10),rgba(0,0,0,.04),rgba(0,0,0,.16))"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.45),rgba(255,247,237,.35),rgba(255,255,255,.55))"></div>
       <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #FED7AA;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         <div style="font-size:52px;filter:drop-shadow(0 0 20px rgba(249,115,22,.5))">📚</div>
         <div style="font-family:'Fraunces',serif;font-size:38px;font-weight:700;color:#111827;letter-spacing:-1px;margin-top:10px">Book<span style="color:#F97316">Swipe</span></div>
         <div style="font-size:12px;color:#6B7280;margin-top:6px;letter-spacing:.8px;text-transform:uppercase">Desliza · Conecta · Intercambia</div>
       </div>
-      <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.55);border-radius:22px;padding:28px 24px;backdrop-filter:blur(8px);box-shadow:0 24px 70px rgba(17,24,39,.20)">
+      <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(26,18,16,.94);border:1px solid #FED7AA;border-radius:22px;padding:28px 24px;backdrop-filter:blur(12px)">
         <div style="display:flex;background:#FFFFFF;border-radius:10px;padding:4px;margin-bottom:22px">
           <button onclick="showAuth('login')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='login'?'background:#F97316;color:#FFFFFF':'background:transparent;color:#6B7280'}">Ingresar</button>
           <button onclick="showAuth('register')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='register'?'background:#F97316;color:#FFFFFF':'background:transparent;color:#6B7280'}">Registrarse</button>
@@ -248,7 +281,7 @@ async function launchApp(){
   /* Mostrar nav */
   const nav=$('nav');if(nav)nav.style.display='flex';
   /* Restaurar #view con espacio para nav */
-  const view=VIEW();if(view){view.style.bottom='0';view.style.left=(window.innerWidth<=720?'78px':'96px');}
+  const view=VIEW();if(view)view.style.bottom='68px';
 
   try{if(!ME){try{ME=JSON.parse(localStorage.getItem('bs_user')||'null');}catch{};}if(!ME)rememberUser(await api('GET','/api/users/me'));}
   catch(e){localStorage.removeItem('bs_token');TOKEN='';showAuth('login');return;}
@@ -406,7 +439,7 @@ async function showBooks(){
   const fab=document.createElement('button');
   fab.className='fab-btn';
   fab.textContent='+';
-  fab.style.cssText='position:fixed;bottom:84px;right:max(24px,calc(50% - 590px + 24px));width:56px;height:56px;border-radius:50%;background:#F97316;color:#FFFFFF;font-size:28px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(249,115,22,.4);z-index:200;transition:transform .2s;display:flex;align-items:center;justify-content:center';
+  fab.style.cssText='position:fixed;bottom:84px;right:max(16px,calc(50% - 240px + 16px));width:56px;height:56px;border-radius:50%;background:#F97316;color:#FFFFFF;font-size:28px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(249,115,22,.4);z-index:200;transition:transform .2s;display:flex;align-items:center;justify-content:center';
   fab.onclick=()=>openBookModal(null);
   document.body.appendChild(fab);
 
@@ -584,9 +617,9 @@ function drawMatches(){
   ml.innerHTML=MATCHES.map((m,i)=>`
     <div style="background:#FFFFFF;border:1px solid #FED7AA;border-radius:14px;overflow:hidden">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 16px 12px">
-        <div style="width:48px;height:48px;border-radius:50%;background:#F97316;color:#FFFFFF;font-family:Fraunces,serif;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${ini(m.matchedUser.username)}</div>
+        <button onclick="openPublicProfile('${m.matchedUser.id}')" style="width:48px;height:48px;border-radius:50%;background:#F97316;color:#FFFFFF;font-family:Fraunces,serif;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:none;overflow:hidden">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</button>
         <div style="flex:1;min-width:0">
-          <div style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827">@${esc(m.matchedUser.username)}</div>
+          <button onclick="openPublicProfile('${m.matchedUser.id}')" style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827;border:none;background:transparent;padding:0;text-align:left">@${esc(m.matchedUser.username)}</button>
           ${m.matchedUser.location?`<div style="font-size:12px;color:#6B7280;margin-top:1px">📍 ${esc(m.matchedUser.location)}</div>`:''}
         </div>
         <span style="background:#F97316;color:#FFFFFF;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700">✓ Match</span>
@@ -602,6 +635,9 @@ function drawMatches(){
           <div style="font-family:Fraunces,serif;font-size:14px;font-weight:600;color:#111827;line-height:1.3">${esc(m.myBook.title)}</div>
           <div style="font-size:11px;color:#6B7280;margin-top:2px">${esc(m.myBook.author)}</div>
         </div>
+      </div>
+      <div style="margin:0 16px 10px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:10px;font-size:12px;color:#6B7280">
+        Estado del intercambio: <strong style="color:#111827">${m.exchangeState?.label||'Coordinando'}</strong>
       </div>
       <div style="display:flex;gap:8px;padding:0 16px 16px">
         <button onclick="openChat(${i})" style="flex:1;padding:11px;background:#F97316;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">💬 Chat</button>
@@ -786,7 +822,10 @@ async function showProfile(){
             </div>
           </div>
         </div>
-        <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:11px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Nivel de usuario</div><div style="font-family:Fraunces,serif;font-size:20px;font-weight:800;color:#111827">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${u.completedExchanges||0} intercambios realizados · Verificación: ${esc(u.verificationStatus||'pending')}</div></div>
+        <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:14px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Nivel de usuario</div>
+          ${(()=>{const p=u.levelProgress||nextLevelInfo(u.completedExchanges);return `<div style="font-family:Fraunces,serif;font-size:20px;font-weight:800;color:#111827">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${u.completedExchanges||0} intercambios realizados · ${p.next?`faltan ${p.remaining} para ${p.next}`:'nivel máximo alcanzado'} · Verificación: ${esc(u.verificationStatus||'pending')}</div><div style="height:10px;background:#FFEDD5;border-radius:999px;overflow:hidden;margin-top:10px"><div style="height:100%;width:${Math.max(0,Math.min(100,p.percent||0))}%;background:#F97316;border-radius:999px"></div></div>`})()}
+        </div>
         <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Foto de rostro / perfil</div><div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px;margin-bottom:16px"><input type="file" id="pf-file" accept="image/*" style="width:100%;font-size:13px;color:#6B7280"><div style="font-size:11px;color:#9CA3AF;margin-top:8px">Sube una foto clara de tu rostro. Quedará pendiente de verificación.</div></div>
         <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Sobre mí</div>
         <textarea id="pb" rows="3" placeholder="Cuéntale a otros qué tipo de lector eres..." style="width:100%;background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;resize:none;margin-bottom:12px;box-sizing:border-box;line-height:1.5;font-family:inherit">${esc(u.bio||'')}</textarea>
