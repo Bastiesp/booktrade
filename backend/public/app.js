@@ -3,7 +3,7 @@
 
 const API='';
 let TOKEN=localStorage.getItem('bs_token')||'';
-let ME=null,MATCHES=[],MY_BOOKS=[],QUEUE=[],UNREAD={},SOCKET=null;
+let ME=null,MATCHES=[],MY_BOOKS=[],QUEUE=[],UNREAD={},NOTIFS={unread:0,items:[]},HISTORY=[],SOCKET=null;
 let ACTIVE_GENRE='Todos',CITY='';
 
 const GENRES=['Ficción','No ficción','Ciencia ficción','Fantasía','Terror','Romance',
@@ -70,10 +70,16 @@ function requireLogin(){
 
 function setNav(id){
   forceShowNav();
-  ['nb-discover','nb-books','nb-matches','nb-profile'].forEach(n=>{
+  ['nb-discover','nb-books','nb-matches','nb-history','nb-profile'].forEach(n=>{
     const b=$(n);if(b)b.className='nb'+(n===id?' active':'');
   });
 }
+
+
+function levelFor(n){n=Number(n||0);if(n>=35)return 'Oro';if(n>=15)return 'Plata';if(n>=7)return 'Bronce';return 'Aficionado';}
+function levelEmoji(l){return l==='Oro'?'🥇':l==='Plata'?'🥈':l==='Bronce'?'🥉':'📚';}
+async function loadNotifications(){if(!TOKEN)return;try{NOTIFS=await api('GET','/api/notifications');updateNotificationBadge();}catch{}}
+function updateNotificationBadge(){const el=$('nb-notif-badge');if(!el)return;const n=NOTIFS?.unread||0;el.style.display=n>0?'inline-flex':'none';el.textContent=n>9?'9+':String(n);}
 
 function updateBadge(){
   const el=$('nb-mlabel');if(!el)return;
@@ -235,6 +241,7 @@ async function launchApp(){
   try{MATCHES=await api('GET','/api/swipes/matches')||[];}catch{}
   try{initSocket();}catch{}
   updateBadge();
+  await loadNotifications();
   showDiscover();
 }
 
@@ -584,9 +591,43 @@ function drawMatches(){
       </div>
       <div style="display:flex;gap:8px;padding:0 16px 16px">
         <button onclick="openChat(${i})" style="flex:1;padding:11px;background:#F97316;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">💬 Chat</button>
-        <a href="mailto:${esc(m.matchedUser.email)}" style="padding:11px 16px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;font-size:13px;color:#6B7280;display:flex;align-items:center;gap:5px">✉ Email</a>
+        <button onclick="confirmExchange(${i})" style="flex:1;padding:11px;background:#10B981;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">✅ Intercambiado</button>
       </div>
     </div>`).join('');
+}
+
+
+async function confirmExchange(idx){
+  const m=MATCHES[idx];if(!m)return;
+  if(!confirm('¿Confirmas que este intercambio ya se realizó?'))return;
+  try{
+    const r=await api('POST','/api/exchanges/confirm',{matchedUserId:m.matchedUser.id,myBookId:m.myBook.id,theirBookId:m.theirBook.id});
+    toast(r.completed?'Intercambio completado y guardado en historial ✓':'Confirmación enviada. Falta que la otra persona confirme.','success');
+    await loadNotifications();await showMatches();
+  }catch(e){toast(e.message,'error');}
+}
+
+async function showHistory(){
+  setNav('nb-history');if(!requireLogin())return;
+  document.querySelector('.fab-btn')?.remove();
+  setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between">
+    <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Historial</div>
+    <button onclick="showNotifications()" style="position:relative;background:#FFF7ED;border:1px solid #FED7AA;color:#F97316;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700">🔔 <span>${NOTIFS?.unread||0}</span></button>
+  </div><div id="hlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:14px"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
+  try{HISTORY=await api('GET','/api/exchanges/history');drawHistory();}catch(e){toast(e.message,'error');}
+}
+function drawHistory(){
+  const h=$('hlist');if(!h)return;
+  if(!HISTORY.length){h.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.45">📜</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin historial aún</div><div style="font-size:13px;color:#6B7280">Cuando ambos confirmen un intercambio aparecerá aquí.</div></div>`;return;}
+  const myId=getCurrentUserId();
+  h.innerHTML=HISTORY.map(x=>{const other=(String(x.requester?._id||x.requester?.id)===String(myId))?x.matchedUser:x.requester;return `<div style="background:#FFFFFF;border:1px solid #FED7AA;border-radius:14px;padding:16px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:44px;height:44px;border-radius:50%;background:#F97316;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;overflow:hidden">${other?.profilePhoto?`<img src="${esc(other.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(other?.username)}</div><div style="flex:1"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827">@${esc(other?.username||'Usuario')}</div><div style="font-size:12px;color:#6B7280">${levelEmoji(other?.level)} ${esc(other?.level||'Aficionado')} · ${other?.completedExchanges||0} intercambios</div></div><span style="background:#DCFCE7;color:#166534;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700">Completado</span></div>
+    <div style="display:flex;gap:8px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px"><div style="flex:1"><div style="font-size:9px;color:#9CA3AF;font-weight:800;text-transform:uppercase">Tu libro</div><div style="font-weight:700;color:#111827;font-size:13px">${esc(x.myBook?.title||'—')}</div><div style="font-size:11px;color:#6B7280">${esc(x.myBook?.author||'')}</div></div><div style="font-size:20px;color:#F97316;display:flex;align-items:center">⇄</div><div style="flex:1;text-align:right"><div style="font-size:9px;color:#9CA3AF;font-weight:800;text-transform:uppercase">Recibido</div><div style="font-weight:700;color:#111827;font-size:13px">${esc(x.theirBook?.title||'—')}</div><div style="font-size:11px;color:#6B7280">${esc(x.theirBook?.author||'')}</div></div></div>
+    <div style="font-size:11px;color:#9CA3AF;margin-top:10px">Fecha: ${new Date(x.completedAt||x.updatedAt).toLocaleDateString('es-CL')}</div></div>`}).join('');
+}
+async function showNotifications(){
+  setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Notificaciones</div><button onclick="showHistory()" style="background:#FFF7ED;border:1px solid #FED7AA;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700">Volver</button></div><div id="nlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:10px"><div class="spin"></div></div>`);
+  try{await loadNotifications();await api('PUT','/api/notifications/read');const n=$('nlist');if(!NOTIFS.items.length)n.innerHTML='<div style="text-align:center;color:#6B7280;padding:40px">No tienes notificaciones.</div>';else n.innerHTML=NOTIFS.items.map(it=>`<div style="background:${it.read?'#FFFFFF':'#FFF7ED'};border:1px solid #FED7AA;border-radius:12px;padding:14px"><div style="font-weight:800;color:#111827;font-size:14px">${esc(it.title)}</div><div style="font-size:13px;color:#6B7280;margin-top:3px">${esc(it.body||'')}</div><div style="font-size:10px;color:#9CA3AF;margin-top:6px">${new Date(it.createdAt).toLocaleString('es-CL')}</div></div>`).join('');NOTIFS.unread=0;updateNotificationBadge();}catch(e){toast(e.message,'error');}
 }
 
 /* ══════════════════════════════════════════════════
@@ -721,16 +762,18 @@ async function showProfile(){
       <div style="padding:0 16px 80px">
         <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827;padding:16px 0 12px">Mi Perfil</div>
         <div style="background:#FFFFFF;border:1px solid #FED7AA;border-radius:14px;padding:20px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
-          <div style="width:64px;height:64px;border-radius:50%;background:#F97316;color:#FFFFFF;font-family:Fraunces,serif;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${ini(u.username)}</div>
+          <div style="width:64px;height:64px;border-radius:50%;background:#F97316;color:#FFFFFF;font-family:Fraunces,serif;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">${u.profilePhoto?`<img src="${esc(u.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(u.username)}</div>
           <div>
             <div style="font-family:Fraunces,serif;font-size:20px;font-weight:700;color:#111827">@${esc(u.username)}</div>
             <div style="font-size:13px;color:#6B7280;margin-top:2px">${esc(u.email)}</div>
             <div style="display:flex;gap:16px;margin-top:8px">
               <div><div style="font-size:18px;font-weight:600;color:#F97316">${u.totalBooks||0}</div><div style="font-size:11px;color:#6B7280">Libros</div></div>
-              <div><div style="font-size:18px;font-weight:600;color:#F97316">${MATCHES.length}</div><div style="font-size:11px;color:#6B7280">Matches</div></div>
+              <div><div style="font-size:18px;font-weight:600;color:#F97316">${MATCHES.length}</div><div style="font-size:11px;color:#6B7280">Matches</div></div><div><div style="font-size:18px;font-weight:600;color:#F97316">${u.completedExchanges||0}</div><div style="font-size:11px;color:#6B7280">Intercambios</div></div>
             </div>
           </div>
         </div>
+        <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:14px;margin-bottom:16px"><div style="font-size:11px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Nivel de usuario</div><div style="font-family:Fraunces,serif;font-size:20px;font-weight:800;color:#111827">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${u.completedExchanges||0} intercambios realizados · Verificación: ${esc(u.verificationStatus||'pending')}</div></div>
+        <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Foto de rostro / perfil</div><div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px;margin-bottom:16px"><input type="file" id="pf-file" accept="image/*" style="width:100%;font-size:13px;color:#6B7280"><div style="font-size:11px;color:#9CA3AF;margin-top:8px">Sube una foto clara de tu rostro. Quedará pendiente de verificación.</div></div>
         <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Sobre mí</div>
         <textarea id="pb" rows="3" placeholder="Cuéntale a otros qué tipo de lector eres..." style="width:100%;background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;resize:none;margin-bottom:12px;box-sizing:border-box;line-height:1.5;font-family:inherit">${esc(u.bio||'')}</textarea>
         <input id="pl" type="text" value="${esc(u.location||'')}" placeholder="Ej: Concepción, Chile"
@@ -747,7 +790,7 @@ async function showProfile(){
       </div>`);
     window._pg=sg;
     window.pgToggle=g=>{const has=window._pg.includes(g);if(has)window._pg=window._pg.filter(x=>x!==g);else window._pg.push(g);const btn=$('pg-'+g);if(!btn)return;const on=window._pg.includes(g);btn.style.background=on?'rgba(249,115,22,.12)':'#FFF7ED';btn.style.borderColor=on?'rgba(249,115,22,.35)':'#FED7AA';btn.style.color=on?'#F97316':'#6B7280';};
-    window.pgSave=async()=>{const btn=$('psave');btn.disabled=true;btn.textContent='Guardando...';try{await api('PUT','/api/users/me',{bio:$('pb').value.trim(),location:$('pl').value.trim(),favoriteGenres:window._pg});toast('Perfil actualizado ✓','success');}catch(e){toast(e.message,'error');}finally{btn.disabled=false;btn.textContent='Guardar cambios';}};
+    window.pgSave=async()=>{const btn=$('psave');btn.disabled=true;btn.textContent='Guardando...';try{let profilePhoto;const file=$('pf-file')?.files?.[0];if(file)profilePhoto=await compressImg(file);const payload={bio:$('pb').value.trim(),location:$('pl').value.trim(),favoriteGenres:window._pg};if(profilePhoto)payload.profilePhoto=profilePhoto;const updated=await api('PUT','/api/users/me',payload);rememberUser({...ME,...updated});toast('Perfil actualizado ✓','success');showProfile();}catch(e){toast(e.message,'error');}finally{btn.disabled=false;btn.textContent='Guardar cambios';}};
   }catch(e){toast(e.message,'error');}
 }
 
@@ -831,6 +874,7 @@ function initSocket(){
     SOCKET.on('message-error', (data) => {
       toast(data?.error || 'Error al enviar mensaje', 'error');
     });
+    SOCKET.on('notification-update',()=>loadNotifications());
 
   } catch (err) {
     console.warn('Socket.IO desactivado:', err?.message || err);
