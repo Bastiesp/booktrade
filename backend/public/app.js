@@ -21,36 +21,47 @@ const fmtT=d=>new Date(d).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-d
 const roomId=(...a)=>a.map(String).sort().join('_');
 
 
-function ensureShell(){
-  let appEl=$('app');
-  if(!appEl){appEl=document.createElement('div');appEl.id='app';document.body.prepend(appEl);}
-  let view=$('view');
-  if(!view){view=document.createElement('div');view.id='view';appEl.appendChild(view);}
-  let nav=$('nav');
-  if(!nav){
-    nav=document.createElement('div');nav.id='nav';
-    nav.innerHTML=`
-      <button class="nb" id="nb-discover" onclick="showDiscover()"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Descubrir</span></button>
-      <button class="nb" id="nb-books" onclick="showBooks()"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Mis Libros</span></button>
-      <button class="nb" id="nb-matches" onclick="showMatches()"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nb-mlabel">Matches</span></button>
-      <button class="nb" id="nb-profile" onclick="showProfile()"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></button>`;
-    appEl.appendChild(nav);
+function forceShowNav(){
+  const nav=document.getElementById('nav');
+  const view=document.getElementById('view');
+  if(nav){
+    nav.style.setProperty('display','flex','important');
+    nav.style.setProperty('position','fixed','important');
+    nav.style.setProperty('bottom','0','important');
+    nav.style.setProperty('left','50%','important');
+    nav.style.setProperty('transform','translateX(-50%)','important');
+    nav.style.setProperty('width','100%','important');
+    nav.style.setProperty('max-width','480px','important');
+    nav.style.setProperty('height','68px','important');
+    nav.style.setProperty('background','#FFFFFF','important');
+    nav.style.setProperty('border-top','1px solid #FED7AA','important');
+    nav.style.setProperty('z-index','999999','important');
   }
-  let toasts=$('toasts');
-  if(!toasts){toasts=document.createElement('div');toasts.id='toasts';document.body.appendChild(toasts);}
-  appEl.style.cssText='position:fixed;inset:0;max-width:480px;margin:0 auto;overflow:hidden;background:#FFFFFF;height:100vh';
-  view.style.cssText='position:absolute;top:0;left:0;right:0;bottom:68px;overflow-y:auto;overflow-x:hidden;background:#FFFFFF';
-  nav.style.cssText='position:absolute;bottom:0;left:0;right:0;height:68px;background:#FFFFFF;border-top:1px solid #FED7AA;display:flex;align-items:center;padding:0 4px;z-index:999;box-shadow:0 -8px 24px rgba(17,24,39,.06)';
-  toasts.style.cssText='position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:340px;width:90%';
+  if(view){
+    view.style.setProperty('bottom','68px','important');
+  }
 }
+
 function forceLogout(){
-  TOKEN='';ME=null;MATCHES=[];MY_BOOKS=[];QUEUE=[];UNREAD={};
-  try{localStorage.removeItem('bs_token');localStorage.removeItem('bs_user');}catch{}
+  TOKEN='';
+  ME=null;
+  MATCHES=[];
+  MY_BOOKS=[];
+  QUEUE=[];
+  UNREAD={};
+  try{
+    localStorage.removeItem('bs_token');
+    localStorage.removeItem('bs_user');
+  }catch{}
   try{SOCKET?.disconnect();}catch{}
-  SOCKET=null;showAuth('login');toast('Sesión reiniciada','success');
+  SOCKET=null;
+  forceShowNav();
+  showAuth('login');
 }
+
 function requireLogin(){
   if(TOKEN)return true;
+  forceShowNav();
   toast('Inicia sesión para usar este módulo','error');
   showAuth('login');
   return false;
@@ -58,9 +69,7 @@ function requireLogin(){
 
 
 function setNav(id){
-  ensureShell();
-  const nav=$('nav');if(nav)nav.style.display='flex';
-  const view=VIEW();if(view)view.style.bottom='68px';
+  forceShowNav();
   ['nb-discover','nb-books','nb-matches','nb-profile'].forEach(n=>{
     const b=$(n);if(b)b.className='nb'+(n===id?' active':'');
   });
@@ -122,7 +131,7 @@ function toast(msg,type){
    AUTH — oculta el nav, muestra pantalla completa
    ══════════════════════════════════════════════════ */
 function showAuth(tab){
-  ensureShell();
+  forceShowNav();
   tab=tab||'login';
   const nav=$('nav');if(nav)nav.style.display='flex';
   const view=VIEW();if(view){view.style.bottom='68px';}
@@ -131,7 +140,7 @@ function showAuth(tab){
     <div style="min-height:calc(100vh - 68px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;
       background:url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=85&w=1400&auto=format') center center/cover">
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.45),rgba(255,247,237,.35),rgba(255,255,255,.55))"></div>
-      <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:2;background:#FFFFFF;border:1px solid #FED7AA;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
+      <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #FED7AA;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         <div style="font-size:52px;filter:drop-shadow(0 0 20px rgba(249,115,22,.5))">📚</div>
         <div style="font-family:'Fraunces',serif;font-size:38px;font-weight:700;color:#111827;letter-spacing:-1px;margin-top:10px">Book<span style="color:#F97316">Swipe</span></div>
@@ -215,20 +224,14 @@ function doLogout(){
    LAUNCH — restaurar nav y cargar app
    ══════════════════════════════════════════════════ */
 async function launchApp(){
-  ensureShell();
+  forceShowNav();
   /* Mostrar nav */
   const nav=$('nav');if(nav)nav.style.display='flex';
   /* Restaurar #view con espacio para nav */
   const view=VIEW();if(view)view.style.bottom='68px';
 
   try{if(!ME){try{ME=JSON.parse(localStorage.getItem('bs_user')||'null');}catch{};}if(!ME)rememberUser(await api('GET','/api/users/me'));}
-  catch(e){
-    console.warn('/api/users/me falló:',e?.message||e);
-    localStorage.removeItem('bs_token');localStorage.removeItem('bs_user');
-    TOKEN='';ME=null;showAuth('login');
-    toast('Tu sesión expiró. Inicia sesión nuevamente.','error');
-    return;
-  }
+  catch(e){localStorage.removeItem('bs_token');TOKEN='';showAuth('login');return;}
   try{MATCHES=await api('GET','/api/swipes/matches')||[];}catch{}
   try{initSocket();}catch{}
   updateBadge();
@@ -737,10 +740,11 @@ function initSocket(){
    ARRANCAR
    ══════════════════════════════════════════════════ */
 /* Arrancar */
-ensureShell();
+forceShowNav();
 const navEl=$('nav');
 if(navEl)navEl.style.display='flex';
 const viewEl=$('view');
 if(viewEl)viewEl.style.bottom='68px';
 
 if(TOKEN){launchApp();}else{showAuth('login');}
+setInterval(forceShowNav,1000);

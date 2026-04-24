@@ -13,7 +13,7 @@ html,body{height:100%;background:#FFFFFF;font-family:'DM Sans',sans-serif;color:
 #app{position:fixed;inset:0;max-width:480px;margin:0 auto;overflow:hidden;background:#FFFFFF;height:100vh}
 #view{position:absolute;top:0;left:0;right:0;bottom:68px;overflow-y:auto;overflow-x:hidden;background:#FFFFFF}
 #view::-webkit-scrollbar{display:none}
-#nav{position:absolute;bottom:0;left:0;right:0;height:68px;background:#FFFFFF;border-top:1px solid #FED7AA;display:flex;align-items:center;padding:0 4px;z-index:999;box-shadow:0 -8px 24px rgba(17,24,39,.06)}
+#nav{position:fixed!important;bottom:0!important;left:50%!important;transform:translateX(-50%)!important;width:100%!important;max-width:480px!important;height:68px!important;background:#FFFFFF!important;border-top:1px solid #FED7AA!important;display:flex!important;align-items:center!important;padding:0 4px!important;z-index:999999!important;box-shadow:0 -8px 24px rgba(17,24,39,.06)!important}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:100%;border:none;background:transparent;cursor:pointer;color:#9CA3AF;font-size:10px;font-weight:500;font-family:inherit;transition:color .2s,transform .2s;padding:0}
 .nb.active{color:#F97316;font-weight:700}
 .nb:active{transform:scale(.96)}
@@ -24,14 +24,37 @@ input,textarea,select,button{font-family:'DM Sans',sans-serif}button{cursor:poin
 </style>
 </head>
 <body>
-<div id="app"><div id="view"></div><div id="nav">
-<button class="nb" id="nb-discover" onclick="showDiscover()"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Descubrir</span></button>
-<button class="nb" id="nb-books" onclick="showBooks()"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Mis Libros</span></button>
-<button class="nb" id="nb-matches" onclick="showMatches()"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nb-mlabel">Matches</span></button>
-<button class="nb" id="nb-profile" onclick="showProfile()"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></button>
-</div></div>
-<div id="toasts" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:340px;width:90%"></div>
+<div id="app">
+  <div id="view"></div>
+</div>
+
+<div id="nav">
+  <button class="nb" id="nb-discover" onclick="window.showDiscover?showDiscover():alert('app.js todavía no cargó')">
+    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Descubrir</span>
+  </button>
+  <button class="nb" id="nb-books" onclick="window.showBooks?showBooks():alert('app.js todavía no cargó')">
+    <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Mis Libros</span>
+  </button>
+  <button class="nb" id="nb-matches" onclick="window.showMatches?showMatches():alert('app.js todavía no cargó')">
+    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nb-mlabel">Matches</span>
+  </button>
+  <button class="nb" id="nb-profile" onclick="window.showProfile?showProfile():alert('app.js todavía no cargó')">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span>
+  </button>
+</div>
+
+<div id="toasts" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:340px;width:90%"></div>
+
+<script>
+window.__BOOKSWIPE_VERSION__ = "1776997209";
+setInterval(function(){
+  var nav=document.getElementById('nav');
+  var view=document.getElementById('view');
+  if(nav){nav.style.setProperty('display','flex','important');nav.style.setProperty('z-index','999999','important');}
+  if(view){view.style.setProperty('bottom','68px','important');}
+},500);
+</script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script src="./app.js?v=always-nav-auth-fix"></script>
+<script src="./app.js?v=1776997209"></script>
 </body>
 </html>
