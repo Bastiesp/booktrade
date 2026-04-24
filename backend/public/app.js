@@ -578,7 +578,27 @@ function openChat(idx){
   window._cRoom=room;window._cMyId=myId;
   if(SOCKET)SOCKET.emit('join-chat',room);
 
-  window.chatSend2=()=>{const i=$('cin2');const t=i?.value?.trim();if(!t)return;i.value='';i.style.height='auto';if(SOCKET)SOCKET.emit('send-message',{roomId:room,text:t});};
+  window.chatSend2=async()=>{
+    const i=$('cin2');
+    const t=i?.value?.trim();
+    if(!t)return;
+    i.value='';
+    i.style.height='auto';
+
+    const tempMsg={text:t,createdAt:new Date().toISOString(),sender:window._cMyId};
+    appendMsg2(tempMsg);
+
+    try{
+      if(SOCKET?.connected){
+        SOCKET.emit('send-message',{roomId:room,text:t});
+      }else{
+        // Fallback por HTTP si tu backend tiene POST /api/chat/:room
+        await api('POST','/api/chat/'+room,{text:t});
+      }
+    }catch(e){
+      toast('No se pudo enviar el mensaje','error');
+    }
+  };
 
   api('GET','/api/chat/'+room).then(msgs=>{
     const b=$('cmsgs');if(!b)return;
@@ -667,14 +687,37 @@ function showMatchModal(match){
 
 /* ── Socket.io ──────────────────────────────────── */
 function initSocket(){
-  if(typeof io==='undefined'||SOCKET?.connected)return;
-  SOCKET=io({auth:{token:TOKEN}});
-  SOCKET.on('new-message',msg=>{
-    const myId=(ME?._id||ME?.id||'').toString();
-    const r=roomId(myId,(msg.sender?._id||msg.sender).toString());
-    if(window._cRoom===r)appendMsg2(msg);
-    else{UNREAD[r]=(UNREAD[r]||0)+1;updateBadge();}
-  });
+  // Socket.IO seguro:
+  // - No rompe la app si el cliente no cargó.
+  // - No rompe la app si el backend todavía no tiene socket.io activo.
+  // - Si el backend sí tiene socket.io, conecta al mismo dominio automáticamente.
+  try{
+    if(typeof io==='undefined')return;
+    if(SOCKET?.connected)return;
+
+    SOCKET=io(window.location.origin,{
+      auth:{token:TOKEN},
+      transports:['websocket','polling'],
+      reconnection:true,
+      reconnectionAttempts:5,
+      reconnectionDelay:1000
+    });
+
+    SOCKET.on('connect_error',err=>{
+      console.warn('Socket.IO no conectado:',err?.message||err);
+    });
+
+    SOCKET.on('new-message',msg=>{
+      const myId=(ME?._id||ME?.id||'').toString();
+      const senderId=(msg.sender?._id||msg.sender||'').toString();
+      if(!senderId)return;
+      const r=roomId(myId,senderId);
+      if(window._cRoom===r)appendMsg2(msg);
+      else{UNREAD[r]=(UNREAD[r]||0)+1;updateBadge();}
+    });
+  }catch(err){
+    console.warn('Socket.IO desactivado por error:',err?.message||err);
+  }
 }
 
 /* ══════════════════════════════════════════════════
