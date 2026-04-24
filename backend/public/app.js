@@ -20,7 +20,64 @@ const clr=id=>{let h=0;for(const c of String(id||''))h=(h*31+c.charCodeAt(0))&0x
 const fmtT=d=>new Date(d).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
 const roomId=(...a)=>a.map(String).sort().join('_');
 
+
+function ensureShell(){
+  let appEl=$('app');
+  if(!appEl){
+    appEl=document.createElement('div');
+    appEl.id='app';
+    document.body.prepend(appEl);
+  }
+
+  let view=$('view');
+  if(!view){
+    view=document.createElement('div');
+    view.id='view';
+    appEl.appendChild(view);
+  }
+
+  let nav=$('nav');
+  if(!nav){
+    nav=document.createElement('div');
+    nav.id='nav';
+    nav.innerHTML=`
+      <button class="nb" id="nb-discover" onclick="showDiscover()">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <span>Descubrir</span>
+      </button>
+      <button class="nb" id="nb-books" onclick="showBooks()">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg>
+        <span>Mis Libros</span>
+      </button>
+      <button class="nb" id="nb-matches" onclick="showMatches()">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span id="nb-mlabel">Matches</span>
+      </button>
+      <button class="nb" id="nb-profile" onclick="showProfile()">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Perfil</span>
+      </button>`;
+    appEl.appendChild(nav);
+  }
+
+  let toasts=$('toasts');
+  if(!toasts){
+    toasts=document.createElement('div');
+    toasts.id='toasts';
+    document.body.appendChild(toasts);
+  }
+
+  appEl.style.cssText='position:fixed;inset:0;max-width:480px;margin:0 auto;overflow:hidden;background:#FFFFFF;height:100vh';
+  view.style.cssText='position:absolute;top:0;left:0;right:0;bottom:68px;overflow-y:auto;overflow-x:hidden;background:#FFFFFF';
+  nav.style.cssText='position:absolute;bottom:0;left:0;right:0;height:68px;background:#FFFFFF;border-top:1px solid #FED7AA;display:flex;align-items:center;padding:0 4px;z-index:999;box-shadow:0 -8px 24px rgba(17,24,39,.06)';
+  toasts.style.cssText='position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:340px;width:90%';
+}
+
+
 function setNav(id){
+  ensureShell();
+  const nav=$('nav');if(nav)nav.style.display='flex';
+  const view=VIEW();if(view)view.style.bottom='68px';
   ['nb-discover','nb-books','nb-matches','nb-profile'].forEach(n=>{
     const b=$(n);if(b)b.className='nb'+(n===id?' active':'');
   });
@@ -82,6 +139,7 @@ function toast(msg,type){
    AUTH — oculta el nav, muestra pantalla completa
    ══════════════════════════════════════════════════ */
 function showAuth(tab){
+  ensureShell();
   tab=tab||'login';
   /* Ocultar nav durante auth */
   const nav=$('nav');if(nav)nav.style.display='none';
@@ -175,6 +233,7 @@ function doLogout(){
    LAUNCH — restaurar nav y cargar app
    ══════════════════════════════════════════════════ */
 async function launchApp(){
+  ensureShell();
   /* Mostrar nav */
   const nav=$('nav');if(nav)nav.style.display='flex';
   /* Restaurar #view con espacio para nav */
@@ -592,7 +651,6 @@ function openChat(idx){
       if(SOCKET?.connected){
         SOCKET.emit('send-message',{roomId:room,text:t});
       }else{
-        // Fallback por HTTP si tu backend tiene POST /api/chat/:room
         await api('POST','/api/chat/'+room,{text:t});
       }
     }catch(e){
@@ -687,10 +745,6 @@ function showMatchModal(match){
 
 /* ── Socket.io ──────────────────────────────────── */
 function initSocket(){
-  // Socket.IO seguro:
-  // - No rompe la app si el cliente no cargó.
-  // - No rompe la app si el backend todavía no tiene socket.io activo.
-  // - Si el backend sí tiene socket.io, conecta al mismo dominio automáticamente.
   try{
     if(typeof io==='undefined')return;
     if(SOCKET?.connected)return;
@@ -724,6 +778,7 @@ function initSocket(){
    ARRANCAR
    ══════════════════════════════════════════════════ */
 /* Ocultar nav hasta que el usuario esté logueado */
+ensureShell();
 const navEl=$('nav');
 if(navEl)navEl.style.display='none';
 const viewEl=$('view');
