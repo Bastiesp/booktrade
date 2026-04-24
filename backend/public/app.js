@@ -23,54 +23,37 @@ const roomId=(...a)=>a.map(String).sort().join('_');
 
 function ensureShell(){
   let appEl=$('app');
-  if(!appEl){
-    appEl=document.createElement('div');
-    appEl.id='app';
-    document.body.prepend(appEl);
-  }
-
+  if(!appEl){appEl=document.createElement('div');appEl.id='app';document.body.prepend(appEl);}
   let view=$('view');
-  if(!view){
-    view=document.createElement('div');
-    view.id='view';
-    appEl.appendChild(view);
-  }
-
+  if(!view){view=document.createElement('div');view.id='view';appEl.appendChild(view);}
   let nav=$('nav');
   if(!nav){
-    nav=document.createElement('div');
-    nav.id='nav';
+    nav=document.createElement('div');nav.id='nav';
     nav.innerHTML=`
-      <button class="nb" id="nb-discover" onclick="showDiscover()">
-        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        <span>Descubrir</span>
-      </button>
-      <button class="nb" id="nb-books" onclick="showBooks()">
-        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg>
-        <span>Mis Libros</span>
-      </button>
-      <button class="nb" id="nb-matches" onclick="showMatches()">
-        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        <span id="nb-mlabel">Matches</span>
-      </button>
-      <button class="nb" id="nb-profile" onclick="showProfile()">
-        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>Perfil</span>
-      </button>`;
+      <button class="nb" id="nb-discover" onclick="showDiscover()"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Descubrir</span></button>
+      <button class="nb" id="nb-books" onclick="showBooks()"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Mis Libros</span></button>
+      <button class="nb" id="nb-matches" onclick="showMatches()"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nb-mlabel">Matches</span></button>
+      <button class="nb" id="nb-profile" onclick="showProfile()"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></button>`;
     appEl.appendChild(nav);
   }
-
   let toasts=$('toasts');
-  if(!toasts){
-    toasts=document.createElement('div');
-    toasts.id='toasts';
-    document.body.appendChild(toasts);
-  }
-
+  if(!toasts){toasts=document.createElement('div');toasts.id='toasts';document.body.appendChild(toasts);}
   appEl.style.cssText='position:fixed;inset:0;max-width:480px;margin:0 auto;overflow:hidden;background:#FFFFFF;height:100vh';
   view.style.cssText='position:absolute;top:0;left:0;right:0;bottom:68px;overflow-y:auto;overflow-x:hidden;background:#FFFFFF';
   nav.style.cssText='position:absolute;bottom:0;left:0;right:0;height:68px;background:#FFFFFF;border-top:1px solid #FED7AA;display:flex;align-items:center;padding:0 4px;z-index:999;box-shadow:0 -8px 24px rgba(17,24,39,.06)';
   toasts.style.cssText='position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:340px;width:90%';
+}
+function forceLogout(){
+  TOKEN='';ME=null;MATCHES=[];MY_BOOKS=[];QUEUE=[];UNREAD={};
+  try{localStorage.removeItem('bs_token');localStorage.removeItem('bs_user');}catch{}
+  try{SOCKET?.disconnect();}catch{}
+  SOCKET=null;showAuth('login');toast('Sesión reiniciada','success');
+}
+function requireLogin(){
+  if(TOKEN)return true;
+  toast('Inicia sesión para usar este módulo','error');
+  showAuth('login');
+  return false;
 }
 
 
@@ -141,15 +124,14 @@ function toast(msg,type){
 function showAuth(tab){
   ensureShell();
   tab=tab||'login';
-  /* Ocultar nav durante auth */
-  const nav=$('nav');if(nav)nav.style.display='none';
-  /* Hacer que #view ocupe toda la pantalla */
-  const view=VIEW();if(view){view.style.bottom='0';}
+  const nav=$('nav');if(nav)nav.style.display='flex';
+  const view=VIEW();if(view){view.style.bottom='68px';}
 
   setView(`
-    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;
+    <div style="min-height:calc(100vh - 68px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;
       background:url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=85&w=1400&auto=format') center center/cover">
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.45),rgba(255,247,237,.35),rgba(255,255,255,.55))"></div>
+      <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:2;background:#FFFFFF;border:1px solid #FED7AA;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         <div style="font-size:52px;filter:drop-shadow(0 0 20px rgba(249,115,22,.5))">📚</div>
         <div style="font-family:'Fraunces',serif;font-size:38px;font-weight:700;color:#111827;letter-spacing:-1px;margin-top:10px">Book<span style="color:#F97316">Swipe</span></div>
@@ -240,7 +222,13 @@ async function launchApp(){
   const view=VIEW();if(view)view.style.bottom='68px';
 
   try{if(!ME){try{ME=JSON.parse(localStorage.getItem('bs_user')||'null');}catch{};}if(!ME)rememberUser(await api('GET','/api/users/me'));}
-  catch(e){localStorage.removeItem('bs_token');TOKEN='';showAuth('login');return;}
+  catch(e){
+    console.warn('/api/users/me falló:',e?.message||e);
+    localStorage.removeItem('bs_token');localStorage.removeItem('bs_user');
+    TOKEN='';ME=null;showAuth('login');
+    toast('Tu sesión expiró. Inicia sesión nuevamente.','error');
+    return;
+  }
   try{MATCHES=await api('GET','/api/swipes/matches')||[];}catch{}
   try{initSocket();}catch{}
   updateBadge();
@@ -383,6 +371,7 @@ async function doSwipe(bookId,dir){
    ══════════════════════════════════════════════════ */
 async function showBooks(){
   setNav('nb-books');
+  if(!requireLogin())return;
   document.querySelector('.fab-btn')?.remove();
   setView(`
     <div style="padding:16px 20px 12px"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Mis Libros</div></div>
@@ -553,6 +542,7 @@ async function compressImg(file){return new Promise((res,rej)=>{const r=new File
    ══════════════════════════════════════════════════ */
 async function showMatches(){
   setNav('nb-matches');
+  if(!requireLogin())return;
   document.querySelector('.fab-btn')?.remove();
   UNREAD={};updateBadge();
   setView(`
@@ -637,26 +627,7 @@ function openChat(idx){
   window._cRoom=room;window._cMyId=myId;
   if(SOCKET)SOCKET.emit('join-chat',room);
 
-  window.chatSend2=async()=>{
-    const i=$('cin2');
-    const t=i?.value?.trim();
-    if(!t)return;
-    i.value='';
-    i.style.height='auto';
-
-    const tempMsg={text:t,createdAt:new Date().toISOString(),sender:window._cMyId};
-    appendMsg2(tempMsg);
-
-    try{
-      if(SOCKET?.connected){
-        SOCKET.emit('send-message',{roomId:room,text:t});
-      }else{
-        await api('POST','/api/chat/'+room,{text:t});
-      }
-    }catch(e){
-      toast('No se pudo enviar el mensaje','error');
-    }
-  };
+  window.chatSend2=()=>{const i=$('cin2');const t=i?.value?.trim();if(!t)return;i.value='';i.style.height='auto';if(SOCKET)SOCKET.emit('send-message',{roomId:room,text:t});};
 
   api('GET','/api/chat/'+room).then(msgs=>{
     const b=$('cmsgs');if(!b)return;
@@ -679,6 +650,7 @@ function appendMsg2(msg){
    ══════════════════════════════════════════════════ */
 async function showProfile(){
   setNav('nb-profile');
+  if(!requireLogin())return;
   document.querySelector('.fab-btn')?.remove();
   setView(`<div style="display:flex;justify-content:center;padding:60px"><div class="spin"></div></div>`);
   try{
@@ -748,19 +720,8 @@ function initSocket(){
   try{
     if(typeof io==='undefined')return;
     if(SOCKET?.connected)return;
-
-    SOCKET=io(window.location.origin,{
-      auth:{token:TOKEN},
-      transports:['websocket','polling'],
-      reconnection:true,
-      reconnectionAttempts:5,
-      reconnectionDelay:1000
-    });
-
-    SOCKET.on('connect_error',err=>{
-      console.warn('Socket.IO no conectado:',err?.message||err);
-    });
-
+    SOCKET=io(window.location.origin,{auth:{token:TOKEN},transports:['websocket','polling'],reconnection:true});
+    SOCKET.on('connect_error',err=>console.warn('Socket.IO no conectado:',err?.message||err));
     SOCKET.on('new-message',msg=>{
       const myId=(ME?._id||ME?.id||'').toString();
       const senderId=(msg.sender?._id||msg.sender||'').toString();
@@ -769,19 +730,17 @@ function initSocket(){
       if(window._cRoom===r)appendMsg2(msg);
       else{UNREAD[r]=(UNREAD[r]||0)+1;updateBadge();}
     });
-  }catch(err){
-    console.warn('Socket.IO desactivado por error:',err?.message||err);
-  }
+  }catch(err){console.warn('Socket.IO desactivado:',err?.message||err);}
 }
 
 /* ══════════════════════════════════════════════════
    ARRANCAR
    ══════════════════════════════════════════════════ */
-/* Ocultar nav hasta que el usuario esté logueado */
+/* Arrancar */
 ensureShell();
 const navEl=$('nav');
-if(navEl)navEl.style.display='none';
+if(navEl)navEl.style.display='flex';
 const viewEl=$('view');
-if(viewEl)viewEl.style.bottom='0';
+if(viewEl)viewEl.style.bottom='68px';
 
 if(TOKEN){launchApp();}else{showAuth('login');}
