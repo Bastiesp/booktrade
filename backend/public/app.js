@@ -24,21 +24,35 @@ const roomId=(...a)=>a.map(String).sort().join('_');
 function forceShowNav(){
   const nav=document.getElementById('nav');
   const view=document.getElementById('view');
+  const app=document.getElementById('app');
+  const small=window.innerWidth<=720;
+  const side=small?'78px':'96px';
+  if(app){app.style.setProperty('max-width','1180px','important');app.style.setProperty('width','100%','important');}
   if(nav){
     nav.style.setProperty('display','flex','important');
     nav.style.setProperty('position','fixed','important');
-    nav.style.setProperty('bottom','0','important');
-    nav.style.setProperty('left','50%','important');
-    nav.style.setProperty('transform','translateX(-50%)','important');
-    nav.style.setProperty('width','100%','important');
-    nav.style.setProperty('max-width','480px','important');
-    nav.style.setProperty('height','68px','important');
+    nav.style.setProperty('top','0','important');
+    nav.style.setProperty('bottom','auto','important');
+    nav.style.setProperty('left',small?'0':'max(0px,calc(50% - 590px))','important');
+    nav.style.setProperty('transform','none','important');
+    nav.style.setProperty('width',side,'important');
+    nav.style.setProperty('max-width',side,'important');
+    nav.style.setProperty('height','100vh','important');
     nav.style.setProperty('background','#FFFFFF','important');
-    nav.style.setProperty('border-top','1px solid #FED7AA','important');
+    nav.style.setProperty('border-top','none','important');
+    nav.style.setProperty('border-right','1px solid #FED7AA','important');
     nav.style.setProperty('z-index','999999','important');
+    nav.style.setProperty('flex-direction','column','important');
+    nav.style.setProperty('justify-content','center','important');
+    nav.style.setProperty('gap','4px','important');
+    nav.style.setProperty('box-shadow','8px 0 24px rgba(17,24,39,.06)','important');
   }
   if(view){
-    view.style.setProperty('bottom','68px','important');
+    view.style.setProperty('top','0','important');
+    view.style.setProperty('bottom','0','important');
+    view.style.setProperty('left',side,'important');
+    view.style.setProperty('right','0','important');
+    view.style.setProperty('background','#FFFFFF','important');
   }
 }
 
@@ -187,19 +201,19 @@ function showAuth(tab){
   forceShowNav();
   tab=tab||'login';
   const nav=$('nav');if(nav)nav.style.display='flex';
-  const view=VIEW();if(view){view.style.bottom='68px';}
+  const view=VIEW();if(view){view.style.bottom='0';view.style.left=(window.innerWidth<=720?'78px':'96px');}
 
   setView(`
-    <div style="min-height:calc(100vh - 68px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;
+    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;position:relative;overflow:hidden;
       background:url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=85&w=1400&auto=format') center center/cover">
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.45),rgba(255,247,237,.35),rgba(255,255,255,.55))"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.10),rgba(0,0,0,.04),rgba(0,0,0,.16))"></div>
       <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #FED7AA;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         <div style="font-size:52px;filter:drop-shadow(0 0 20px rgba(249,115,22,.5))">📚</div>
         <div style="font-family:'Fraunces',serif;font-size:38px;font-weight:700;color:#111827;letter-spacing:-1px;margin-top:10px">Book<span style="color:#F97316">Swipe</span></div>
         <div style="font-size:12px;color:#6B7280;margin-top:6px;letter-spacing:.8px;text-transform:uppercase">Desliza · Conecta · Intercambia</div>
       </div>
-      <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(26,18,16,.94);border:1px solid #FED7AA;border-radius:22px;padding:28px 24px;backdrop-filter:blur(12px)">
+      <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.55);border-radius:22px;padding:28px 24px;backdrop-filter:blur(8px);box-shadow:0 24px 70px rgba(17,24,39,.20)">
         <div style="display:flex;background:#FFFFFF;border-radius:10px;padding:4px;margin-bottom:22px">
           <button onclick="showAuth('login')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='login'?'background:#F97316;color:#FFFFFF':'background:transparent;color:#6B7280'}">Ingresar</button>
           <button onclick="showAuth('register')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='register'?'background:#F97316;color:#FFFFFF':'background:transparent;color:#6B7280'}">Registrarse</button>
@@ -281,7 +295,7 @@ async function launchApp(){
   /* Mostrar nav */
   const nav=$('nav');if(nav)nav.style.display='flex';
   /* Restaurar #view con espacio para nav */
-  const view=VIEW();if(view)view.style.bottom='68px';
+  const view=VIEW();if(view){view.style.bottom='0';view.style.left=(window.innerWidth<=720?'78px':'96px');}
 
   try{if(!ME){try{ME=JSON.parse(localStorage.getItem('bs_user')||'null');}catch{};}if(!ME)rememberUser(await api('GET','/api/users/me'));}
   catch(e){localStorage.removeItem('bs_token');TOKEN='';showAuth('login');return;}
@@ -439,7 +453,7 @@ async function showBooks(){
   const fab=document.createElement('button');
   fab.className='fab-btn';
   fab.textContent='+';
-  fab.style.cssText='position:fixed;bottom:84px;right:max(16px,calc(50% - 240px + 16px));width:56px;height:56px;border-radius:50%;background:#F97316;color:#FFFFFF;font-size:28px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(249,115,22,.4);z-index:200;transition:transform .2s;display:flex;align-items:center;justify-content:center';
+  fab.style.cssText='position:fixed;bottom:84px;right:max(24px,calc(50% - 590px + 24px));width:56px;height:56px;border-radius:50%;background:#F97316;color:#FFFFFF;font-size:28px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(249,115,22,.4);z-index:200;transition:transform .2s;display:flex;align-items:center;justify-content:center';
   fab.onclick=()=>openBookModal(null);
   document.body.appendChild(fab);
 
