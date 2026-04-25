@@ -1,4 +1,4 @@
-/* BookSwipe v3 — app.js */
+/* BookTrade v3 — app.js */
 'use strict';
 
 const API='';
@@ -210,7 +210,7 @@ function showAuth(tab){
       <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #FED7AA;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         <div style="font-size:52px;filter:drop-shadow(0 0 20px rgba(249,115,22,.5))">📚</div>
-        <div style="font-family:'Fraunces',serif;font-size:38px;font-weight:700;color:#111827;letter-spacing:-1px;margin-top:10px">Book<span style="color:#F97316">Swipe</span></div>
+        <div style="font-family:'Fraunces',serif;font-size:38px;font-weight:700;color:#111827;letter-spacing:-1px;margin-top:10px">Book<span style="color:#F97316">Trade</span></div>
         <div style="font-size:12px;color:#6B7280;margin-top:6px;letter-spacing:.8px;text-transform:uppercase">Desliza · Conecta · Intercambia</div>
       </div>
       <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.55);border-radius:22px;padding:28px 24px;backdrop-filter:blur(8px);box-shadow:0 24px 70px rgba(17,24,39,.20)">
@@ -270,7 +270,7 @@ async function doRegister(){
   try{
     const d=await api('POST','/api/auth/register',{username:u,email:e,password:p});
     TOKEN=d.token;localStorage.setItem('bs_token',TOKEN);rememberUser(d.user);
-    toast('¡Bienvenido a BookSwipe! 📚','success');
+    toast('¡Bienvenido a BookTrade! 📚','success');
     await launchApp();
   }catch(e2){
     toast(e2.message,'error');
@@ -316,7 +316,7 @@ async function showDiscover(){
 
   setView(`
     <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between">
-      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Book<span style="color:#F97316">Swipe</span></div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Book<span style="color:#F97316">Trade</span></div>
       <div id="qcnt" style="display:none;background:#F97316;color:#FFFFFF;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600"></div>
     </div>
     <div id="gbar" style="display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none">
