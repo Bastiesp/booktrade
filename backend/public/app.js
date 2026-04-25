@@ -853,6 +853,7 @@ async function showProfile(){
             ${sg.includes(g)?'background:rgba(249,115,22,.12);border-color:rgba(249,115,22,.35);color:#F97316':'background:#FFF7ED;border-color:#FED7AA;color:#6B7280'}">${g}</button>`).join('')}
         </div>
         <button id="psave" onclick="pgSave()" style="width:100%;padding:14px;background:#F97316;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px">Guardar cambios</button>
+        <button onclick="window.location.href='/admin'" style="width:100%;padding:14px;background:#111827;color:#FFFFFF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px">⚙️ Abrir panel admin</button>
         <button onclick="doLogout()" style="width:100%;padding:14px;background:transparent;border:1px solid #FED7AA;border-radius:12px;font-size:14px;color:#6B7280;cursor:pointer">Cerrar sesión</button>
       </div>`);
     window._pg=sg;
