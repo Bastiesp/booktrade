@@ -35,6 +35,32 @@ async function requireAdmin(req, res, next) {
   }
 }
 
+
+router.get('/whoami', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    const admins = allowedAdminEmails();
+    const isAdmin = !!user && (user.role === 'admin' || admins.includes(String(user.email).toLowerCase()));
+
+    res.json({
+      ok: true,
+      isAdmin,
+      user: user ? {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        verificationStatus: user.verificationStatus
+      } : null,
+      adminEmailsConfigured: admins,
+      envHasAdminEmails: admins.length > 0
+    });
+  } catch (err) {
+    console.error('GET /api/admin/whoami error:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
 router.get('/summary', auth, requireAdmin, async (_req, res) => {
   try {
     const [
