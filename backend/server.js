@@ -48,7 +48,7 @@ app.use('/api/admin',         require('./routes/admin'));
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
-    version: '3.2.0-admin-definitive',
+    version: '3.3.0-realtime-notifications-password',
     socket: 'enabled',
     adminPanel: '/admin',
     adminHtml: '/admin.html',
@@ -93,6 +93,7 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   console.log('🟢 Socket conectado:', socket.userId);
+  socket.join('user:'+socket.userId);
 
   socket.on('join-chat', (roomId, callback) => {
     if (!roomId) {
