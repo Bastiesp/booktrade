@@ -211,6 +211,21 @@ function toast(msg,type){
 /* ══════════════════════════════════════════════════
    AUTH — oculta el nav, muestra pantalla completa
    ══════════════════════════════════════════════════ */
+
+function showForgotPassword(){
+  const nav=$('nav');if(nav)nav.style.display='none';
+  const view=VIEW();if(view){view.style.left='0';view.style.bottom='0';}
+  setView(`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#EFF6FF"><div style="width:100%;max-width:420px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;padding:26px;box-shadow:0 24px 70px rgba(17,24,39,.10)"><div style="font-family:Fraunces,serif;font-size:28px;font-weight:900;color:#111827;margin-bottom:8px">Recuperar contraseña</div><div style="font-size:14px;color:#6B7280;line-height:1.45;margin-bottom:18px">Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.</div><input id="fp-email" type="email" placeholder="tu-correo@email.com" style="width:100%;padding:14px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;font-size:15px;color:#111827;outline:none;margin-bottom:12px"><button id="fp-btn" onclick="sendForgotPassword()" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:900">Enviar enlace</button><button onclick="showAuth('login')" style="width:100%;padding:13px;margin-top:10px;background:transparent;color:#6B7280;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:700">Volver al login</button></div></div>`);
+}
+async function sendForgotPassword(){
+  const btn=$('fp-btn'),email=$('fp-email')?.value?.trim();
+  if(!email)return toast('Ingresa tu correo','error');
+  btn.disabled=true;btn.textContent='Enviando...';
+  try{const r=await api('POST','/api/auth/forgot-password',{email});toast(r.message||'Revisa tu correo','success');showAuth('login');}
+  catch(e){toast(e.message,'error')}
+  finally{btn.disabled=false;btn.textContent='Enviar enlace'}
+}
+
 function showAuth(tab){
   forceShowNav();
   tab=tab||'login';
@@ -317,6 +332,7 @@ async function launchApp(){
   try{initSocket();}catch{}
   updateBadge();
   await loadNotifications();
+  if(window._notifPoll)clearInterval(window._notifPoll);window._notifPoll=setInterval(()=>{if(TOKEN)loadNotifications();},20000);
   await checkAdminAccess();
   showDiscover();
 }
@@ -995,7 +1011,12 @@ function initSocket(){
     SOCKET.on('message-error', (data) => {
       toast(data?.error || 'Error al enviar mensaje', 'error');
     });
-    SOCKET.on('notification-update',()=>loadNotifications());
+    SOCKET.on('notification-update',async(data)=>{
+      const before=NOTIFS?.unread||0;
+      await loadNotifications();
+      const after=NOTIFS?.unread||0;
+      if(after>before)showPopNotification('🔔 Nueva notificación','Tienes una nueva actividad en BookTrade',()=>showNotifications());
+    });
 
   } catch (err) {
     console.warn('Socket.IO desactivado:', err?.message || err);
