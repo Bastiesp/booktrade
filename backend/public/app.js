@@ -70,7 +70,7 @@ function forceLogout(){
   try{SOCKET?.disconnect();}catch{}
   SOCKET=null;
   forceShowNav();
-  showAuth('login');
+  showAuth('login');setTimeout(()=>ensureForgotFixedButton?.(),80);
 }
 
 function requireLogin(){
@@ -213,6 +213,37 @@ function toast(msg,type){
    ══════════════════════════════════════════════════ */
 
 
+
+function ensureForgotFixedButton(){
+  let b=document.getElementById('forgot-fixed-btn');
+  if(!b){
+    b=document.createElement('button');
+    b.id='forgot-fixed-btn';
+    b.textContent='¿Olvidaste tu contraseña?';
+    b.onclick=()=>showForgotPassword();
+    b.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:1000008;background:rgba(255,255,255,.94);color:#1D4ED8;border:1px solid rgba(255,255,255,.85);border-radius:999px;padding:12px 18px;font-size:14px;font-weight:900;box-shadow:0 16px 40px rgba(17,24,39,.24);cursor:pointer';
+    document.body.appendChild(b);
+  }
+  b.style.display=TOKEN?'none':'block';
+}
+
+
+function injectForgotInsideLogin(){
+  if(TOKEN)return;
+  if(document.getElementById('forgot-inline-btn'))return;
+  const view=VIEW();
+  if(!view)return;
+  const loginBtn=[...view.querySelectorAll('button')].find(b=>/Entrar|Ingresar|Iniciar/i.test(b.textContent||''));
+  if(!loginBtn)return;
+  const btn=document.createElement('button');
+  btn.id='forgot-inline-btn';
+  btn.type='button';
+  btn.textContent='¿Olvidaste tu contraseña?';
+  btn.onclick=showForgotPassword;
+  btn.style.cssText='width:100%;background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.85);color:#1D4ED8;border-radius:12px;padding:11px 12px;font-size:13px;font-weight:900;margin:0 0 12px;cursor:pointer;box-shadow:0 8px 24px rgba(17,24,39,.12)';
+  loginBtn.parentNode.insertBefore(btn,loginBtn);
+}
+
 function showForgotPassword(){
   const nav=$('nav');
   if(nav)nav.style.display='none';
@@ -274,6 +305,7 @@ async function sendForgotPassword(){
 
 
 function showAuth(tab){
+  setTimeout(()=>{ensureForgotFixedButton?.();injectForgotInsideLogin?.();},50);setTimeout(()=>injectForgotInsideLogin?.(),300);setTimeout(()=>injectForgotInsideLogin?.(),800);
   forceShowNav();
   tab=tab||'login';
   const nav=$('nav');if(nav)nav.style.display='flex';
@@ -367,6 +399,8 @@ function doLogout(){
    LAUNCH — restaurar nav y cargar app
    ══════════════════════════════════════════════════ */
 async function launchApp(){
+  document.body.classList.add('logged-in');
+  document.getElementById('forgot-fixed-btn')?.style.setProperty('display','none','important');
   forceShowNav();
   /* Mostrar nav */
   const nav=$('nav');if(nav)nav.style.display='flex';
