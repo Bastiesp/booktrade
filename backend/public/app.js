@@ -4,7 +4,7 @@
 const API='';
 let TOKEN=localStorage.getItem('bs_token')||'';
 let ME=null,MATCHES=[],MY_BOOKS=[],QUEUE=[],UNREAD={},NOTIFS={unread:0,items:[]},HISTORY=[],SOCKET=null;
-let ACTIVE_GENRE='Todos',CITY='',DISCOVER_MODE='swipe';
+let ACTIVE_GENRE='Todos',CITY='',DISCOVER_MODE='swipe',IS_ADMIN=false;
 
 const GENRES=['Ficción','No ficción','Ciencia ficción','Fantasía','Terror','Romance',
   'Thriller','Historia','Biografía','Ciencia','Filosofía','Poesía','Infantil','Cómic','Otro'];
@@ -84,7 +84,7 @@ function requireLogin(){
 
 function setNav(id){
   forceShowNav();
-  ['nb-discover','nb-books','nb-matches','nb-history','nb-profile'].forEach(n=>{
+  ['nb-discover','nb-books','nb-matches','nb-chats','nb-history','nb-profile'].forEach(n=>{
     const b=$(n);if(b)b.className='nb'+(n===id?' active':'');
   });
 }
@@ -141,6 +141,20 @@ async function openPublicProfile(userId){
 function levelEmoji(l){return l==='Oro'?'🥇':l==='Plata'?'🥈':l==='Bronce'?'🥉':'📚';}
 async function loadNotifications(){if(!TOKEN)return;try{NOTIFS=await api('GET','/api/notifications');updateNotificationBadge();}catch{}}
 function updateNotificationBadge(){const el=$('nb-notif-badge');if(!el)return;const n=NOTIFS?.unread||0;el.style.display=n>0?'inline-flex':'none';el.textContent=n>9?'9+':String(n);}
+
+
+async function checkAdminAccess(){
+  if(!TOKEN)return false;
+  try{const r=await api('GET','/api/admin/whoami');IS_ADMIN=!!r.isAdmin;return IS_ADMIN;}catch{IS_ADMIN=false;return false;}
+}
+function showPopNotification(title,body,onclick){
+  const p=document.createElement('div');
+  p.style.cssText='position:fixed;top:18px;right:max(18px,calc(50% - 590px + 18px));z-index:1000005;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px 16px;box-shadow:0 16px 45px rgba(17,24,39,.18);max-width:320px;cursor:pointer;color:#111827';
+  p.innerHTML=`<div style="font-weight:900;color:#3B82F6;font-size:14px;margin-bottom:3px">${esc(title)}</div><div style="font-size:13px;color:#6B7280;line-height:1.35">${esc(body||'')}</div>`;
+  p.onclick=()=>{try{onclick&&onclick();}catch{}p.remove();};
+  document.body.appendChild(p);
+  setTimeout(()=>{p.style.opacity='0';p.style.transform='translateY(-8px)';p.style.transition='.25s';setTimeout(()=>p.remove(),260);},5200);
+}
 
 function updateBadge(){
   const el=$('nb-mlabel');if(!el)return;
@@ -303,6 +317,7 @@ async function launchApp(){
   try{initSocket();}catch{}
   updateBadge();
   await loadNotifications();
+  await checkAdminAccess();
   showDiscover();
 }
 
@@ -691,6 +706,21 @@ async function confirmExchange(idx){
   }catch(e){toast(e.message,'error');}
 }
 
+
+async function showChats(){
+  setNav('nb-chats');
+  if(!requireLogin())return;
+  document.querySelector('.fab-btn')?.remove();
+  setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Chats</div><div style="font-size:12px;color:#6B7280;margin-top:2px">Conversaciones con tus matches</div></div><button onclick="loadNotifications();showNotifications?.()" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#3B82F6;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800">🔔 ${NOTIFS?.unread||0}</button></div><div id="clist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:12px"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
+  try{MATCHES=await api('GET','/api/swipes/matches')||[];drawChats();}catch(e){toast(e.message,'error');}
+}
+function drawChats(){
+  const c=$('clist');if(!c)return;
+  if(!MATCHES.length){c.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.45">💬</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin chats todavía</div><div style="font-size:13px;color:#6B7280">Cuando tengas matches, tus conversaciones aparecerán aquí.</div></div>`;return;}
+  const myId=getCurrentUserId();
+  c.innerHTML=MATCHES.map((m,i)=>{const r=roomId(myId,m.matchedUser.id);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:100%;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)"><div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div><div style="flex:1;min-width:0"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div><div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">${m.exchangeState?.label||'Coordinando intercambio'}</div></div>${unread?`<span style="background:#EF4444;color:#fff;border-radius:999px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900">${unread>9?'9+':unread}</span>`:''}</button>`}).join('');
+}
+
 async function showHistory(){
   setNav('nb-history');if(!requireLogin())return;
   document.querySelector('.fab-btn')?.remove();
@@ -723,7 +753,7 @@ function openChat(idx){
   const navChat=$('nav');if(navChat)navChat.style.setProperty('display','none','important');
   const myId=(ME?._id||ME?.id||'').toString();
   const room=roomId(myId,m.matchedUser.id);
-  delete UNREAD[room];updateBadge();
+  delete UNREAD[room];updateBadge();if($('clist'))drawChats();
 
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:480px;left:50%;transform:translateX(-50%)';
@@ -873,7 +903,7 @@ async function showProfile(){
             ${sg.includes(g)?'background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35);color:#3B82F6':'background:#EFF6FF;border-color:#BFDBFE;color:#6B7280'}">${g}</button>`).join('')}
         </div>
         <button id="psave" onclick="pgSave()" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px">Guardar cambios</button>
-        <button onclick="window.location.href='/admin'" style="width:100%;padding:14px;background:#111827;color:#FFFFFF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px">⚙️ Abrir panel admin</button>
+        ${IS_ADMIN?`${IS_ADMIN?`<button onclick="window.location.href='/admin'" style="width:100%;padding:14px;background:#111827;color:#FFFFFF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px">⚙️ Abrir panel admin</button>`:''}`:''}
         <button onclick="doLogout()" style="width:100%;padding:14px;background:transparent;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;color:#6B7280;cursor:pointer">Cerrar sesión</button>
       </div>`);
     window._pg=sg;
@@ -956,6 +986,9 @@ function initSocket(){
       } else {
         UNREAD[r] = (UNREAD[r] || 0) + 1;
         updateBadge();
+        const senderName=msg.sender?.username||'Nuevo mensaje';
+        showPopNotification('💬 '+senderName, msg.text||'Tienes un nuevo mensaje', ()=>showChats());
+        loadNotifications();
       }
     });
 
