@@ -81,6 +81,8 @@ const userSchema = new mongoose.Schema({
     min: 0
   },
 
+  resetPasswordToken:{type:String,default:''},
+  resetPasswordExpires:{type:Date,default:null},
   role: {
     type: String,
     enum: ['user', 'admin'],
@@ -102,7 +104,7 @@ userSchema.statics.levelFor = calcLevel;
 
 userSchema.set('toJSON', {
   transform: (_doc, ret) => {
-    delete ret.password;
+    delete ret.password; delete ret.resetPasswordToken; delete ret.resetPasswordExpires;
     ret.id = ret._id;
     ret.level = calcLevel(ret.completedExchanges);
     return ret;
