@@ -212,19 +212,66 @@ function toast(msg,type){
    AUTH — oculta el nav, muestra pantalla completa
    ══════════════════════════════════════════════════ */
 
+
 function showForgotPassword(){
-  const nav=$('nav');if(nav)nav.style.display='none';
-  const view=VIEW();if(view){view.style.left='0';view.style.bottom='0';}
-  setView(`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#EFF6FF"><div style="width:100%;max-width:420px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;padding:26px;box-shadow:0 24px 70px rgba(17,24,39,.10)"><div style="font-family:Fraunces,serif;font-size:28px;font-weight:900;color:#111827;margin-bottom:8px">Recuperar contraseña</div><div style="font-size:14px;color:#6B7280;line-height:1.45;margin-bottom:18px">Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.</div><input id="fp-email" type="email" placeholder="tu-correo@email.com" style="width:100%;padding:14px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;font-size:15px;color:#111827;outline:none;margin-bottom:12px"><button id="fp-btn" onclick="sendForgotPassword()" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:900">Enviar enlace</button><button onclick="showAuth('login')" style="width:100%;padding:13px;margin-top:10px;background:transparent;color:#6B7280;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:700">Volver al login</button></div></div>`);
+  const nav=$('nav');
+  if(nav)nav.style.display='none';
+
+  const view=VIEW();
+  if(view){
+    view.style.left='0';
+    view.style.bottom='0';
+    view.style.right='0';
+  }
+
+  setView(`
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#EFF6FF">
+      <div style="width:100%;max-width:420px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;padding:26px;box-shadow:0 24px 70px rgba(17,24,39,.10)">
+        <div style="font-family:Fraunces,serif;font-size:28px;font-weight:900;color:#111827;margin-bottom:8px">Recuperar contraseña</div>
+        <div style="font-size:14px;color:#6B7280;line-height:1.45;margin-bottom:18px">
+          Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.
+        </div>
+
+        <input id="fp-email" type="email" placeholder="tu-correo@email.com"
+          style="width:100%;padding:14px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;font-size:15px;color:#111827;outline:none;margin-bottom:12px">
+
+        <button id="fp-btn" onclick="sendForgotPassword()"
+          style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:900">
+          Enviar enlace
+        </button>
+
+        <button onclick="showAuth('login')"
+          style="width:100%;padding:13px;margin-top:10px;background:transparent;color:#6B7280;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:700">
+          Volver al login
+        </button>
+      </div>
+    </div>
+  `);
 }
+
 async function sendForgotPassword(){
-  const btn=$('fp-btn'),email=$('fp-email')?.value?.trim();
-  if(!email)return toast('Ingresa tu correo','error');
-  btn.disabled=true;btn.textContent='Enviando...';
-  try{const r=await api('POST','/api/auth/forgot-password',{email});toast(r.message||'Revisa tu correo','success');showAuth('login');}
-  catch(e){toast(e.message,'error')}
-  finally{btn.disabled=false;btn.textContent='Enviar enlace'}
+  const btn=$('fp-btn');
+  const email=$('fp-email')?.value?.trim();
+
+  if(!email){
+    return toast('Ingresa tu correo','error');
+  }
+
+  btn.disabled=true;
+  btn.textContent='Enviando...';
+
+  try{
+    const r=await api('POST','/api/auth/forgot-password',{email});
+    toast(r.message||'Si el correo existe, recibirás un enlace.','success');
+    showAuth('login');
+  }catch(e){
+    toast(e.message,'error');
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Enviar enlace';
+  }
 }
+
 
 function showAuth(tab){
   forceShowNav();
@@ -779,6 +826,12 @@ function openChat(idx){
         <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#93C5FD;border-radius:2px"></div>
         <div style="width:38px;height:38px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">${ini(m.matchedUser.username)}</div>
         <div style="flex:1"><div style="font-size:15px;font-weight:600;color:#111827">@${esc(m.matchedUser.username)}</div></div>
+        ${tab==='login'?`
+          <button type="button" onclick="showForgotPassword()"
+            style="width:100%;background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.75);color:#1D4ED8;border-radius:12px;padding:11px 12px;font-size:13px;font-weight:900;margin:0 0 12px;cursor:pointer;text-decoration:none;box-shadow:0 8px 24px rgba(17,24,39,.12)">
+            ¿Olvidaste tu contraseña?
+          </button>
+        `:''}
         <button id="chat-close-btn" style="width:32px;height:32px;border-radius:50%;background:#EFF6FF;color:#6B7280;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
       </div>
       <div id="cmsgs" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;scrollbar-width:none">
@@ -1035,3 +1088,6 @@ if(viewEl)viewEl.style.bottom='68px';
 
 if(TOKEN){launchApp();}else{showAuth('login');}
 setInterval(forceShowNav,1000);
+
+window.showForgotPassword=showForgotPassword;
+window.sendForgotPassword=sendForgotPassword;
