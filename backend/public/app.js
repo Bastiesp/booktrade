@@ -227,34 +227,24 @@ function toast(msg,type){
 
 
 
-function ensureForgotFixedButton(){
-  let b=document.getElementById('forgot-fixed-btn');
-  if(!b){
-    b=document.createElement('button');
-    b.id='forgot-fixed-btn';
-    b.textContent='¿Olvidaste tu contraseña?';
-    b.onclick=()=>showForgotPassword();
-    b.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:1000008;background:rgba(255,255,255,.94);color:#1D4ED8;border:1px solid rgba(255,255,255,.85);border-radius:999px;padding:12px 18px;font-size:14px;font-weight:900;box-shadow:0 16px 40px rgba(17,24,39,.24);cursor:pointer';
-    document.body.appendChild(b);
-  }
-  b.style.display=TOKEN?'none':'block';
-}
+function ensureForgotFixedButton(){ const b=document.getElementById('forgot-fixed-btn'); if(b)b.remove(); }
 
 
 function injectForgotInsideLogin(){
   if(TOKEN)return;
-  if(document.getElementById('forgot-inline-btn'))return;
+  if(document.getElementById('forgot-inline-link'))return;
   const view=VIEW();
   if(!view)return;
-  const loginBtn=[...view.querySelectorAll('button')].find(b=>/Entrar|Ingresar|Iniciar/i.test(b.textContent||''));
+  const buttons=[...view.querySelectorAll('button')];
+  const loginBtn=buttons.find(b=>/Ingresar|Entrar|Iniciar/i.test((b.textContent||'').trim()));
   if(!loginBtn)return;
-  const btn=document.createElement('button');
-  btn.id='forgot-inline-btn';
-  btn.type='button';
-  btn.textContent='¿Olvidaste tu contraseña?';
-  btn.onclick=showForgotPassword;
-  btn.style.cssText='width:100%;background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.85);color:#1D4ED8;border-radius:12px;padding:11px 12px;font-size:13px;font-weight:900;margin:0 0 12px;cursor:pointer;box-shadow:0 8px 24px rgba(17,24,39,.12)';
-  loginBtn.parentNode.insertBefore(btn,loginBtn);
+  const link=document.createElement('button');
+  link.id='forgot-inline-link';
+  link.type='button';
+  link.textContent='¿Olvidaste tu contraseña?';
+  link.onclick=showForgotPassword;
+  link.style.cssText='width:100%;background:transparent;border:none;color:#FFFFFF;text-shadow:0 2px 12px rgba(0,0,0,.75);font-size:13px;font-weight:900;margin:12px 0 0;cursor:pointer;text-decoration:underline;padding:8px';
+  loginBtn.insertAdjacentElement('afterend',link);
 }
 
 function showForgotPassword(){
@@ -461,7 +451,7 @@ async function showDiscover(){
         style="padding:9px 16px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Buscar</button>
     </div>
     <div style="display:flex;gap:8px;padding:0 16px 12px">
-      <button id="mode-swipe" onclick="setDiscoverMode('swipe')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='swipe'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='swipe'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='swipe'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">🔥 Swipe</button>
+      <button id="mode-swipe" onclick="setDiscoverMode('swipe')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='swipe'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='swipe'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='swipe'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">🔥 Deslizar</button>
       <button id="mode-catalog" onclick="setDiscoverMode('catalog')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='catalog'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='catalog'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='catalog'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">📚 Catálogo</button>
     </div>
     <div style="position:relative;margin:0 auto;max-width:380px;width:calc(100% - 32px);height:560px;min-height:560px" id="stack"></div>
@@ -611,7 +601,7 @@ async function showBooks(){
   document.querySelector('.fab-btn')?.remove();
   setView(`
     <div style="padding:16px 20px 12px"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Mis Libros</div></div>
-    <div id="bgrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px 80px">
+    <div id="bgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,210px));justify-content:center;gap:16px;padding:0 16px 80px">
       <div style="grid-column:1/-1;display:flex;justify-content:center;padding:40px"><div class="spin"></div></div>
     </div>`);
 
@@ -630,9 +620,9 @@ function drawBooksGrid(){
   const g=$('bgrid');if(!g)return;
   if(!MY_BOOKS.length){g.innerHTML=`<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.4">📖</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin libros aún</div><div style="font-size:13px;color:#6B7280">Toca el + para agregar</div></div>`;return;}
   g.innerHTML=MY_BOOKS.map(b=>`
-    <div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:14px;overflow:hidden">
-      <div style="height:130px;background:${clr(b._id)};position:relative;overflow:hidden">
-        ${b.photos?.[0]?`<img src="${esc(b.photos[0])}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;text-align:center"><div style="font-family:Fraunces,serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.9)">${esc(b.title)}</div><div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;font-style:italic">${esc(b.author)}</div></div>`}
+    <div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:14px;overflow:hidden;width:100%;max-width:210px">
+      <div style="height:260px;background:${clr(b._id)};position:relative;overflow:hidden">
+        ${b.photos?.[0]?`<img src="${esc(b.photos[0])}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#EFF6FF">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;text-align:center"><div style="font-family:Fraunces,serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.9)">${esc(b.title)}</div><div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;font-style:italic">${esc(b.author)}</div></div>`}
       </div>
       <div style="padding:10px 12px">
         <div style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.title)}</div>
@@ -806,7 +796,7 @@ function drawMatches(){
   const ml=$('mlist');if(!ml)return;
   if(!MATCHES.length){ml.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.4">💔</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin matches aún</div><div style="font-size:13px;color:#6B7280">Cuando alguien quiera tu libro aparecerá aquí</div></div>`;return;}
   ml.innerHTML=MATCHES.map((m,i)=>`
-    <div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:14px;overflow:hidden">
+    <div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:14px;overflow:hidden;width:100%;max-width:210px">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 16px 12px">
         <button onclick="openPublicProfile('${m.matchedUser.id}')" style="width:48px;height:48px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:none;overflow:hidden">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</button>
         <div style="flex:1;min-width:0">
