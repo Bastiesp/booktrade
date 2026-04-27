@@ -788,6 +788,8 @@ function drawMatches(){
       <div style="display:flex;gap:8px;padding:0 16px 16px">
         <button onclick="openChat(${i})" style="flex:1;padding:11px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">💬 Chat</button>
         <button onclick="confirmExchange(${i})" style="flex:1;padding:11px;background:#10B981;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">✅ Intercambiado</button>
+        <button onclick="reportUser('${m.matchedUser.id}','user')" style="padding:11px;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Reportar</button>
+        <button onclick="blockUser('${m.matchedUser.id}')" style="padding:11px;background:#111827;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Bloquear</button>
       </div>
     </div>`).join('');
 }
@@ -967,6 +969,10 @@ function appendMsg2(msg){
 /* ══════════════════════════════════════════════════
    PERFIL
    ══════════════════════════════════════════════════ */
+async function reportUser(userId,type='user',bookId=null){const reason=prompt('Describe brevemente el motivo del reporte:');if(!reason||!reason.trim())return;try{await api('POST','/api/support/report',{reportedUserId:userId,bookId,type,reason});toast('Reporte enviado','success')}catch(e){toast(e.message,'error')}}
+async function blockUser(userId){if(!confirm('¿Bloquear a este usuario?'))return;try{await api('POST','/api/support/block/'+userId,{});toast('Usuario bloqueado','success');showMatches?.()}catch(e){toast(e.message,'error')}}
+async function deleteMyAccount(){if(!confirm('Esta acción eliminará tu cuenta. ¿Continuar?'))return;if(!confirm('Confirmación final: tu cuenta quedará eliminada.'))return;try{await api('DELETE','/api/support/account');localStorage.removeItem('bs_token');localStorage.removeItem('bs_user');TOKEN='';ME=null;toast('Cuenta eliminada','success');showAuth('login')}catch(e){toast(e.message,'error')}}
+
 async function showProfile(){
   setNav('nb-profile');
   if(!requireLogin())return;
@@ -1007,6 +1013,7 @@ async function showProfile(){
         </div>
         <button id="psave" onclick="pgSave()" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px">Guardar cambios</button>
         ${IS_ADMIN?`${IS_ADMIN?`<button onclick="window.location.href='/admin'" style="width:100%;padding:14px;background:#111827;color:#FFFFFF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px">⚙️ Abrir panel admin</button>`:''}`:''}
+        <button onclick="deleteMyAccount()" style="width:100%;padding:14px;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;font-size:14px;color:#991B1B;font-weight:800;cursor:pointer;margin-bottom:10px">Eliminar cuenta</button>
         <button onclick="doLogout()" style="width:100%;padding:14px;background:transparent;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;color:#6B7280;cursor:pointer">Cerrar sesión</button>
       </div>`);
     window._pg=sg;
