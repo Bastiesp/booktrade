@@ -22,8 +22,8 @@ function exchangeState(exchange, userId) {
 
   if (exchange.status === 'completed') {
     return {
-      label: 'Completado',
-      code: 'completed',
+      label: 'Intercambio hecho',
+      code: 'exchange_done',
       mineConfirmed: true,
       otherConfirmed: true
     };
