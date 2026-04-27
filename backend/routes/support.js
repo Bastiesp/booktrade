@@ -1,0 +1,10 @@
+const express=require('express');
+const auth=require('../middleware/auth');
+const Report=require('../models/Report');
+const Block=require('../models/Block');
+const User=require('../models/User');
+const router=express.Router();
+router.post('/report',auth,async(req,res)=>{try{const{reportedUserId,bookId,type,reason}=req.body;if(!reason||!reason.trim())return res.status(400).json({error:'Debes indicar el motivo del reporte'});const report=await Report.create({reporter:req.userId,reportedUser:reportedUserId||null,book:bookId||null,type:type||'user',reason:reason.trim().slice(0,500)});res.status(201).json({ok:true,report});}catch(e){console.error(e);res.status(500).json({error:'Error del servidor'});}});
+router.post('/block/:userId',auth,async(req,res)=>{try{const blocked=req.params.userId;if(String(blocked)===String(req.userId))return res.status(400).json({error:'No puedes bloquearte a ti mismo'});await Block.updateOne({blocker:req.userId,blocked},{$set:{blocker:req.userId,blocked}},{upsert:true});res.json({ok:true});}catch(e){console.error(e);res.status(500).json({error:'Error del servidor'});}});
+router.delete('/account',auth,async(req,res)=>{try{await User.findByIdAndUpdate(req.userId,{accountStatus:'deleted',deletedAt:new Date(),email:`deleted_${req.userId}@deleted.local`,username:`deleted_${String(req.userId).slice(-8)}`});res.json({ok:true,message:'Cuenta eliminada correctamente'});}catch(e){console.error(e);res.status(500).json({error:'Error del servidor'});}});
+module.exports=router;
