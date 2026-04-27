@@ -43,6 +43,7 @@ app.use('/api/swipes',        require('./routes/swipes'));
 app.use('/api/chat',          require('./routes/chat'));
 app.use('/api/exchanges',     require('./routes/exchanges'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/upload',        require('./routes/upload'));
 app.use('/api/support',       require('./routes/support'));
 app.use('/api/admin',         require('./routes/admin'));
 
@@ -51,6 +52,7 @@ app.get('/api/health', (_req, res) => {
     status: 'ok',
     version: '3.3.0-realtime-notifications-password',
     socket: 'enabled',
+    cloudinary: Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET),
     adminPanel: '/admin',
     adminHtml: '/admin.html',
     adminEmailsConfigured: Boolean(process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL)
