@@ -43,6 +43,7 @@ app.use('/api/swipes',        require('./routes/swipes'));
 app.use('/api/chat',          require('./routes/chat'));
 app.use('/api/exchanges',     require('./routes/exchanges'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/support',       require('./routes/support'));
 app.use('/api/admin',         require('./routes/admin'));
 
 app.get('/api/health', (_req, res) => {
