@@ -461,11 +461,11 @@ async function showDiscover(){
         style="padding:9px 16px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Buscar</button>
     </div>
     <div style="display:flex;gap:8px;padding:0 16px 12px">
-      <button onclick="setDiscoverMode('swipe')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='swipe'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='swipe'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='swipe'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">🔥 Swipe</button>
-      <button onclick="setDiscoverMode('catalog')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='catalog'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='catalog'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='catalog'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">📚 Catálogo</button>
+      <button id="mode-swipe" onclick="setDiscoverMode('swipe')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='swipe'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='swipe'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='swipe'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">🔥 Swipe</button>
+      <button id="mode-catalog" onclick="setDiscoverMode('catalog')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='catalog'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='catalog'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='catalog'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">📚 Catálogo</button>
     </div>
-    <div style="position:relative;margin:0 16px;min-height:420px" id="stack"></div>
-    <div id="swipe-actions" style="display:${DISCOVER_MODE==='swipe'?'flex':'none'};justify-content:center;align-items:center;gap:24px;padding:16px">
+    <div style="position:relative;margin:0 auto;max-width:380px;width:calc(100% - 32px);height:560px;min-height:560px" id="stack"></div>
+    <div id="swipe-actions" style="display:${DISCOVER_MODE==='swipe'?'flex':'none'};justify-content:center;align-items:center;gap:22px;padding:12px 16px 20px">
       <button onclick="swipeBtn('left')"
         style="width:60px;height:60px;border-radius:50%;background:#FFFFFF;border:2px solid #D45A4A;color:#D45A4A;font-size:24px;display:flex;align-items:center;justify-content:center">✕</button>
       <button onclick="swipeBtn('right')"
@@ -473,6 +473,7 @@ async function showDiscover(){
     </div>`);
 
   await loadQueue();
+  updateDiscoverModeButtons();
 }
 
 function setGenre(g){
@@ -500,11 +501,29 @@ async function loadQueue(){
 }
 
 
-function setDiscoverMode(mode){DISCOVER_MODE=mode;drawStack();}
+
+function updateDiscoverModeButtons(){
+  const swipe=$('mode-swipe'), catalog=$('mode-catalog'), actions=$('swipe-actions');
+  if(swipe){
+    const on=DISCOVER_MODE==='swipe';
+    swipe.style.background=on?'#3B82F6':'#EFF6FF';
+    swipe.style.color=on?'#FFFFFF':'#6B7280';
+    swipe.style.borderColor=on?'#3B82F6':'#BFDBFE';
+  }
+  if(catalog){
+    const on=DISCOVER_MODE==='catalog';
+    catalog.style.background=on?'#3B82F6':'#EFF6FF';
+    catalog.style.color=on?'#FFFFFF':'#6B7280';
+    catalog.style.borderColor=on?'#3B82F6':'#BFDBFE';
+  }
+  if(actions)actions.style.display=DISCOVER_MODE==='swipe'?'flex':'none';
+}
+
+function setDiscoverMode(mode){DISCOVER_MODE=mode;updateDiscoverModeButtons();drawStack();}
 function drawCatalog(){
   const s=$('stack'),cnt=$('qcnt');if(!s)return;
   const actions=$('swipe-actions');if(actions)actions.style.display='none';
-  s.style.height='auto';s.style.minHeight='420px';
+  s.style.height='auto';s.style.minHeight='420px';s.style.maxWidth='none';s.style.width='auto';s.style.margin='0 16px';
   if(cnt){cnt.style.display=QUEUE.length?'block':'none';cnt.textContent=QUEUE.length+' libros';}
   if(!QUEUE.length){s.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:10px;text-align:center;padding:20px"><div style="font-size:48px;opacity:.4">🔭</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">¡Todo explorado!</div><div style="font-size:13px;color:#6B7280">Vuelve pronto o cambia los filtros</div></div>';return;}
   s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(photo)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · @${esc(book.owner?.username||'usuario')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right')" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800">Me interesa</button></div></div></div>`}).join('')}</div>`;
@@ -516,7 +535,7 @@ async function catalogSwipe(bookId,dir){
 function drawStack(){
   if(DISCOVER_MODE==='catalog')return drawCatalog();
   const s=$('stack'),cnt=$('qcnt');if(!s)return;
-  s.style.height='420px';s.style.minHeight='420px';const actions=$('swipe-actions');if(actions)actions.style.display='flex';
+  s.style.height='560px';s.style.minHeight='560px';s.style.maxWidth='380px';s.style.width='calc(100% - 32px)';s.style.margin='0 auto';const actions=$('swipe-actions');if(actions)actions.style.display='flex';
   if(!QUEUE.length){
     if(cnt)cnt.style.display='none';
     s.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;text-align:center;padding:20px"><div style="font-size:48px;opacity:.4">🔭</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">¡Todo explorado!</div><div style="font-size:13px;color:#6B7280">Vuelve pronto o cambia los filtros</div></div>';
@@ -528,17 +547,17 @@ function drawStack(){
     const isTop=ri===Math.min(QUEUE.length,3)-1;
     const depth=Math.min(QUEUE.length,3)-1-ri;
     const card=document.createElement('div');
-    card.style.cssText=`position:absolute;inset:0;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;overflow:hidden;user-select:none;will-change:transform;transform-origin:center bottom;${depth>0?`transform:scale(${1-depth*.04}) translateY(${depth*14}px)`:''}`;
+    card.style.cssText=`position:absolute;inset:0;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:24px;overflow:hidden;user-select:none;will-change:transform;box-shadow:0 18px 45px rgba(17,24,39,.12);transform-origin:center bottom;${depth>0?`transform:scale(${1-depth*.04}) translateY(${depth*14}px)`:''}`;
     const photo=book.photos?.[0];
     card.innerHTML=`
       <div id="sl" style="position:absolute;top:28px;left:18px;padding:7px 16px;border-radius:6px;font-size:18px;font-weight:800;letter-spacing:2px;color:#4CAF7D;border:3px solid #4CAF7D;transform:rotate(-12deg);opacity:0;z-index:10;pointer-events:none">ME GUSTA</div>
       <div id="sn" style="position:absolute;top:28px;right:18px;padding:7px 16px;border-radius:6px;font-size:18px;font-weight:800;letter-spacing:2px;color:#D45A4A;border:3px solid #D45A4A;transform:rotate(12deg);opacity:0;z-index:10;pointer-events:none">PASO</div>
-      <div style="height:60%;background:${clr(book._id)};position:relative;overflow:hidden">
+      <div style="height:68%;background:${clr(book._id)};position:relative;overflow:hidden">
         ${photo?`<img src="${esc(photo)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`
         :`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}
       </div>
-      <div style="padding:14px 18px">
-        <div style="font-family:Fraunces,serif;font-size:18px;font-weight:600;color:#111827;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(book.title)}</div>
+      <div style="padding:16px 18px">
+        <div style="font-family:Fraunces,serif;font-size:19px;font-weight:700;color:#111827;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(book.title)}</div>
         <div style="font-size:13px;color:#6B7280;margin-bottom:8px">${esc(book.author)}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
           <span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span>
@@ -641,7 +660,7 @@ function openBookModal(idOrNull){
   let activeSlot=0;
 
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:480px;left:50%;transform:translateX(-50%)';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:560px;left:50%;transform:translateX(-50%)';
   ov.innerHTML=`
     <div id="bm" style="width:100%;background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;padding:8px 24px 36px;max-height:92vh;overflow-y:auto;transform:translateY(30px);transition:transform .25s">
       <div style="width:40px;height:4px;background:#93C5FD;border-radius:2px;margin:12px auto 20px"></div>
@@ -860,6 +879,15 @@ async function showNotifications(){
 /* ══════════════════════════════════════════════════
    CHAT
    ══════════════════════════════════════════════════ */
+
+async function openChatByMatchId(matchId){
+  try{
+    if(!MATCHES?.length)MATCHES=await api('GET','/api/swipes/matches')||[];
+    const idx=MATCHES.findIndex(m=>String(m.id)===String(matchId)||String(m.matchedUser?.id)===String(matchId));
+    if(idx>=0)openChat(idx);
+  }catch(e){toast(e.message,'error');}
+}
+
 function openChat(idx){
   const m=MATCHES[idx];if(!m)return;
   window.__CHAT_OPEN__=true;
@@ -869,19 +897,13 @@ function openChat(idx){
   delete UNREAD[room];updateBadge();if($('clist'))drawChats();
 
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:480px;left:50%;transform:translateX(-50%)';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:560px;left:50%;transform:translateX(-50%)';
   ov.innerHTML=`
     <div id="cp" style="width:100%;height:min(88vh,calc(100vh - 24px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #BFDBFE;flex-shrink:0;position:relative">
         <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#93C5FD;border-radius:2px"></div>
         <div style="width:38px;height:38px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">${ini(m.matchedUser.username)}</div>
         <div style="flex:1"><div style="font-size:15px;font-weight:600;color:#111827">@${esc(m.matchedUser.username)}</div></div>
-        ${tab==='login'?`
-          <button type="button" onclick="showForgotPassword()"
-            style="width:100%;background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.75);color:#1D4ED8;border-radius:12px;padding:11px 12px;font-size:13px;font-weight:900;margin:0 0 12px;cursor:pointer;text-decoration:none;box-shadow:0 8px 24px rgba(17,24,39,.12)">
-            ¿Olvidaste tu contraseña?
-          </button>
-        `:''}
         <button id="chat-close-btn" style="width:32px;height:32px;border-radius:50%;background:#EFF6FF;color:#6B7280;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
       </div>
       <div id="cmsgs" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;scrollbar-width:none">
@@ -904,6 +926,7 @@ function openChat(idx){
   ov.addEventListener('click',e=>{if(e.target===ov)closeChat();});
 
   window._cRoom=room;window._cMyId=myId;
+  if(!SOCKET?.connected){try{initSocket();}catch{}}
   if (SOCKET?.connected) {
     SOCKET.emit('join-chat', room, (res) => {
       if (!res?.ok) console.warn('No se pudo unir a la sala:', res?.error);
@@ -1039,7 +1062,7 @@ async function showProfile(){
 /* ── Match Modal ────────────────────────────────── */
 function showMatchModal(match){
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:700;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:480px;left:50%;transform:translateX(-50%)';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:700;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:560px;left:50%;transform:translateX(-50%)';
   const close=()=>{ov.style.opacity='0';setTimeout(()=>ov.remove(),280);};
   ov.innerHTML=`
     <div id="mmb" style="width:100%;background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;padding:40px 24px 36px;text-align:center;transform:translateY(30px);transition:transform .25s">
