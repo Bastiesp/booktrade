@@ -1,4 +1,137 @@
-const express=require('express');const auth=require('../middleware/auth');const Swipe=require('../models/Swipe');const Book=require('../models/Book');const User=require('../models/User');const Notification=require('../models/Notification');const router=express.Router();
-router.post('/',auth,async(req,res)=>{try{const{bookId,direction}=req.body;if(!bookId||!['right','left'].includes(direction))return res.status(400).json({error:'bookId y direction requeridos'});const book=await Book.findById(bookId).populate('owner','username email location profilePhoto level completedExchanges');if(!book)return res.status(404).json({error:'Libro no encontrado'});if(book.owner._id.toString()===req.userId)return res.status(400).json({error:'No puedes deslizar tus propios libros'});try{await Swipe.create({swiper:req.userId,book:bookId,direction})}catch(e){if(e.code!==11000)throw e}let match=null;if(direction==='right'){const myBooks=await Book.find({owner:req.userId}).select('_id title author');const theirSwipe=await Swipe.findOne({swiper:book.owner._id,book:{$in:myBooks.map(b=>b._id)},direction:'right'}).populate('book','title author');if(theirSwipe){const me=await User.findById(req.userId).select('username email');match={matchedUser:{id:book.owner._id,username:book.owner.username,email:book.owner.email,location:book.owner.location,profilePhoto:book.owner.profilePhoto,level:book.owner.level,completedExchanges:book.owner.completedExchanges},theirBook:{id:book._id,title:book.title,author:book.author},myBook:{id:theirSwipe.book._id,title:theirSwipe.book.title,author:theirSwipe.book.author}};await Notification.create({user:book.owner._id,type:'match',title:'Nuevo match',body:`${me?.username||'Un usuario'} quiere intercambiar contigo.`,data:{matchedUser:req.userId,bookId:book._id}});await Notification.create({user:req.userId,type:'match',title:'Nuevo match',body:`Tienes un match con @${book.owner.username}.`,data:{matchedUser:book.owner._id,bookId:book._id}})}}res.json({swiped:true,match})}catch(err){console.error(err);res.status(500).json({error:'Error del servidor'})}});
-router.get('/matches',auth,async(req,res)=>{try{const myRight=await Swipe.find({swiper:req.userId,direction:'right'}).populate({path:'book',populate:{path:'owner',select:'username email location profilePhoto level completedExchanges'}});const myBooks=await Book.find({owner:req.userId}).select('_id title author');const myBookIds=myBooks.map(b=>b._id);const matches=[],seen=new Set();for(const swipe of myRight){if(!swipe.book?.owner)continue;const ownerId=swipe.book.owner._id.toString();const theirSwipe=await Swipe.findOne({swiper:swipe.book.owner._id,book:{$in:myBookIds},direction:'right'}).populate('book','title author');if(theirSwipe){const key=`${ownerId}_${swipe.book._id}_${theirSwipe.book._id}`;if(seen.has(key))continue;seen.add(key);matches.push({id:`${req.userId}_${ownerId}_${swipe.book._id}_${theirSwipe.book._id}`,matchedUser:{id:swipe.book.owner._id,username:swipe.book.owner.username,email:swipe.book.owner.email,location:swipe.book.owner.location,profilePhoto:swipe.book.owner.profilePhoto,level:swipe.book.owner.level,completedExchanges:swipe.book.owner.completedExchanges},theirBook:{id:swipe.book._id,title:swipe.book.title,author:swipe.book.author},myBook:{id:theirSwipe.book._id,title:theirSwipe.book.title,author:theirSwipe.book.author},createdAt:theirSwipe.createdAt})}}matches.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));res.json(matches)}catch(e){res.status(500).json({error:'Error del servidor'})}});
+const express=require('express');
+const auth=require('../middleware/auth');
+const Swipe=require('../models/Swipe');
+const Book=require('../models/Book');
+const User=require('../models/User');
+const Notification=require('../models/Notification');
+const router=express.Router();
+
+router.post('/',auth,async(req,res)=>{
+  try{
+    const{bookId,direction}=req.body;
+    if(!bookId||!['right','left'].includes(direction))return res.status(400).json({error:'bookId y direction requeridos'});
+
+    const book=await Book.findById(bookId).populate('owner','username email location profilePhoto level completedExchanges');
+    if(!book)return res.status(404).json({error:'Libro no encontrado'});
+    if(book.owner._id.toString()===req.userId)return res.status(400).json({error:'No puedes deslizar tus propios libros'});
+
+    try{await Swipe.create({swiper:req.userId,book:bookId,direction});}
+    catch(e){if(e.code!==11000)throw e;}
+
+    let match=null;
+
+    if(direction==='right'){
+      const myBooks=await Book.find({owner:req.userId}).select('_id title author');
+      const theirSwipe=await Swipe.findOne({
+        swiper:book.owner._id,
+        book:{$in:myBooks.map(b=>b._id)},
+        direction:'right'
+      }).populate('book','title author');
+
+      if(theirSwipe){
+        const me=await User.findById(req.userId).select('username email');
+        match={
+          id:`${req.userId}_${book.owner._id}_${book._id}_${theirSwipe.book._id}`,
+          matchedUser:{
+            id:book.owner._id,
+            username:book.owner.username,
+            email:book.owner.email,
+            location:book.owner.location,
+            profilePhoto:book.owner.profilePhoto,
+            level:book.owner.level,
+            completedExchanges:book.owner.completedExchanges
+          },
+          theirBook:{id:book._id,title:book.title,author:book.author},
+          myBook:{id:theirSwipe.book._id,title:theirSwipe.book.title,author:theirSwipe.book.author}
+        };
+
+        await Notification.create({
+          user:book.owner._id,
+          type:'match',
+          title:'Nuevo match',
+          body:`${me?.username||'Un usuario'} quiere intercambiar contigo.`,
+          data:{matchedUser:req.userId,bookId:book._id,myBookId:theirSwipe.book._id}
+        });
+
+        await Notification.create({
+          user:req.userId,
+          type:'match',
+          title:'Nuevo match',
+          body:`Tienes un match con @${book.owner.username}.`,
+          data:{matchedUser:book.owner._id,bookId:book._id,myBookId:theirSwipe.book._id}
+        });
+      }
+    }
+
+    res.json({swiped:true,match});
+  }catch(err){
+    console.error(err);
+    res.status(500).json({error:'Error del servidor'});
+  }
+});
+
+router.get('/matches',auth,async(req,res)=>{
+  try{
+    const myRight=await Swipe.find({swiper:req.userId,direction:'right'})
+      .populate({
+        path:'book',
+        populate:{path:'owner',select:'username email location profilePhoto level completedExchanges'}
+      });
+
+    const myBooks=await Book.find({owner:req.userId}).select('_id title author');
+    const myBookIds=myBooks.map(b=>b._id);
+
+    const matches=[];
+    const seen=new Set();
+
+    for(const swipe of myRight){
+      if(!swipe.book?.owner)continue;
+
+      const ownerId=swipe.book.owner._id.toString();
+
+      // Antes se usaba findOne(), eso generaba un solo chat por usuario.
+      // Ahora usamos find() para permitir varios matches con el mismo usuario
+      // si son por libros distintos.
+      const theirSwipes=await Swipe.find({
+        swiper:swipe.book.owner._id,
+        book:{$in:myBookIds},
+        direction:'right'
+      }).populate('book','title author');
+
+      for(const theirSwipe of theirSwipes){
+        if(!theirSwipe?.book)continue;
+
+        const bookA=String(swipe.book._id);
+        const bookB=String(theirSwipe.book._id);
+        const key=`${ownerId}_${[bookA,bookB].sort().join('_')}`;
+
+        if(seen.has(key))continue;
+        seen.add(key);
+
+        matches.push({
+          id:`${req.userId}_${ownerId}_${bookA}_${bookB}`,
+          matchedUser:{
+            id:swipe.book.owner._id,
+            username:swipe.book.owner.username,
+            email:swipe.book.owner.email,
+            location:swipe.book.owner.location,
+            profilePhoto:swipe.book.owner.profilePhoto,
+            level:swipe.book.owner.level,
+            completedExchanges:swipe.book.owner.completedExchanges
+          },
+          theirBook:{id:swipe.book._id,title:swipe.book.title,author:swipe.book.author},
+          myBook:{id:theirSwipe.book._id,title:theirSwipe.book.title,author:theirSwipe.book.author},
+          createdAt:theirSwipe.createdAt
+        });
+      }
+    }
+
+    matches.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+    res.json(matches);
+  }catch(e){
+    console.error(e);
+    res.status(500).json({error:'Error del servidor'});
+  }
+});
+
 module.exports=router;
