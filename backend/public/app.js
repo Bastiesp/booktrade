@@ -687,7 +687,7 @@ function openBookModal(idOrNull){
           </div>`).join('')}
         </div>
         <input type="file" id="bm-file" accept="image/*" style="display:none">
-        <div style="font-size:11px;color:#9CA3AF;margin-top:6px">Toca cada cuadro para elegir una foto</div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:6px">Toca cada cuadro para elegir una foto. Las imágenes se guardan en Cloudinary.</div>
       </div>
       <div style="margin-bottom:20px"><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Color de portada</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -759,9 +759,9 @@ function openBookModal(idOrNull){
   $('bm-file').addEventListener('change',async()=>{
     const f=$('bm-file').files[0];if(!f)return;
     if(f.size>10*1024*1024)return toast('Imagen muy grande (máx 10MB)','error');
-    const btn=$('bm-save');btn.disabled=true;btn.textContent='Comprimiendo...';
+    const btn=$('bm-save');btn.disabled=true;btn.textContent='Subiendo a Cloudinary...';
     try{
-      const url=await compressImg(f);
+      const url=await compressAndUploadImg(f,'books');
       bmFillSlot(activeSlot,url);state.photos[activeSlot]=url;
       const nx=state.photos.findIndex(x=>!x);if(nx!==-1)activeSlot=nx;
     }catch{toast('Error al procesar foto','error');}
@@ -771,6 +771,18 @@ function openBookModal(idOrNull){
 
 function bmFillSlot(i,src){const img=$('pi'+i),ph=$('pp'+i),rm=$('pr'+i),sl=$('ps'+i);if(!img)return;img.src=src;img.style.display='block';ph.style.display='none';rm.style.display='block';sl.style.borderStyle='solid';sl.style.borderColor='#3B82F6';}
 function bmField(label,id,type,val){return `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${label}</div><input id="${id}" type="${type}" value="${esc(val)}" style="width:100%;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'"/></div>`;}
+
+async function uploadImageToCloudinary(dataUrl, folder='books'){
+  const r = await api('POST','/api/upload/image',{ image:dataUrl, folder });
+  if(!r?.url) throw new Error('Cloudinary no devolvió URL');
+  return r.url;
+}
+
+async function compressAndUploadImg(file, folder='books'){
+  const dataUrl = await compressImg(file);
+  return await uploadImageToCloudinary(dataUrl, folder);
+}
+
 async function compressImg(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const ratio=Math.min(900/img.width,900/img.height,1);const c=document.createElement('canvas');c.width=Math.round(img.width*ratio);c.height=Math.round(img.height*ratio);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.78));};img.onerror=rej;img.src=e.target.result;};r.onerror=rej;r.readAsDataURL(file);});}
 
 /* ══════════════════════════════════════════════════
@@ -1055,7 +1067,7 @@ async function showProfile(){
       </div>`);
     window._pg=sg;
     window.pgToggle=g=>{const has=window._pg.includes(g);if(has)window._pg=window._pg.filter(x=>x!==g);else window._pg.push(g);const btn=$('pg-'+g);if(!btn)return;const on=window._pg.includes(g);btn.style.background=on?'rgba(59,130,246,.12)':'#EFF6FF';btn.style.borderColor=on?'rgba(59,130,246,.35)':'#BFDBFE';btn.style.color=on?'#3B82F6':'#6B7280';};
-    window.pgSave=async()=>{const btn=$('psave');btn.disabled=true;btn.textContent='Guardando...';try{let profilePhoto;const file=$('pf-file')?.files?.[0];if(file)profilePhoto=await compressImg(file);const payload={bio:$('pb').value.trim(),location:$('pl').value.trim(),favoriteGenres:window._pg};if(profilePhoto)payload.profilePhoto=profilePhoto;const updated=await api('PUT','/api/users/me',payload);rememberUser({...ME,...updated});updateNavProfilePhoto();toast('Perfil actualizado ✓','success');showProfile();}catch(e){toast(e.message,'error');}finally{btn.disabled=false;btn.textContent='Guardar cambios';}};
+    window.pgSave=async()=>{const btn=$('psave');btn.disabled=true;btn.textContent='Guardando...';try{let profilePhoto;const file=$('pf-file')?.files?.[0];if(file)profilePhoto=await compressAndUploadImg(file,'profiles');const payload={bio:$('pb').value.trim(),location:$('pl').value.trim(),favoriteGenres:window._pg};if(profilePhoto)payload.profilePhoto=profilePhoto;const updated=await api('PUT','/api/users/me',payload);rememberUser({...ME,...updated});updateNavProfilePhoto();toast('Perfil actualizado ✓','success');showProfile();}catch(e){toast(e.message,'error');}finally{btn.disabled=false;btn.textContent='Guardar cambios';}};
   }catch(e){toast(e.message,'error');}
 }
 
