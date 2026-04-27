@@ -83,6 +83,8 @@ const userSchema = new mongoose.Schema({
 
   resetPasswordToken:{type:String,default:''},
   resetPasswordExpires:{type:Date,default:null},
+  accountStatus:{type:String,enum:['active','blocked','deleted'],default:'active',index:true},
+  deletedAt:{type:Date,default:null},
   role: {
     type: String,
     enum: ['user', 'admin'],
