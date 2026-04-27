@@ -14,7 +14,12 @@
 <button class="nb" id="nb-matches" onclick="window.showMatches?showMatches():alert('app.js todavía no cargó')"><span id="nb-notif-badge">0</span><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nb-mlabel">Matches</span></button>
 <button class="nb" id="nb-chats" onclick="window.showChats?showChats():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span>Chats</span></button>
 <button class="nb" id="nb-history" onclick="window.showHistory?showHistory():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l3 2"/></svg><span>Historial</span></button>
-<button class="nb" id="nb-profile" onclick="window.showProfile?showProfile():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></button>
+<button class="nb" id="nb-profile" onclick="window.showProfile?showProfile():alert('app.js todavía no cargó')">
+  <span id="nav-profile-avatar" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  </span>
+  <span>Perfil</span>
+</button>
 </div><div id="toasts" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:340px;width:90%"></div>
 <script>window.__BOOKTRADE_VERSION__="admin-wide-final-v1";setInterval(function(){var nav=document.getElementById('nav'),view=document.getElementById('view'),app=document.getElementById('app'),small=window.innerWidth<=720;if(app){app.style.setProperty('max-width','1180px','important');app.style.setProperty('width','100%','important')}if(nav&&!window.__CHAT_OPEN__){nav.style.setProperty('display','flex','important');nav.style.setProperty('z-index','999999','important');nav.style.setProperty('flex-direction','column','important')}if(view){view.style.setProperty('bottom','0','important');view.style.setProperty('left',small?'78px':'96px','important')}},500);</script>
 <button id="forgot-fixed-btn" onclick="window.showForgotPassword ? window.showForgotPassword() : (location.href='/reset-password.html')">

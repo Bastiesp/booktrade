@@ -58,7 +58,7 @@ function forceShowNav(){
 
 function forceLogout(){
   TOKEN='';
-  ME=null;
+  ME=null;updateNavProfilePhoto?.();
   MATCHES=[];
   MY_BOOKS=[];
   QUEUE=[];
@@ -140,6 +140,19 @@ async function openPublicProfile(userId){
 
 function levelEmoji(l){return l==='Oro'?'🥇':l==='Plata'?'🥈':l==='Bronce'?'🥉':'📚';}
 async function loadNotifications(){if(!TOKEN)return;try{NOTIFS=await api('GET','/api/notifications');updateNotificationBadge();}catch{}}
+
+function updateNavProfilePhoto(){
+  const el=document.getElementById('nav-profile-avatar');
+  if(!el)return;
+  const photo=ME?.profilePhoto;
+  const verified=ME?.verificationStatus==='verified';
+  if(photo && verified){
+    el.innerHTML=`<img src="${esc(photo)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #3B82F6">`;
+  }else{
+    el.innerHTML=`<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+  }
+}
+
 function updateNotificationBadge(){const el=$('nb-notif-badge');if(!el)return;const n=NOTIFS?.unread||0;el.style.display=n>0?'inline-flex':'none';el.textContent=n>9?'9+':String(n);}
 
 
@@ -388,7 +401,7 @@ async function doRegister(){
 
 function doLogout(){
   if(!confirm('¿Cerrar sesión?'))return;
-  TOKEN='';ME=null;MATCHES=[];MY_BOOKS=[];QUEUE=[];
+  TOKEN='';ME=null;updateNavProfilePhoto?.();MATCHES=[];MY_BOOKS=[];QUEUE=[];
   localStorage.removeItem('bs_token');
   localStorage.removeItem('bs_user');
   SOCKET?.disconnect();SOCKET=null;
@@ -415,6 +428,7 @@ async function launchApp(){
   await loadNotifications();
   if(window._notifPoll)clearInterval(window._notifPoll);window._notifPoll=setInterval(()=>{if(TOKEN)loadNotifications();},20000);
   await checkAdminAccess();
+  updateNavProfilePhoto();
   showDiscover();
 }
 
@@ -971,7 +985,7 @@ function appendMsg2(msg){
    ══════════════════════════════════════════════════ */
 async function reportUser(userId,type='user',bookId=null){const reason=prompt('Describe brevemente el motivo del reporte:');if(!reason||!reason.trim())return;try{await api('POST','/api/support/report',{reportedUserId:userId,bookId,type,reason});toast('Reporte enviado','success')}catch(e){toast(e.message,'error')}}
 async function blockUser(userId){if(!confirm('¿Bloquear a este usuario?'))return;try{await api('POST','/api/support/block/'+userId,{});toast('Usuario bloqueado','success');showMatches?.()}catch(e){toast(e.message,'error')}}
-async function deleteMyAccount(){if(!confirm('Esta acción eliminará tu cuenta. ¿Continuar?'))return;if(!confirm('Confirmación final: tu cuenta quedará eliminada.'))return;try{await api('DELETE','/api/support/account');localStorage.removeItem('bs_token');localStorage.removeItem('bs_user');TOKEN='';ME=null;toast('Cuenta eliminada','success');showAuth('login')}catch(e){toast(e.message,'error')}}
+async function deleteMyAccount(){if(!confirm('Esta acción eliminará tu cuenta. ¿Continuar?'))return;if(!confirm('Confirmación final: tu cuenta quedará eliminada.'))return;try{await api('DELETE','/api/support/account');localStorage.removeItem('bs_token');localStorage.removeItem('bs_user');TOKEN='';ME=null;updateNavProfilePhoto?.();toast('Cuenta eliminada','success');showAuth('login')}catch(e){toast(e.message,'error')}}
 
 async function showProfile(){
   setNav('nb-profile');
@@ -1018,7 +1032,7 @@ async function showProfile(){
       </div>`);
     window._pg=sg;
     window.pgToggle=g=>{const has=window._pg.includes(g);if(has)window._pg=window._pg.filter(x=>x!==g);else window._pg.push(g);const btn=$('pg-'+g);if(!btn)return;const on=window._pg.includes(g);btn.style.background=on?'rgba(59,130,246,.12)':'#EFF6FF';btn.style.borderColor=on?'rgba(59,130,246,.35)':'#BFDBFE';btn.style.color=on?'#3B82F6':'#6B7280';};
-    window.pgSave=async()=>{const btn=$('psave');btn.disabled=true;btn.textContent='Guardando...';try{let profilePhoto;const file=$('pf-file')?.files?.[0];if(file)profilePhoto=await compressImg(file);const payload={bio:$('pb').value.trim(),location:$('pl').value.trim(),favoriteGenres:window._pg};if(profilePhoto)payload.profilePhoto=profilePhoto;const updated=await api('PUT','/api/users/me',payload);rememberUser({...ME,...updated});toast('Perfil actualizado ✓','success');showProfile();}catch(e){toast(e.message,'error');}finally{btn.disabled=false;btn.textContent='Guardar cambios';}};
+    window.pgSave=async()=>{const btn=$('psave');btn.disabled=true;btn.textContent='Guardando...';try{let profilePhoto;const file=$('pf-file')?.files?.[0];if(file)profilePhoto=await compressImg(file);const payload={bio:$('pb').value.trim(),location:$('pl').value.trim(),favoriteGenres:window._pg};if(profilePhoto)payload.profilePhoto=profilePhoto;const updated=await api('PUT','/api/users/me',payload);rememberUser({...ME,...updated});updateNavProfilePhoto();toast('Perfil actualizado ✓','success');showProfile();}catch(e){toast(e.message,'error');}finally{btn.disabled=false;btn.textContent='Guardar cambios';}};
   }catch(e){toast(e.message,'error');}
 }
 
