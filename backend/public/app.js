@@ -19,6 +19,7 @@ const ini=s=>String(s||'??').slice(0,2).toUpperCase();
 const clr=id=>{let h=0;for(const c of String(id||''))h=(h*31+c.charCodeAt(0))&0xfffffff;return COLORS[h%COLORS.length];};
 const fmtT=d=>new Date(d).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
 const roomId=(...a)=>a.map(String).sort().join('_');
+const matchRoomId=(m)=>{const users=[getCurrentUserId(),m?.matchedUser?.id].map(String).sort().join('_');const books=[m?.myBook?.id,m?.theirBook?.id].map(String).sort().join('_');return `match_${users}_${books}`;};
 
 
 function forceShowNav(){
@@ -785,7 +786,7 @@ async function showMatches(){
   UNREAD={};updateBadge();
   setView(`
     <div style="padding:16px 20px 12px"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Matches</div></div>
-    <div id="mlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:14px">
+    <div id="mlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:16px;align-items:center">
       <div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div>
     </div>`);
   try{MATCHES=await api('GET','/api/swipes/matches')||[];drawMatches();}
@@ -796,7 +797,7 @@ function drawMatches(){
   const ml=$('mlist');if(!ml)return;
   if(!MATCHES.length){ml.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.4">💔</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin matches aún</div><div style="font-size:13px;color:#6B7280">Cuando alguien quiera tu libro aparecerá aquí</div></div>`;return;}
   ml.innerHTML=MATCHES.map((m,i)=>`
-    <div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:14px;overflow:hidden;width:100%;max-width:210px">
+    <div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;overflow:hidden;width:min(100%,560px);box-shadow:0 10px 28px rgba(17,24,39,.06)">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 16px 12px">
         <button onclick="openPublicProfile('${m.matchedUser.id}')" style="width:48px;height:48px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:none;overflow:hidden">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</button>
         <div style="flex:1;min-width:0">
@@ -820,7 +821,7 @@ function drawMatches(){
       <div style="margin:0 16px 10px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px;font-size:12px;color:#6B7280">
         Estado del intercambio: <strong style="color:#111827">${m.exchangeState?.label||'Coordinando'}</strong>
       </div>
-      <div style="display:flex;gap:8px;padding:0 16px 16px">
+      <div style="display:flex;gap:8px;padding:0 16px 16px;flex-wrap:wrap">
         <button onclick="openChat(${i})" style="flex:1;padding:11px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">💬 Chat</button>
         <button onclick="confirmExchange(${i})" style="flex:1;padding:11px;background:#10B981;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">✅ Intercambiado</button>
         <button onclick="reportUser('${m.matchedUser.id}','user')" style="padding:11px;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Reportar</button>
@@ -852,7 +853,7 @@ function drawChats(){
   const c=$('clist');if(!c)return;
   if(!MATCHES.length){c.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.45">💬</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin chats todavía</div><div style="font-size:13px;color:#6B7280">Cuando tengas matches, tus conversaciones aparecerán aquí.</div></div>`;return;}
   const myId=getCurrentUserId();
-  c.innerHTML=MATCHES.map((m,i)=>{const r=roomId(myId,m.matchedUser.id);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:100%;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)"><div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div><div style="flex:1;min-width:0"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div><div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">${m.exchangeState?.label||'Coordinando intercambio'}</div></div>${unread?`<span style="background:#EF4444;color:#fff;border-radius:999px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900">${unread>9?'9+':unread}</span>`:''}</button>`}).join('');
+  c.innerHTML=MATCHES.map((m,i)=>{const r=matchRoomId(m);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:100%;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)"><div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div><div style="flex:1;min-width:0"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div><div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">${m.exchangeState?.label||'Coordinando intercambio'}</div></div>${unread?`<span style="background:#EF4444;color:#fff;border-radius:999px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900">${unread>9?'9+':unread}</span>`:''}</button>`}).join('');
 }
 
 async function showHistory(){
@@ -895,7 +896,7 @@ function openChat(idx){
   window.__CHAT_OPEN__=true;
   const navChat=$('nav');if(navChat)navChat.style.setProperty('display','none','important');
   const myId=(ME?._id||ME?.id||'').toString();
-  const room=roomId(myId,m.matchedUser.id);
+  const room=matchRoomId(m);
   delete UNREAD[room];updateBadge();if($('clist'))drawChats();
 
   const ov=document.createElement('div');
@@ -905,7 +906,7 @@ function openChat(idx){
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #BFDBFE;flex-shrink:0;position:relative">
         <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#93C5FD;border-radius:2px"></div>
         <div style="width:38px;height:38px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">${ini(m.matchedUser.username)}</div>
-        <div style="flex:1"><div style="font-size:15px;font-weight:600;color:#111827">@${esc(m.matchedUser.username)}</div></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#111827">@${esc(m.matchedUser.username)}</div><div style="font-size:11px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook?.title||'')} ⇄ ${esc(m.theirBook?.title||'')}</div></div>
         <button id="chat-close-btn" style="width:32px;height:32px;border-radius:50%;background:#EFF6FF;color:#6B7280;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
       </div>
       <div id="cmsgs" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;scrollbar-width:none">
