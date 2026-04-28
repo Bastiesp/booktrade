@@ -3,7 +3,7 @@
 
 const API='';
 let TOKEN=localStorage.getItem('bs_token')||'';
-let ME=null,MATCHES=[],MY_BOOKS=[],QUEUE=[],UNREAD={},NOTIFS={unread:0,items:[]},HISTORY=[],SOCKET=null;
+let ME=null,MATCHES=[],MY_BOOKS=[],QUEUE=[],UNREAD=(()=>{try{return JSON.parse(localStorage.getItem('bt_unread_chats')||'{}')}catch{return {}}})(),NOTIFS={unread:0,items:[]},HISTORY=[],SOCKET=null;
 const SEEN_INCOMING_MESSAGES=new Set();
 let ACTIVE_GENRE='Todos',CITY='',DISCOVER_MODE='swipe',IS_ADMIN=false;
 
@@ -172,12 +172,15 @@ function showPopNotification(title,body,onclick){
 }
 
 
+
 function saveUnreadChats(){
   try{localStorage.setItem('bt_unread_chats',JSON.stringify(UNREAD||{}));}catch{}
 }
+
 function unreadTotal(){
   return Object.values(UNREAD||{}).reduce((a,b)=>a+Number(b||0),0);
 }
+
 function setChatBadgeCount(){
   const n=unreadTotal();
   const badge=$('nb-chat-badge');
@@ -186,19 +189,35 @@ function setChatBadgeCount(){
     badge.textContent=n>9?'9+':String(n);
   }
 }
+
+async function syncChatUnreadFromServer(){
+  if(!TOKEN)return;
+  try{
+    const r=await api('GET','/api/notifications/message-unread');
+    UNREAD=r.rooms||{};
+    saveUnreadChats();
+    updateBadge();
+  }catch(e){
+    // Silencioso para no molestar; socket/localStorage queda como respaldo.
+  }
+}
+
 function incrementUnread(room){
   if(!room)return;
   UNREAD[room]=(UNREAD[room]||0)+1;
   saveUnreadChats();
   updateBadge();
 }
-function clearUnread(room){
+
+async function clearUnread(room){
   if(!room)return;
   if(UNREAD[room]){
     delete UNREAD[room];
     saveUnreadChats();
   }
   updateBadge();
+  try{await api('PUT','/api/notifications/read-room/'+encodeURIComponent(room));}catch{}
+  try{await syncChatUnreadFromServer();}catch{}
 }
 
 function updateBadge(){
@@ -451,8 +470,10 @@ async function launchApp(){
   try{initSocket();}catch{}
   updateBadge();
   await loadNotifications();
+  await syncChatUnreadFromServer();
   updateBadge();
   if(window._notifPoll)clearInterval(window._notifPoll);window._notifPoll=setInterval(()=>{if(TOKEN)loadNotifications();},20000);
+  if(window._chatUnreadPoll)clearInterval(window._chatUnreadPoll);window._chatUnreadPoll=setInterval(()=>{if(TOKEN)syncChatUnreadFromServer();},5000);
   await checkAdminAccess();
   updateNavProfilePhoto();
   showDiscover();
@@ -885,7 +906,7 @@ async function showChats(){
   if(!requireLogin())return;
   document.querySelector('.fab-btn')?.remove();
   setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Chats</div><div style="font-size:12px;color:#6B7280;margin-top:2px">Conversaciones con tus matches</div></div><button onclick="loadNotifications();showNotifications?.()" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#3B82F6;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800">🔔 ${NOTIFS?.unread||0}</button></div><div id="clist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:12px"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
-  try{MATCHES=await api('GET','/api/swipes/matches')||[];drawChats();}catch(e){toast(e.message,'error');}
+  try{await syncChatUnreadFromServer();MATCHES=await api('GET','/api/swipes/matches')||[];drawChats();}catch(e){toast(e.message,'error');}
 }
 function drawChats(){
   const c=$('clist');if(!c)return;
@@ -1171,20 +1192,19 @@ function initSocket(){
       const msgKey=String(msg.clientId||msg._id||'');
       if(msgKey&&SEEN_INCOMING_MESSAGES.has(msgKey))return;
       if(msgKey)SEEN_INCOMING_MESSAGES.add(msgKey);
-      const myId = (ME?._id || ME?.id || '').toString();
-      const senderId = (msg.sender?._id || msg.sender?.id || msg.sender || '').toString();
 
-      if (!senderId) return;
-
-      const r = msg.roomId || roomId(myId, senderId);
+      const r = msg.roomId;
+      if (!r) return;
 
       if (window._cRoom === r) {
         appendMsg2(msg);
+        clearUnread(r);
       } else {
         incrementUnread(r);
         const senderName=msg.sender?.username||'Nuevo mensaje';
         showPopNotification('💬 '+senderName, msg.text||'Tienes un nuevo mensaje', ()=>showChats());
         loadNotifications();
+        syncChatUnreadFromServer();
       }
     });
 
@@ -1194,6 +1214,7 @@ function initSocket(){
     SOCKET.on('notification-update',async(data)=>{
       const before=NOTIFS?.unread||0;
       await loadNotifications();
+      await syncChatUnreadFromServer();
       const after=NOTIFS?.unread||0;
       if(after>before)showPopNotification('🔔 Nueva notificación','Tienes una nueva actividad en BookTrade',()=>showNotifications());
     });
