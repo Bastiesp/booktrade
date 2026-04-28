@@ -550,15 +550,20 @@ async function loadQueue(){
 
 
 
+function firstBookPhoto(book){
+  return book?.photos?.[0] || book?.photo || book?.cover || book?.image || '';
+}
+
 function miniBookCover(book,label){
-  const src=book?.photos?.[0]||'';
-  return `<div style="display:flex;align-items:center;gap:8px;min-width:0">
-    <div style="width:34px;height:46px;border-radius:7px;background:#EFF6FF;border:1px solid #BFDBFE;overflow:hidden;flex-shrink:0;box-shadow:0 4px 10px rgba(17,24,39,.08)">
-      ${src?`<img src="${esc(src)}" alt="${esc(book?.title||'Libro')}" style="width:100%;height:100%;object-fit:cover">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:16px">📘</div>`}
+  const src=firstBookPhoto(book);
+  return `<div style="display:flex;align-items:center;gap:10px;min-width:0">
+    <div style="width:42px;height:58px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;overflow:hidden;flex-shrink:0;box-shadow:0 5px 12px rgba(17,24,39,.10)">
+      ${src?`<img src="${esc(src)}" alt="${esc(book?.title||'Libro')}" style="width:100%;height:100%;object-fit:cover">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:18px">📘</div>`}
     </div>
     <div style="min-width:0">
-      <div style="font-size:10px;font-weight:900;color:#64748B;text-transform:uppercase;letter-spacing:.3px">${label}</div>
-      <div style="font-size:12px;color:#111827;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(book?.title||'Libro')}</div>
+      <div style="font-size:9px;font-weight:900;color:#64748B;text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px">${label}</div>
+      <div style="font-family:Fraunces,serif;font-size:14px;color:#111827;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(book?.title||'Libro')}</div>
+      ${book?.author?`<div style="font-size:11px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(book.author)}</div>`:''}
     </div>
   </div>`;
 }
@@ -878,16 +883,12 @@ function drawMatches(){
         </div>
         <span style="background:#3B82F6;color:#FFFFFF;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700">✓ Match</span>
       </div>
-      <div style="display:flex;margin:0 16px 12px;background:#EFF6FF;border-radius:10px;border:1px solid #BFDBFE;overflow:hidden">
-        <div style="flex:1;padding:12px 14px;border-right:1px solid #BFDBFE">
-          <div style="font-size:9px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Te interesa</div>
-          <div style="font-family:Fraunces,serif;font-size:14px;font-weight:600;color:#111827;line-height:1.3">${esc(m.theirBook.title)}</div>
-          <div style="font-size:11px;color:#6B7280;margin-top:2px">${esc(m.theirBook.author)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 12px">
+        <div style="background:#F8FAFC;border:1px solid #BFDBFE;border-radius:12px;padding:10px;min-width:0">
+          ${miniBookCover(m.theirBook,'Recibes')}
         </div>
-        <div style="flex:1;padding:12px 14px">
-          <div style="font-size:9px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Le interesa tuyo</div>
-          <div style="font-family:Fraunces,serif;font-size:14px;font-weight:600;color:#111827;line-height:1.3">${esc(m.myBook.title)}</div>
-          <div style="font-size:11px;color:#6B7280;margin-top:2px">${esc(m.myBook.author)}</div>
+        <div style="background:#F8FAFC;border:1px solid #BFDBFE;border-radius:12px;padding:10px;min-width:0">
+          ${miniBookCover(m.myBook,'Tú das')}
         </div>
       </div>
       <div style="margin:0 16px 10px;background:${isExchangeDone(m)?'#DCFCE7':'#EFF6FF'};border:1px solid ${isExchangeDone(m)?'#86EFAC':'#BFDBFE'};border-radius:10px;padding:10px;font-size:12px;color:${isExchangeDone(m)?'#166534':'#6B7280'}">
