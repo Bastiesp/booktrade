@@ -134,6 +134,11 @@ router.post('/',auth,async(req,res)=>{
         if(!sw.book?.owner)continue;
         if(String(sw.book.owner._id)!==ownerId)continue;
 
+        // No bloquear el libro que se acaba de deslizar.
+        // Si lo bloqueamos aquí, el match nuevo se anula a sí mismo
+        // y no aparece la ventana “¡Es un Match!”.
+        if(String(sw.book._id)===String(book._id))continue;
+
         const otherSwipes=await Swipe.find({
           swiper:book.owner._id,
           book:{$in:myBooks.map(b=>b._id)},
