@@ -216,6 +216,40 @@ router.post('/',auth,async(req,res)=>{
       }
     }
 
+
+    // Fallback para modal: si por reglas internas match quedó null,
+    // pero existe reciprocidad real, devolver el primer match relacionado.
+    if(direction==='right' && !match){
+      try{
+        const ownerId=String(book.owner._id);
+        const myBooks=await Book.find({owner:req.userId}).select('_id title author photos');
+        const theirSwipe=await Swipe.findOne({
+          swiper:book.owner._id,
+          book:{$in:myBooks.map(b=>b._id)},
+          direction:'right'
+        }).populate('book','title author photos');
+
+        if(theirSwipe?.book){
+          const exchange=await getExchangeForMatch(req.userId,ownerId,book._id,theirSwipe.book._id);
+          match={
+            id:`${req.userId}_${ownerId}_${book._id}_${theirSwipe.book._id}`,
+            matchedUser:{
+              id:book.owner._id,
+              username:book.owner.username,
+              email:book.owner.email,
+              location:book.owner.location,
+              profilePhoto:book.owner.profilePhoto,
+              level:book.owner.level,
+              completedExchanges:book.owner.completedExchanges
+            },
+            theirBook:{id:book._id,title:book.title,author:book.author,photos:book.photos||[]},
+            myBook:{id:theirSwipe.book._id,title:theirSwipe.book.title,author:theirSwipe.book.author,photos:theirSwipe.book.photos||[]},
+            exchangeState:stateFromExchange(exchange,req.userId)
+          };
+        }
+      }catch(e){}
+    }
+
     res.json({swiped:true,match});
   }catch(err){
     console.error(err);
