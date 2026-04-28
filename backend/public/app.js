@@ -322,8 +322,8 @@ function showAuth(tab){
       <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #BFDBFE;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         
-        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:-12px 0 4px">
-          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(760px,104vw);max-width:none;height:auto;max-height:300px;object-fit:contain;filter:drop-shadow(0 16px 38px rgba(0,0,0,.62))">
+        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:-4px 0 6px">
+          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(880px,98vw);max-width:100%;height:auto;max-height:235px;object-fit:contain;filter:drop-shadow(0 14px 34px rgba(0,0,0,.62))">
         </div>
         <div style="font-size:14px;color:#FFFFFF;margin-top:4px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
       </div>
@@ -435,7 +435,7 @@ async function showDiscover(){
 
   setView(`
     <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between">
-      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827"><img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(760px,104vw);max-width:none;height:auto;max-height:300px;object-fit:contain;filter:drop-shadow(0 16px 38px rgba(0,0,0,.62))"></div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827"><img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(880px,98vw);max-width:100%;height:auto;max-height:235px;object-fit:contain;filter:drop-shadow(0 14px 34px rgba(0,0,0,.62))"></div>
       <div id="qcnt" style="display:none;background:#3B82F6;color:#FFFFFF;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600"></div>
     </div>
     <div id="gbar" style="display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none">
