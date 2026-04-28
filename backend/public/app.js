@@ -323,7 +323,7 @@ function showAuth(tab){
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         
         <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:-4px 0 8px">
-          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(780px,96vw);max-width:100%;height:auto;max-height:245px;object-fit:contain;filter:drop-shadow(0 14px 34px rgba(0,0,0,.48))">
+          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(820px,96vw);max-width:100%;height:auto;max-height:250px;object-fit:contain;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35))">
         </div>
         <div style="font-size:14px;color:#FFFFFF;margin-top:4px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
       </div>
@@ -435,7 +435,7 @@ async function showDiscover(){
 
   setView(`
     <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between">
-      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827"><img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(780px,96vw);max-width:100%;height:auto;max-height:245px;object-fit:contain;filter:drop-shadow(0 14px 34px rgba(0,0,0,.48))"></div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827"><img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(820px,96vw);max-width:100%;height:auto;max-height:250px;object-fit:contain;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35))"></div>
       <div id="qcnt" style="display:none;background:#3B82F6;color:#FFFFFF;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600"></div>
     </div>
     <div id="gbar" style="display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none">
