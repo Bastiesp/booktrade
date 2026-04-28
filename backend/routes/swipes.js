@@ -95,7 +95,7 @@ router.post('/',auth,async(req,res)=>{
       return res.status(400).json({error:'bookId y direction requeridos'});
     }
 
-    const book=await Book.findById(bookId).populate('owner','username email location profilePhoto level completedExchanges');
+    const book=await Book.findById(bookId).select('_id owner title author photos').populate('owner','username email location profilePhoto level completedExchanges');
     if(!book)return res.status(404).json({error:'Libro no encontrado'});
     if(book.owner._id.toString()===req.userId)return res.status(400).json({error:'No puedes deslizar tus propios libros'});
 
