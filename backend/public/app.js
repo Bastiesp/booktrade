@@ -666,7 +666,7 @@ async function doSwipe(bookId,dir){
   QUEUE.shift();
   const cnt=$('qcnt');if(cnt){if(!QUEUE.length)cnt.style.display='none';else cnt.textContent=QUEUE.length+' libros';}
   setTimeout(drawStack,380);
-  try{const r=await api('POST','/api/swipes',{bookId,direction:dir});if(dir==='right'&&r.match)showMatchModal(r.match);}catch{}
+  try{const r=await api('POST','/api/swipes',{bookId,direction:dir});if(dir==='right'&&r.match){showMatchModal(r.match);try{MATCHES=await api('GET','/api/swipes/matches')||[]}catch{}}else if(dir==='right'){toast('Interés guardado','success');}}catch(e){toast(e.message||'No se pudo registrar el swipe','error');}
 }
 
 /* ══════════════════════════════════════════════════
@@ -1143,19 +1143,36 @@ async function showProfile(){
 }
 
 /* ── Match Modal ────────────────────────────────── */
+
+function matchPopupBook(book,label,align='left'){
+  const src=firstBookPhoto?.(book) || book?.photos?.[0] || book?.photo || book?.cover || '';
+  return `<div style="flex:1;min-width:0;text-align:${align}">
+    <div style="display:flex;align-items:center;gap:10px;${align==='right'?'flex-direction:row-reverse':''}">
+      <div style="width:48px;height:66px;border-radius:9px;background:#EFF6FF;border:1px solid #BFDBFE;overflow:hidden;flex-shrink:0;box-shadow:0 6px 14px rgba(17,24,39,.12)">
+        ${src?`<img src="${esc(src)}" alt="${esc(book?.title||'Libro')}" style="width:100%;height:100%;object-fit:cover">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:20px">📘</div>`}
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px;font-weight:900">${label}</div>
+        <div style="font-family:Fraunces,serif;font-size:15px;font-weight:800;color:#111827;margin-top:3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(book?.title||'Libro')}</div>
+        ${book?.author?`<div style="font-size:12px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(book.author)}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
 function showMatchModal(match){
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:700;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:760px;left:50%;transform:translateX(-50%)';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:1000004;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:760px;left:50%;transform:translateX(-50%)';
   const close=()=>{ov.style.opacity='0';setTimeout(()=>ov.remove(),280);};
   ov.innerHTML=`
     <div id="mmb" style="width:100%;background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;padding:40px 24px 36px;text-align:center;transform:translateY(30px);transition:transform .25s">
       <div style="font-size:68px;line-height:1;margin-bottom:16px;animation:matchPop .5s ease">🎉</div>
       <div style="font-family:Fraunces,serif;font-size:28px;font-weight:700;color:#3B82F6;margin-bottom:8px">¡Es un Match!</div>
       <div style="font-size:14px;color:#6B7280;margin-bottom:24px;line-height:1.5">Tú y <strong style="color:#111827">@${esc(match.matchedUser.username)}</strong> quieren intercambiar libros</div>
-      <div style="display:flex;align-items:center;gap:12px;background:#EFF6FF;border-radius:14px;padding:16px;margin-bottom:20px;text-align:left">
-        <div style="flex:1"><div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px">Tu libro</div><div style="font-family:Fraunces,serif;font-size:15px;font-weight:600;color:#111827;margin-top:3px">${esc(match.myBook.title)}</div><div style="font-size:12px;color:#6B7280">${esc(match.myBook.author)}</div></div>
-        <span style="font-size:22px;color:#3B82F6">⇄</span>
-        <div style="flex:1;text-align:right"><div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px">Su libro</div><div style="font-family:Fraunces,serif;font-size:15px;font-weight:600;color:#111827;margin-top:3px">${esc(match.theirBook.title)}</div><div style="font-size:12px;color:#6B7280">${esc(match.theirBook.author)}</div></div>
+      <div style="display:flex;align-items:center;gap:12px;background:#EFF6FF;border-radius:16px;padding:14px;margin-bottom:20px;text-align:left;border:1px solid #BFDBFE">
+        ${matchPopupBook(match.myBook,'Tú das','left')}
+        <span style="font-size:24px;color:#3B82F6;font-weight:900;flex-shrink:0">⇄</span>
+        ${matchPopupBook(match.theirBook,'Recibes','right')}
       </div>
       <button id="mm-ver" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px">💬 Ver Matches</button>
       <button id="mm-cont" style="width:100%;padding:12px;background:#DBEAFE;border:1px solid #BFDBFE;border-radius:10px;font-size:14px;color:#6B7280;cursor:pointer">Seguir explorando</button>
