@@ -596,7 +596,20 @@ function drawCatalog(){
   s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(photo)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · @${esc(book.owner?.username||'usuario')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right')" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800">Me interesa</button></div></div></div>`}).join('')}</div>`;
 }
 async function catalogSwipe(bookId,dir){
-  try{const r=await api('POST','/api/swipes',{bookId,direction:dir});QUEUE=QUEUE.filter(b=>String(b._id)!==String(bookId));drawCatalog();if(dir==='right'&&r.match)showMatchModal(r.match);else toast(dir==='right'?'Interés guardado':'Libro descartado','success');}catch(e){toast(e.message,'error');}
+  try{
+    const r=await api('POST','/api/swipes',{bookId,direction:dir});
+    QUEUE=QUEUE.filter(b=>String(b._id)!==String(bookId));
+    drawCatalog();
+
+    if(dir==='right'){
+      const showed=await showMatchFromSwipeResult(bookId,r);
+      if(!showed)toast('Interés guardado','success');
+    }else{
+      toast('Libro descartado','success');
+    }
+  }catch(e){
+    toast(e.message,'error');
+  }
 }
 
 function drawStack(){
@@ -662,11 +675,53 @@ function swipeBtn(dir){
   doSwipe(QUEUE[0]._id,dir);
 }
 
+
+async function showMatchFromSwipeResult(bookId,response){
+  if(response?.match){
+    showMatchModal(response.match);
+    try{MATCHES=await api('GET','/api/swipes/matches')||[]}catch{}
+    return true;
+  }
+
+  // Respaldo: algunos casos de reglas/duplicados pueden registrar el match,
+  // pero devolver match:null en el POST. Entonces consultamos la lista real.
+  try{
+    const fresh=await api('GET','/api/swipes/matches')||[];
+    MATCHES=fresh;
+
+    const found=fresh.find(m=>
+      String(m?.theirBook?.id||m?.theirBook?._id)===String(bookId) ||
+      String(m?.myBook?.id||m?.myBook?._id)===String(bookId)
+    );
+
+    if(found){
+      showMatchModal(found);
+      return true;
+    }
+  }catch(e){}
+
+  return false;
+}
+
 async function doSwipe(bookId,dir){
   QUEUE.shift();
-  const cnt=$('qcnt');if(cnt){if(!QUEUE.length)cnt.style.display='none';else cnt.textContent=QUEUE.length+' libros';}
+  const cnt=$('qcnt');
+  if(cnt){
+    if(!QUEUE.length)cnt.style.display='none';
+    else cnt.textContent=QUEUE.length+' libros';
+  }
   setTimeout(drawStack,380);
-  try{const r=await api('POST','/api/swipes',{bookId,direction:dir});if(dir==='right'&&r.match){showMatchModal(r.match);try{MATCHES=await api('GET','/api/swipes/matches')||[]}catch{}}else if(dir==='right'){toast('Interés guardado','success');}}catch(e){toast(e.message||'No se pudo registrar el swipe','error');}
+
+  try{
+    const r=await api('POST','/api/swipes',{bookId,direction:dir});
+
+    if(dir==='right'){
+      const showed=await showMatchFromSwipeResult(bookId,r);
+      if(!showed)toast('Interés guardado','success');
+    }
+  }catch(e){
+    toast(e.message||'No se pudo registrar el swipe','error');
+  }
 }
 
 /* ══════════════════════════════════════════════════
