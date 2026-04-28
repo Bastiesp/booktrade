@@ -261,7 +261,7 @@ function showForgotPassword(){
 
   setView(`
     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#EFF6FF">
-      <div style="width:100%;max-width:560px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;padding:24px;box-shadow:0 24px 70px rgba(17,24,39,.10)">
+      <div style="width:100%;max-width:760px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;padding:24px;box-shadow:0 24px 70px rgba(17,24,39,.10)">
         <div style="font-family:Fraunces,serif;font-size:28px;font-weight:900;color:#111827;margin-bottom:8px">Recuperar contraseña</div>
         <div style="font-size:14px;color:#6B7280;line-height:1.45;margin-bottom:18px">
           Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.
@@ -276,7 +276,7 @@ function showForgotPassword(){
         </button>
 
         <button onclick="showAuth('login')"
-          style="width:100%;padding:13px;margin-top:10px;background:transparent;color:#6B7280;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:700">
+          style="width:100%;padding:13px;margin-top:4px;background:transparent;color:#6B7280;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:700">
           Volver al login
         </button>
       </div>
@@ -321,13 +321,13 @@ function showAuth(tab){
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.10),rgba(0,0,0,.04),rgba(0,0,0,.16))"></div>
       <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #BFDBFE;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
-        <div style="font-size:52px;filter:drop-shadow(0 0 20px rgba(59,130,246,.5))">📚</div>
-        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:4px 0 10px">
-          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(520px,96vw);max-width:100%;height:auto;max-height:220px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(0,0,0,.55))">
+        
+        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:-12px 0 4px">
+          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(760px,104vw);max-width:none;height:auto;max-height:300px;object-fit:contain;filter:drop-shadow(0 16px 38px rgba(0,0,0,.62))">
         </div>
-        <div style="font-size:14px;color:#FFFFFF;margin-top:10px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
+        <div style="font-size:14px;color:#FFFFFF;margin-top:4px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
       </div>
-      <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.55);border-radius:22px;padding:24px 22px;backdrop-filter:blur(8px);box-shadow:0 24px 70px rgba(17,24,39,.20)">
+      <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.55);border-radius:22px;padding:18px 18px;backdrop-filter:blur(8px);box-shadow:0 24px 70px rgba(17,24,39,.20)">
         <div style="display:flex;background:#FFFFFF;border-radius:10px;padding:4px;margin-bottom:22px">
           <button onclick="showAuth('login')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='login'?'background:#3B82F6;color:#FFFFFF':'background:transparent;color:#6B7280'}">Ingresar</button>
           <button onclick="showAuth('register')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='register'?'background:#3B82F6;color:#FFFFFF':'background:transparent;color:#6B7280'}">Registrarse</button>
@@ -435,7 +435,7 @@ async function showDiscover(){
 
   setView(`
     <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between">
-      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827"><img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(520px,96vw);max-width:100%;height:auto;max-height:220px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(0,0,0,.55))"></div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827"><img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(760px,104vw);max-width:none;height:auto;max-height:300px;object-fit:contain;filter:drop-shadow(0 16px 38px rgba(0,0,0,.62))"></div>
       <div id="qcnt" style="display:none;background:#3B82F6;color:#FFFFFF;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600"></div>
     </div>
     <div id="gbar" style="display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none">
@@ -622,7 +622,7 @@ async function showBooks(){
 
 function drawBooksGrid(){
   const g=$('bgrid');if(!g)return;
-  if(!MY_BOOKS.length){g.innerHTML=`<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.4">📖</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin libros aún</div><div style="font-size:13px;color:#6B7280">Toca el + para agregar</div></div>`;return;}
+  if(!MY_BOOKS.length){g.innerHTML=`<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:10px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin libros aún</div><div style="font-size:13px;color:#6B7280">Toca el + para agregar</div></div>`;return;}
   g.innerHTML=MY_BOOKS.map(b=>`
     <div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:14px;overflow:hidden;width:100%;max-width:210px">
       <div style="height:260px;background:${clr(b._id)};position:relative;overflow:hidden">
@@ -654,7 +654,7 @@ function openBookModal(idOrNull){
   let activeSlot=0;
 
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:560px;left:50%;transform:translateX(-50%)';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:760px;left:50%;transform:translateX(-50%)';
   ov.innerHTML=`
     <div id="bm" style="width:100%;background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;padding:8px 24px 36px;max-height:92vh;overflow-y:auto;transform:translateY(30px);transition:transform .25s">
       <div style="width:40px;height:4px;background:#93C5FD;border-radius:2px;margin:12px auto 20px"></div>
@@ -877,7 +877,7 @@ function drawHistory(){
     <div title="Intercambio confirmado por ambas partes" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:#22C55E;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;box-shadow:0 8px 22px rgba(34,197,94,.35);z-index:2">✓</div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:44px;height:44px;border-radius:50%;background:#3B82F6;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;overflow:hidden">${other?.profilePhoto?`<img src="${esc(other.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(other?.username)}</div><div style="flex:1"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827">@${esc(other?.username||'Usuario')}</div><div style="font-size:12px;color:#6B7280">${levelEmoji(other?.level)} ${esc(other?.level||'Aficionado')} · ${other?.completedExchanges||0} intercambios</div></div><span style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;border-radius:999px;padding:4px 34px 4px 10px;font-size:11px;font-weight:900">Intercambio hecho</span></div>
     <div style="display:flex;gap:8px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px"><div style="flex:1"><div style="font-size:9px;color:#9CA3AF;font-weight:800;text-transform:uppercase">Tu libro</div><div style="font-weight:700;color:#111827;font-size:13px">${esc(x.myBook?.title||'—')}</div><div style="font-size:11px;color:#6B7280">${esc(x.myBook?.author||'')}</div></div><div style="font-size:20px;color:#3B82F6;display:flex;align-items:center">⇄</div><div style="flex:1;text-align:right"><div style="font-size:9px;color:#9CA3AF;font-weight:800;text-transform:uppercase">Recibido</div><div style="font-weight:700;color:#111827;font-size:13px">${esc(x.theirBook?.title||'—')}</div><div style="font-size:11px;color:#6B7280">${esc(x.theirBook?.author||'')}</div></div></div>
-    <div style="font-size:11px;color:#166534;margin-top:10px;font-weight:800">✅ ${esc(doneLabel)} · confirmado por ambas partes</div><div style="font-size:11px;color:#9CA3AF;margin-top:4px">Fecha: ${new Date(x.completedAt||x.updatedAt).toLocaleDateString('es-CL')}</div></div>`}).join('');
+    <div style="font-size:11px;color:#166534;margin-top:4px;font-weight:800">✅ ${esc(doneLabel)} · confirmado por ambas partes</div><div style="font-size:11px;color:#9CA3AF;margin-top:4px">Fecha: ${new Date(x.completedAt||x.updatedAt).toLocaleDateString('es-CL')}</div></div>`}).join('');
 }
 async function showNotifications(){
   setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Notificaciones</div><button onclick="showHistory()" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700">Volver</button></div><div id="nlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:10px"><div class="spin"></div></div>`);
@@ -905,7 +905,7 @@ function openChat(idx){
   delete UNREAD[room];updateBadge();if($('clist'))drawChats();
 
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:560px;left:50%;transform:translateX(-50%)';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:760px;left:50%;transform:translateX(-50%)';
   ov.innerHTML=`
     <div id="cp" style="width:100%;height:min(88vh,calc(100vh - 24px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #BFDBFE;flex-shrink:0;position:relative">
@@ -1047,7 +1047,7 @@ async function showProfile(){
         </div>
         <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:14px;padding:14px;margin-bottom:16px">
           <div style="font-size:11px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Nivel de usuario</div>
-          ${(()=>{const p=u.levelProgress||nextLevelInfo(u.completedExchanges);return `<div style="font-family:Fraunces,serif;font-size:20px;font-weight:800;color:#111827">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${u.completedExchanges||0} intercambios realizados · ${p.next?`faltan ${p.remaining} para ${p.next}`:'nivel máximo alcanzado'} · Verificación: ${esc(u.verificationStatus||'pending')}</div><div style="height:10px;background:#DBEAFE;border-radius:999px;overflow:hidden;margin-top:10px"><div style="height:100%;width:${Math.max(0,Math.min(100,p.percent||0))}%;background:#3B82F6;border-radius:999px"></div></div>`})()}
+          ${(()=>{const p=u.levelProgress||nextLevelInfo(u.completedExchanges);return `<div style="font-family:Fraunces,serif;font-size:20px;font-weight:800;color:#111827">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${u.completedExchanges||0} intercambios realizados · ${p.next?`faltan ${p.remaining} para ${p.next}`:'nivel máximo alcanzado'} · Verificación: ${esc(u.verificationStatus||'pending')}</div><div style="height:10px;background:#DBEAFE;border-radius:999px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${Math.max(0,Math.min(100,p.percent||0))}%;background:#3B82F6;border-radius:999px"></div></div>`})()}
         </div>
         <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Foto de rostro / perfil</div><div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px;margin-bottom:16px"><input type="file" id="pf-file" accept="image/*" style="width:100%;font-size:13px;color:#6B7280"><div style="font-size:11px;color:#9CA3AF;margin-top:8px">Sube una foto clara de tu rostro. Quedará pendiente de verificación.</div></div>
         <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Sobre mí</div>
@@ -1075,7 +1075,7 @@ async function showProfile(){
 /* ── Match Modal ────────────────────────────────── */
 function showMatchModal(match){
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:700;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:560px;left:50%;transform:translateX(-50%)';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:700;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:760px;left:50%;transform:translateX(-50%)';
   const close=()=>{ov.style.opacity='0';setTimeout(()=>ov.remove(),280);};
   ov.innerHTML=`
     <div id="mmb" style="width:100%;background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;padding:40px 24px 36px;text-align:center;transform:translateY(30px);transition:transform .25s">
