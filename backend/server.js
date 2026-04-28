@@ -135,9 +135,20 @@ io.on('connection', (socket) => {
 
       io.to(roomId).emit('new-message', payload);
 
-      const otherUserId = String(roomId).split('_').find(x => x !== String(socket.userId));
+      let otherUserId = null;
+      const parts = String(roomId).split('_');
 
-      if (otherUserId) {
+      // Formato nuevo: match_USERA_USERB_BOOKA_BOOKB
+      if (parts[0] === 'match' && parts.length >= 3) {
+        const a = parts[1];
+        const b = parts[2];
+        otherUserId = String(a) === String(socket.userId) ? b : a;
+      } else {
+        // Formato antiguo: USERA_USERB
+        otherUserId = parts.find(x => x && x !== String(socket.userId));
+      }
+
+      if (otherUserId && otherUserId !== 'match') {
         await Notification.create({
           user: otherUserId,
           type: 'message',
@@ -149,9 +160,13 @@ io.on('connection', (socket) => {
           }
         });
 
-        io.to(roomId).emit('notification-update', {
+        // Si el receptor no tiene abierto ese chat, igual recibe el evento
+        // por su sala privada de usuario y puede mostrar badge rojo.
+        io.to('user:' + otherUserId).emit('new-message', payload);
+        io.to('user:' + otherUserId).emit('notification-update', {
           user: otherUserId,
-          type: 'message'
+          type: 'message',
+          roomId
         });
       }
 
