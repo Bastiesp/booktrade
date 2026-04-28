@@ -261,7 +261,7 @@ function showForgotPassword(){
 
   setView(`
     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#EFF6FF">
-      <div style="width:100%;max-width:420px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;padding:26px;box-shadow:0 24px 70px rgba(17,24,39,.10)">
+      <div style="width:100%;max-width:560px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;padding:24px;box-shadow:0 24px 70px rgba(17,24,39,.10)">
         <div style="font-family:Fraunces,serif;font-size:28px;font-weight:900;color:#111827;margin-bottom:8px">Recuperar contraseña</div>
         <div style="font-size:14px;color:#6B7280;line-height:1.45;margin-bottom:18px">
           Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.
@@ -322,13 +322,12 @@ function showAuth(tab){
       <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #BFDBFE;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         <div style="font-size:52px;filter:drop-shadow(0 0 20px rgba(59,130,246,.5))">📚</div>
-        <div style="font-family:'Fraunces',serif;font-size:38px;font-weight:700;color:#FFFFFF;letter-spacing:-1px;margin-top:10px;text-shadow:0 4px 20px rgba(0,0,0,.65)">Book<span style="color:#3B82F6">Trade</span></div>
-        <div style="display:flex;justify-content:center;margin-top:8px;margin-bottom:4px">
-          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(340px,92vw);max-height:132px;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45))">
+        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:4px 0 10px">
+          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(520px,96vw);max-width:100%;height:auto;max-height:220px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(0,0,0,.55))">
         </div>
-        <div style="font-size:13px;color:#FFFFFF;margin-top:8px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
+        <div style="font-size:14px;color:#FFFFFF;margin-top:10px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
       </div>
-      <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.55);border-radius:22px;padding:28px 24px;backdrop-filter:blur(8px);box-shadow:0 24px 70px rgba(17,24,39,.20)">
+      <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.55);border-radius:22px;padding:24px 22px;backdrop-filter:blur(8px);box-shadow:0 24px 70px rgba(17,24,39,.20)">
         <div style="display:flex;background:#FFFFFF;border-radius:10px;padding:4px;margin-bottom:22px">
           <button onclick="showAuth('login')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='login'?'background:#3B82F6;color:#FFFFFF':'background:transparent;color:#6B7280'}">Ingresar</button>
           <button onclick="showAuth('register')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='register'?'background:#3B82F6;color:#FFFFFF':'background:transparent;color:#6B7280'}">Registrarse</button>
@@ -436,7 +435,7 @@ async function showDiscover(){
 
   setView(`
     <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between">
-      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Book<span style="color:#3B82F6">Trade</span></div>
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827"><img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(520px,96vw);max-width:100%;height:auto;max-height:220px;object-fit:contain;filter:drop-shadow(0 12px 32px rgba(0,0,0,.55))"></div>
       <div id="qcnt" style="display:none;background:#3B82F6;color:#FFFFFF;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600"></div>
     </div>
     <div id="gbar" style="display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none">
