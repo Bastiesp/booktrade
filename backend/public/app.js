@@ -4,6 +4,7 @@
 const API='';
 let TOKEN=localStorage.getItem('bs_token')||'';
 let ME=null,MATCHES=[],MY_BOOKS=[],QUEUE=[],UNREAD={},NOTIFS={unread:0,items:[]},HISTORY=[],SOCKET=null;
+const SEEN_INCOMING_MESSAGES=new Set();
 let ACTIVE_GENRE='Todos',CITY='',DISCOVER_MODE='swipe',IS_ADMIN=false;
 
 const GENRES=['Ficción','No ficción','Ciencia ficción','Fantasía','Terror','Romance',
@@ -63,7 +64,7 @@ function forceLogout(){
   MATCHES=[];
   MY_BOOKS=[];
   QUEUE=[];
-  UNREAD={};
+  UNREAD=(()=>{try{return JSON.parse(localStorage.getItem('bt_unread_chats')||'{}')}catch{return {}}})();
   try{
     localStorage.removeItem('bs_token');
     localStorage.removeItem('bs_user');
@@ -170,13 +171,38 @@ function showPopNotification(title,body,onclick){
   setTimeout(()=>{p.style.opacity='0';p.style.transform='translateY(-8px)';p.style.transition='.25s';setTimeout(()=>p.remove(),260);},5200);
 }
 
-function updateBadge(){
-  const n=Object.values(UNREAD).reduce((a,b)=>a+Number(b||0),0);
-  const chatBadge=$('nb-chat-badge');
-  if(chatBadge){
-    chatBadge.style.display=n>0?'flex':'none';
-    chatBadge.textContent=n>9?'9+':String(n);
+
+function saveUnreadChats(){
+  try{localStorage.setItem('bt_unread_chats',JSON.stringify(UNREAD||{}));}catch{}
+}
+function unreadTotal(){
+  return Object.values(UNREAD||{}).reduce((a,b)=>a+Number(b||0),0);
+}
+function setChatBadgeCount(){
+  const n=unreadTotal();
+  const badge=$('nb-chat-badge');
+  if(badge){
+    badge.style.display=n>0?'flex':'none';
+    badge.textContent=n>9?'9+':String(n);
   }
+}
+function incrementUnread(room){
+  if(!room)return;
+  UNREAD[room]=(UNREAD[room]||0)+1;
+  saveUnreadChats();
+  updateBadge();
+}
+function clearUnread(room){
+  if(!room)return;
+  if(UNREAD[room]){
+    delete UNREAD[room];
+    saveUnreadChats();
+  }
+  updateBadge();
+}
+
+function updateBadge(){
+  setChatBadgeCount();
   const label=$('nb-mlabel');
   if(label)label.textContent='Matches';
   if($('clist'))drawChats();
@@ -425,6 +451,7 @@ async function launchApp(){
   try{initSocket();}catch{}
   updateBadge();
   await loadNotifications();
+  updateBadge();
   if(window._notifPoll)clearInterval(window._notifPoll);window._notifPoll=setInterval(()=>{if(TOKEN)loadNotifications();},20000);
   await checkAdminAccess();
   updateNavProfilePhoto();
@@ -792,7 +819,7 @@ async function showMatches(){
   setNav('nb-matches');
   if(!requireLogin())return;
   document.querySelector('.fab-btn')?.remove();
-  UNREAD={};updateBadge();
+  UNREAD=(()=>{try{return JSON.parse(localStorage.getItem('bt_unread_chats')||'{}')}catch{return {}}})();updateBadge();
   setView(`
     <div style="padding:16px 20px 12px"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Matches</div></div>
     <div id="mlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:16px;align-items:center">
@@ -854,6 +881,7 @@ async function confirmExchange(idx){
 
 async function showChats(){
   setNav('nb-chats');
+  updateBadge();
   if(!requireLogin())return;
   document.querySelector('.fab-btn')?.remove();
   setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Chats</div><div style="font-size:12px;color:#6B7280;margin-top:2px">Conversaciones con tus matches</div></div><button onclick="loadNotifications();showNotifications?.()" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#3B82F6;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800">🔔 ${NOTIFS?.unread||0}</button></div><div id="clist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:12px"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
@@ -863,7 +891,7 @@ function drawChats(){
   const c=$('clist');if(!c)return;
   if(!MATCHES.length){c.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.45">💬</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin chats todavía</div><div style="font-size:13px;color:#6B7280">Cuando tengas matches, tus conversaciones aparecerán aquí.</div></div>`;return;}
   const myId=getCurrentUserId();
-  c.innerHTML=MATCHES.map((m,i)=>{const r=matchRoomId(m);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:100%;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)"><div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div><div style="flex:1;min-width:0"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div><div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando intercambio')}</div></div>${unread?`<span title="Mensajes sin leer" style="background:#EF4444;color:#fff;border-radius:999px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid #fff;box-shadow:0 6px 14px rgba(239,68,68,.28)">${unread>9?'9+':unread}</span>`:''}</button>`}).join('');
+  c.innerHTML=MATCHES.map((m,i)=>{const r=matchRoomId(m);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:100%;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)"><div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div><div style="flex:1;min-width:0"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div><div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando intercambio')}</div></div>${unread?`<span title="Mensajes sin leer" style="background:#EF4444;color:#fff;border-radius:999px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid #fff;box-shadow:0 6px 14px rgba(239,68,68,.28);flex-shrink:0">${unread>9?'9+':unread}</span>`:''}</button>`}).join('');
 }
 
 async function showHistory(){
@@ -908,7 +936,7 @@ function openChat(idx){
   const navChat=$('nav');if(navChat)navChat.style.setProperty('display','none','important');
   const myId=(ME?._id||ME?.id||'').toString();
   const room=matchRoomId(m);
-  delete UNREAD[room];updateBadge();if($('clist'))drawChats();
+  clearUnread(room);if($('clist'))drawChats();
 
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:760px;left:50%;transform:translateX(-50%)';
@@ -1140,6 +1168,9 @@ function initSocket(){
     });
 
     SOCKET.on('new-message', (msg) => {
+      const msgKey=String(msg.clientId||msg._id||'');
+      if(msgKey&&SEEN_INCOMING_MESSAGES.has(msgKey))return;
+      if(msgKey)SEEN_INCOMING_MESSAGES.add(msgKey);
       const myId = (ME?._id || ME?.id || '').toString();
       const senderId = (msg.sender?._id || msg.sender?.id || msg.sender || '').toString();
 
@@ -1150,8 +1181,7 @@ function initSocket(){
       if (window._cRoom === r) {
         appendMsg2(msg);
       } else {
-        UNREAD[r] = (UNREAD[r] || 0) + 1;
-        updateBadge();
+        incrementUnread(r);
         const senderName=msg.sender?.username||'Nuevo mensaje';
         showPopNotification('💬 '+senderName, msg.text||'Tienes un nuevo mensaje', ()=>showChats());
         loadNotifications();
@@ -1183,6 +1213,7 @@ if(navEl)navEl.style.display='flex';
 const viewEl=$('view');
 if(viewEl)viewEl.style.bottom='68px';
 
+updateBadge();
 if(TOKEN){launchApp();}else{showAuth('login');}
 setInterval(forceShowNav,1000);
 
