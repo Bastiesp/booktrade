@@ -171,9 +171,15 @@ function showPopNotification(title,body,onclick){
 }
 
 function updateBadge(){
-  const el=$('nb-mlabel');if(!el)return;
-  const n=Object.values(UNREAD).reduce((a,b)=>a+b,0);
-  el.innerHTML=n>0?`Matches <span style="background:#3B82F6;color:#FFFFFF;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:2px">${n}</span>`:'Matches';
+  const n=Object.values(UNREAD).reduce((a,b)=>a+Number(b||0),0);
+  const chatBadge=$('nb-chat-badge');
+  if(chatBadge){
+    chatBadge.style.display=n>0?'flex':'none';
+    chatBadge.textContent=n>9?'9+':String(n);
+  }
+  const label=$('nb-mlabel');
+  if(label)label.textContent='Matches';
+  if($('clist'))drawChats();
 }
 
 /* ── API ────────────────────────────────────────── */
@@ -323,7 +329,7 @@ function showAuth(tab){
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         
         <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:-4px 0 8px">
-          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(820px,96vw);max-width:100%;height:auto;max-height:250px;object-fit:contain;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35))">
+          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(780px,96vw);max-width:100%;height:auto;max-height:245px;object-fit:contain;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35))">
         </div>
         <div style="font-size:14px;color:#FFFFFF;margin-top:4px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
       </div>
@@ -435,7 +441,7 @@ async function showDiscover(){
 
   setView(`
     <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between">
-      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827"><img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(820px,96vw);max-width:100%;height:auto;max-height:250px;object-fit:contain;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35))"></div>
+      <div style="display:flex;align-items:center;min-width:0"><img src="/assets/booktrade-logo-explore.png" alt="BookTrade" style="width:min(260px,58vw);max-width:100%;height:auto;max-height:82px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.16))"></div>
       <div id="qcnt" style="display:none;background:#3B82F6;color:#FFFFFF;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600"></div>
     </div>
     <div id="gbar" style="display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none">
@@ -857,7 +863,7 @@ function drawChats(){
   const c=$('clist');if(!c)return;
   if(!MATCHES.length){c.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.45">💬</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin chats todavía</div><div style="font-size:13px;color:#6B7280">Cuando tengas matches, tus conversaciones aparecerán aquí.</div></div>`;return;}
   const myId=getCurrentUserId();
-  c.innerHTML=MATCHES.map((m,i)=>{const r=matchRoomId(m);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:100%;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)"><div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div><div style="flex:1;min-width:0"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div><div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando intercambio')}</div></div>${unread?`<span style="background:#EF4444;color:#fff;border-radius:999px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900">${unread>9?'9+':unread}</span>`:''}</button>`}).join('');
+  c.innerHTML=MATCHES.map((m,i)=>{const r=matchRoomId(m);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:100%;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)"><div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div><div style="flex:1;min-width:0"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div><div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando intercambio')}</div></div>${unread?`<span title="Mensajes sin leer" style="background:#EF4444;color:#fff;border-radius:999px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid #fff;box-shadow:0 6px 14px rgba(239,68,68,.28)">${unread>9?'9+':unread}</span>`:''}</button>`}).join('');
 }
 
 async function showHistory(){
