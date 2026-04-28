@@ -373,8 +373,8 @@ function showAuth(tab){
       <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #BFDBFE;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         
-        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:-4px 0 8px">
-          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(780px,96vw);max-width:100%;height:auto;max-height:245px;object-fit:contain;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35))">
+        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:0 0 6px">
+          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(680px,90vw);max-width:100%;height:auto;max-height:210px;object-fit:contain;filter:drop-shadow(0 8px 20px rgba(0,0,0,.32))">
         </div>
         <div style="font-size:14px;color:#FFFFFF;margin-top:4px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
       </div>
@@ -596,13 +596,19 @@ function drawCatalog(){
   s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(photo)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · @${esc(book.owner?.username||'usuario')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right')" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800">Me interesa</button></div></div></div>`}).join('')}</div>`;
 }
 async function catalogSwipe(bookId,dir){
+  let beforeIds = new Set();
+  if(dir==='right'){
+    const before = await getCurrentMatchList();
+    beforeIds = new Set(before.map(matchIdOf));
+  }
+
   try{
     const r=await api('POST','/api/swipes',{bookId,direction:dir});
     QUEUE=QUEUE.filter(b=>String(b._id)!==String(bookId));
     drawCatalog();
 
     if(dir==='right'){
-      const showed=await showMatchFromSwipeResult(bookId,r);
+      const showed=await showMatchFromSwipeResult(bookId,r,beforeIds);
       if(!showed)toast('Interés guardado','success');
     }else{
       toast('Libro descartado','success');
@@ -676,34 +682,62 @@ function swipeBtn(dir){
 }
 
 
-async function showMatchFromSwipeResult(bookId,response){
+function matchIdOf(m){
+  return String(m?.id || [
+    m?.matchedUser?.id || m?.matchedUser?._id || '',
+    m?.myBook?.id || m?.myBook?._id || '',
+    m?.theirBook?.id || m?.theirBook?._id || ''
+  ].join('_'));
+}
+
+async function getCurrentMatchList(){
+  try{
+    const list = await api('GET','/api/swipes/matches') || [];
+    MATCHES = list;
+    return list;
+  }catch{
+    return MATCHES || [];
+  }
+}
+
+function isMatchRelatedToBook(m, bookId){
+  return String(m?.theirBook?.id || m?.theirBook?._id) === String(bookId) ||
+         String(m?.myBook?.id || m?.myBook?._id) === String(bookId);
+}
+
+async function showMatchFromSwipeResult(bookId,response,beforeIds){
   if(response?.match){
     showMatchModal(response.match);
     try{MATCHES=await api('GET','/api/swipes/matches')||[]}catch{}
     return true;
   }
 
-  // Respaldo: algunos casos de reglas/duplicados pueden registrar el match,
-  // pero devolver match:null en el POST. Entonces consultamos la lista real.
-  try{
-    const fresh=await api('GET','/api/swipes/matches')||[];
-    MATCHES=fresh;
+  const fresh = await getCurrentMatchList();
 
-    const found=fresh.find(m=>
-      String(m?.theirBook?.id||m?.theirBook?._id)===String(bookId) ||
-      String(m?.myBook?.id||m?.myBook?._id)===String(bookId)
-    );
+  // 1) Preferir un match realmente nuevo comparado con la lista anterior.
+  const newMatch = fresh.find(m => !beforeIds?.has(matchIdOf(m)));
+  if(newMatch){
+    showMatchModal(newMatch);
+    return true;
+  }
 
-    if(found){
-      showMatchModal(found);
-      return true;
-    }
-  }catch(e){}
+  // 2) Si no detectó ID nuevo, buscar uno relacionado con el libro recién deslizado.
+  const related = fresh.find(m => isMatchRelatedToBook(m,bookId));
+  if(related){
+    showMatchModal(related);
+    return true;
+  }
 
   return false;
 }
 
 async function doSwipe(bookId,dir){
+  let beforeIds = new Set();
+  if(dir==='right'){
+    const before = await getCurrentMatchList();
+    beforeIds = new Set(before.map(matchIdOf));
+  }
+
   QUEUE.shift();
   const cnt=$('qcnt');
   if(cnt){
@@ -716,7 +750,7 @@ async function doSwipe(bookId,dir){
     const r=await api('POST','/api/swipes',{bookId,direction:dir});
 
     if(dir==='right'){
-      const showed=await showMatchFromSwipeResult(bookId,r);
+      const showed=await showMatchFromSwipeResult(bookId,r,beforeIds);
       if(!showed)toast('Interés guardado','success');
     }
   }catch(e){
