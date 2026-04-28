@@ -549,6 +549,20 @@ async function loadQueue(){
 
 
 
+
+function miniBookCover(book,label){
+  const src=book?.photos?.[0]||'';
+  return `<div style="display:flex;align-items:center;gap:8px;min-width:0">
+    <div style="width:34px;height:46px;border-radius:7px;background:#EFF6FF;border:1px solid #BFDBFE;overflow:hidden;flex-shrink:0;box-shadow:0 4px 10px rgba(17,24,39,.08)">
+      ${src?`<img src="${esc(src)}" alt="${esc(book?.title||'Libro')}" style="width:100%;height:100%;object-fit:cover">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:16px">📘</div>`}
+    </div>
+    <div style="min-width:0">
+      <div style="font-size:10px;font-weight:900;color:#64748B;text-transform:uppercase;letter-spacing:.3px">${label}</div>
+      <div style="font-size:12px;color:#111827;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(book?.title||'Libro')}</div>
+    </div>
+  </div>`;
+}
+
 function isExchangeDone(m){return ['exchange_done','completed'].includes(m?.exchangeState?.code)||m?.exchangeState?.label==='Intercambio hecho';}
 function updateDiscoverModeButtons(){
   const swipe=$('mode-swipe'), catalog=$('mode-catalog'), actions=$('swipe-actions');
