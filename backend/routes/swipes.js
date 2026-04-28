@@ -109,14 +109,14 @@ router.post('/',auth,async(req,res)=>{
 
     if(direction==='right'){
       const ownerId=String(book.owner._id);
-      const myBooks=await Book.find({owner:req.userId}).select('_id title author');
+      const myBooks=await Book.find({owner:req.userId}).select('_id title author photos');
 
       // Buscar todos los swipes del otro usuario sobre mis libros.
       const theirSwipes=await Swipe.find({
         swiper:book.owner._id,
         book:{$in:myBooks.map(b=>b._id)},
         direction:'right'
-      }).populate('book','title author');
+      }).populate('book','title author photos');
 
       // Evitar que el libro que acabo de elegir quede emparejado con más de un libro
       // de este mismo usuario, y viceversa.
@@ -138,7 +138,7 @@ router.post('/',auth,async(req,res)=>{
           swiper:book.owner._id,
           book:{$in:myBooks.map(b=>b._id)},
           direction:'right'
-        }).populate('book','title author');
+        }).populate('book','title author photos');
 
         for(const os of otherSwipes){
           if(!os.book)continue;
@@ -186,8 +186,8 @@ router.post('/',auth,async(req,res)=>{
             level:book.owner.level,
             completedExchanges:book.owner.completedExchanges
           },
-          theirBook:{id:book._id,title:book.title,author:book.author},
-          myBook:{id:theirSwipe.book._id,title:theirSwipe.book.title,author:theirSwipe.book.author},
+          theirBook:{id:book._id,title:book.title,author:book.author,photos:book.photos||[]},
+          myBook:{id:theirSwipe.book._id,title:theirSwipe.book.title,author:theirSwipe.book.author,photos:theirSwipe.book.photos||[]},
           exchangeState:stateFromExchange(exchange,req.userId)
         };
 
@@ -226,7 +226,7 @@ router.get('/matches',auth,async(req,res)=>{
         populate:{path:'owner',select:'username email location profilePhoto level completedExchanges'}
       });
 
-    const myBooks=await Book.find({owner:req.userId}).select('_id title author');
+    const myBooks=await Book.find({owner:req.userId}).select('_id title author photos');
     const myBookIds=myBooks.map(b=>b._id);
 
     const matches=[];
@@ -247,7 +247,7 @@ router.get('/matches',auth,async(req,res)=>{
         swiper:swipe.book.owner._id,
         book:{$in:myBookIds},
         direction:'right'
-      }).populate('book','title author');
+      }).populate('book','title author photos');
 
       for(const theirSwipe of theirSwipes){
         if(!theirSwipe?.book)continue;
@@ -285,8 +285,8 @@ router.get('/matches',auth,async(req,res)=>{
             level:swipe.book.owner.level,
             completedExchanges:swipe.book.owner.completedExchanges
           },
-          theirBook:{id:swipe.book._id,title:swipe.book.title,author:swipe.book.author},
-          myBook:{id:theirSwipe.book._id,title:theirSwipe.book.title,author:theirSwipe.book.author},
+          theirBook:{id:swipe.book._id,title:swipe.book.title,author:swipe.book.author,photos:swipe.book.photos||[]},
+          myBook:{id:theirSwipe.book._id,title:theirSwipe.book.title,author:theirSwipe.book.author,photos:theirSwipe.book.photos||[]},
           createdAt:theirSwipe.createdAt,
           exchangeState:state
         });
