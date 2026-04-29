@@ -456,29 +456,49 @@ function doLogout(){
    LAUNCH — restaurar nav y cargar app
    ══════════════════════════════════════════════════ */
 
+
+function onboardingKey(){
+  const uid=getCurrentUserId() || ME?.email || ME?.username || 'anon';
+  return 'bt_onboarding_done_'+String(uid);
+}
+
 function shouldShowOnboarding(){
+  if(!ME)return false;
+
+  // Si backend ya dice completado, no mostrar.
+  if(ME.onboardingCompleted === true)return false;
+
+  // Importante: ahora el localStorage es por usuario.
+  // Antes era una llave global y por eso un usuario nuevo en el mismo navegador
+  // no veía la guía si otro usuario ya la había cerrado.
   try{
-    if(localStorage.getItem('bt_onboarding_done')==='1')return false;
+    if(localStorage.getItem(onboardingKey())==='1')return false;
   }catch{}
-  return ME && ME.onboardingCompleted !== true;
+
+  return true;
 }
 
 async function finishOnboarding(){
-  try{localStorage.setItem('bt_onboarding_done','1');}catch{}
+  try{localStorage.setItem(onboardingKey(),'1');}catch{}
   if(ME)ME.onboardingCompleted=true;
-  try{await api('PUT','/api/users/me/onboarding',{});}catch{}
+
+  try{
+    await api('PUT','/api/users/me/onboarding',{});
+  }catch{}
 }
 
-function showOnboarding(){
-  if(!shouldShowOnboarding())return;
+function showOnboarding(force=false){
+  if(!force && !shouldShowOnboarding())return;
+  if(document.getElementById('onboarding-overlay'))return;
 
   const ov=document.createElement('div');
+  ov.id='onboarding-overlay';
   ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.64);backdrop-filter:blur(5px);z-index:1000008;display:flex;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .22s';
 
   ov.innerHTML=`
     <div id="onb-card" style="width:min(560px,94vw);background:#FFFFFF;border:1px solid #BFDBFE;border-radius:24px;box-shadow:0 26px 80px rgba(15,23,42,.28);padding:24px;transform:translateY(18px);transition:transform .22s">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <div style="width:44px;height:44px;border-radius:14px;background:#DBEAFE;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:24px">📚</div>
+        <div style="width:44px;height:44px;border-radius:14px;background:#DBEAFE;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">📚</div>
         <div>
           <div style="font-family:Fraunces,serif;font-size:25px;font-weight:900;color:#111827">Bienvenido a BookTrade</div>
           <div style="font-size:13px;color:#64748B;margin-top:2px">Así funciona la app en 3 pasos simples.</div>
@@ -488,7 +508,7 @@ function showOnboarding(){
       <div style="display:grid;gap:12px;margin-top:18px">
         <div style="display:flex;gap:12px;background:#F8FAFC;border:1px solid #DBEAFE;border-radius:16px;padding:14px">
           <div style="width:34px;height:34px;border-radius:999px;background:#3B82F6;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0">1</div>
-          <div><b style="color:#111827">Publica tus libros</b><div style="font-size:13px;color:#64748B;margin-top:3px;line-height:1.35">Sube 3 fotos, título, autor y estado del libro. Mientras esté en tu perfil, otros usuarios pueden descubrirlo.</div></div>
+          <div><b style="color:#111827">Publica tus libros</b><div style="font-size:13px;color:#64748B;margin-top:3px;line-height:1.35">Sube 3 fotos, título, autor y estado del libro. Otros usuarios podrán descubrirlo.</div></div>
         </div>
 
         <div style="display:flex;gap:12px;background:#F8FAFC;border:1px solid #DBEAFE;border-radius:16px;padding:14px">
@@ -498,7 +518,7 @@ function showOnboarding(){
 
         <div style="display:flex;gap:12px;background:#F8FAFC;border:1px solid #DBEAFE;border-radius:16px;padding:14px">
           <div style="width:34px;height:34px;border-radius:999px;background:#3B82F6;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0">3</div>
-          <div><b style="color:#111827">Coordina, confirma y recibe</b><div style="font-size:13px;color:#64748B;margin-top:3px;line-height:1.35">Habla por chat. Cuando ambos confirman el intercambio, los libros cambian de dueño y quedan en el perfil de quien los recibió.</div></div>
+          <div><b style="color:#111827">Coordina, confirma y recibe</b><div style="font-size:13px;color:#64748B;margin-top:3px;line-height:1.35">Habla por chat. Cuando ambos confirman, los libros cambian de perfil y quedan con quien los recibió.</div></div>
         </div>
       </div>
 
@@ -527,7 +547,17 @@ function showOnboarding(){
   document.getElementById('onb-skip').onclick=()=>close(false);
 }
 
+
+
+
+
+async function repairMyReceivedBooks(){
+  if(!TOKEN)return;
+  try{await api('POST','/api/exchanges/repair-my-books',{});}catch{}
+}
+
 async function launchApp(){
+  try{localStorage.removeItem('bt_onboarding_done');}catch{}
   document.body.classList.add('logged-in');
   document.getElementById('forgot-fixed-btn')?.style.setProperty('display','none','important');
   forceShowNav();
@@ -538,6 +568,7 @@ async function launchApp(){
 
   try{if(!ME){try{ME=JSON.parse(localStorage.getItem('bs_user')||'null');}catch{};}if(!ME)rememberUser(await api('GET','/api/users/me'));}
   catch(e){localStorage.removeItem('bs_token');TOKEN='';showAuth('login');return;}
+  await repairMyReceivedBooks();
   try{MATCHES=await api('GET','/api/swipes/matches')||[];}catch{}
   try{initSocket();}catch{}
   updateBadge();
@@ -549,7 +580,7 @@ async function launchApp(){
   await checkAdminAccess();
   updateNavProfilePhoto();
   showDiscover();
-  setTimeout(()=>showOnboarding?.(),650);
+  setTimeout(()=>showOnboarding?.(),700);
 }
 
 /* ══════════════════════════════════════════════════
@@ -858,7 +889,7 @@ async function showBooks(){
   fab.onclick=()=>openBookModal(null);
   document.body.appendChild(fab);
 
-  try{MY_BOOKS=await api('GET','/api/books/mine');drawBooksGrid();}
+  try{await repairMyReceivedBooks();MY_BOOKS=await api('GET','/api/books/mine');drawBooksGrid();}
   catch(e){toast(e.message,'error');}
 }
 
@@ -1078,8 +1109,8 @@ async function confirmExchange(idx){
   if(!confirm('¿Confirmas que este intercambio ya se realizó?'))return;
   try{
     const r=await api('POST','/api/exchanges/confirm',{matchedUserId:m.matchedUser.id,myBookId:m.myBook.id,theirBookId:m.theirBook.id});
-    toast(r.completed?'Intercambio hecho: los libros cambiaron de perfil ✓':'Confirmación enviada. Falta que la otra persona confirme.','success');
-    await loadNotifications();try{MY_BOOKS=await api('GET','/api/books/mine')}catch{}await showMatches();
+    toast(r.completed?'Intercambio hecho: ahora verás en tu perfil el libro recibido ✓':'Confirmación enviada. Falta que la otra persona confirme.','success');
+    await loadNotifications();try{await repairMyReceivedBooks();MY_BOOKS=await api('GET','/api/books/mine')}catch{}await showMatches();
   }catch(e){toast(e.message,'error');}
 }
 
@@ -1442,4 +1473,6 @@ setInterval(forceShowNav,1000);
 window.showForgotPassword=showForgotPassword;
 window.sendForgotPassword=sendForgotPassword;
 
-window.showOnboardingGuide=function(){try{localStorage.removeItem('bt_onboarding_done')}catch{}; if(ME)ME.onboardingCompleted=false; showOnboarding();};
+ if(ME)ME.onboardingCompleted=false; showOnboarding();};
+
+window.showOnboardingGuide=function(){try{localStorage.removeItem(onboardingKey())}catch{}; if(ME)ME.onboardingCompleted=false; showOnboarding(true);};
