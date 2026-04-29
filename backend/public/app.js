@@ -149,7 +149,7 @@ function updateNavProfilePhoto(){
   const photo=ME?.profilePhoto;
   const verified=ME?.verificationStatus==='verified';
   if(photo && verified){
-    el.innerHTML=`<img src="${esc(photo)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #3B82F6">`;
+    el.innerHTML=`<img src="${esc(cldThumb(photo,520,720))}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #3B82F6">`;
   }else{
     el.innerHTML=`<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
   }
@@ -472,8 +472,8 @@ async function launchApp(){
   await loadNotifications();
   await syncChatUnreadFromServer();
   updateBadge();
-  if(window._notifPoll)clearInterval(window._notifPoll);window._notifPoll=setInterval(()=>{if(TOKEN)loadNotifications();},20000);
-  if(window._chatUnreadPoll)clearInterval(window._chatUnreadPoll);window._chatUnreadPoll=setInterval(()=>{if(TOKEN)syncChatUnreadFromServer();},5000);
+  if(window._notifPoll)clearInterval(window._notifPoll);window._notifPoll=setInterval(()=>{if(TOKEN)loadNotifications();},30000);
+  if(window._chatUnreadPoll)clearInterval(window._chatUnreadPoll);window._chatUnreadPoll=setInterval(()=>{if(TOKEN)syncChatUnreadFromServer();},15000);
   await checkAdminAccess();
   updateNavProfilePhoto();
   showDiscover();
@@ -550,6 +550,13 @@ async function loadQueue(){
 
 
 
+
+function cldThumb(url,w=360,h=520){
+  const s=String(url||'');
+  if(!s.includes('res.cloudinary.com')||!s.includes('/upload/'))return s;
+  return s.replace('/upload/','/upload/f_auto,q_auto:good,c_fill,w_'+w+',h_'+h+'/');
+}
+
 function firstBookPhoto(book){
   return book?.photos?.[0] || book?.photo || book?.cover || book?.image || '';
 }
@@ -558,7 +565,7 @@ function miniBookCover(book,label){
   const src=firstBookPhoto(book);
   return `<div style="display:flex;align-items:center;gap:10px;min-width:0">
     <div style="width:42px;height:58px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;overflow:hidden;flex-shrink:0;box-shadow:0 5px 12px rgba(17,24,39,.10)">
-      ${src?`<img src="${esc(src)}" alt="${esc(book?.title||'Libro')}" style="width:100%;height:100%;object-fit:cover">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:18px">📘</div>`}
+      ${src?`<img src="${esc(cldThumb(src,120,170))}" alt="${esc(book?.title||'Libro')}" style="width:100%;height:100%;object-fit:cover">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:18px">📘</div>`}
     </div>
     <div style="min-width:0">
       <div style="font-size:9px;font-weight:900;color:#64748B;text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px">${label}</div>
@@ -593,7 +600,7 @@ function drawCatalog(){
   s.style.height='auto';s.style.minHeight='420px';s.style.maxWidth='none';s.style.width='auto';s.style.margin='0 16px';
   if(cnt){cnt.style.display=QUEUE.length?'block':'none';cnt.textContent=QUEUE.length+' libros';}
   if(!QUEUE.length){s.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:10px;text-align:center;padding:20px"><div style="font-size:48px;opacity:.4">🔭</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">¡Todo explorado!</div><div style="font-size:13px;color:#6B7280">Vuelve pronto o cambia los filtros</div></div>';return;}
-  s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(photo)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · @${esc(book.owner?.username||'usuario')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right')" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800">Me interesa</button></div></div></div>`}).join('')}</div>`;
+  s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · @${esc(book.owner?.username||'usuario')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right')" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800">Me interesa</button></div></div></div>`}).join('')}</div>`;
 }
 async function catalogSwipe(bookId,dir){
   let beforeIds = new Set();
@@ -639,7 +646,7 @@ function drawStack(){
       <div id="sl" style="position:absolute;top:28px;left:18px;padding:7px 16px;border-radius:6px;font-size:18px;font-weight:800;letter-spacing:2px;color:#4CAF7D;border:3px solid #4CAF7D;transform:rotate(-12deg);opacity:0;z-index:10;pointer-events:none">ME GUSTA</div>
       <div id="sn" style="position:absolute;top:28px;right:18px;padding:7px 16px;border-radius:6px;font-size:18px;font-weight:800;letter-spacing:2px;color:#D45A4A;border:3px solid #D45A4A;transform:rotate(12deg);opacity:0;z-index:10;pointer-events:none">PASO</div>
       <div style="height:68%;background:${clr(book._id)};position:relative;overflow:hidden">
-        ${photo?`<img src="${esc(photo)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`
+        ${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`
         :`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}
       </div>
       <div style="padding:16px 18px">
@@ -788,7 +795,7 @@ function drawBooksGrid(){
   g.innerHTML=MY_BOOKS.map(b=>`
     <div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:14px;overflow:hidden;width:100%;max-width:210px">
       <div style="height:260px;background:${clr(b._id)};position:relative;overflow:hidden">
-        ${b.photos?.[0]?`<img src="${esc(b.photos[0])}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#EFF6FF">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;text-align:center"><div style="font-family:Fraunces,serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.9)">${esc(b.title)}</div><div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;font-style:italic">${esc(b.author)}</div></div>`}
+        ${b.photos?.[0]?`<img src="${esc(cldThumb(b.photos[0],240,340))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#EFF6FF">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;text-align:center"><div style="font-family:Fraunces,serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.9)">${esc(b.title)}</div><div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;font-style:italic">${esc(b.author)}</div></div>`}
       </div>
       <div style="padding:10px 12px">
         <div style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.title)}</div>
@@ -1238,7 +1245,7 @@ function matchPopupBook(book,label,align='left'){
   return `<div style="flex:1;min-width:0;text-align:${align}">
     <div style="display:flex;align-items:center;gap:10px;${align==='right'?'flex-direction:row-reverse':''}">
       <div style="width:48px;height:66px;border-radius:9px;background:#EFF6FF;border:1px solid #BFDBFE;overflow:hidden;flex-shrink:0;box-shadow:0 6px 14px rgba(17,24,39,.12)">
-        ${src?`<img src="${esc(src)}" alt="${esc(book?.title||'Libro')}" style="width:100%;height:100%;object-fit:cover">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:20px">📘</div>`}
+        ${src?`<img src="${esc(cldThumb(src,120,170))}" alt="${esc(book?.title||'Libro')}" style="width:100%;height:100%;object-fit:cover">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:20px">📘</div>`}
       </div>
       <div style="min-width:0">
         <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px;font-weight:900">${label}</div>
