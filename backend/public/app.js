@@ -704,10 +704,18 @@ function drawCatalog(){
   s.style.height='auto';s.style.minHeight='420px';s.style.maxWidth='none';s.style.width='auto';s.style.margin='0 16px';
   if(cnt){cnt.style.display=QUEUE.length?'block':'none';cnt.textContent=QUEUE.length+' libros';}
   if(!QUEUE.length){s.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:10px;text-align:center;padding:20px"><div style="font-size:48px;opacity:.4">🔭</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">¡Todo explorado!</div><div style="font-size:13px;color:#6B7280">Vuelve pronto o cambia los filtros</div></div>';return;}
-  s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · @${esc(book.owner?.username||'usuario')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right')" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800">Me interesa</button></div></div></div>`}).join('')}</div>`;
+  s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · @${esc(book.owner?.username||'usuario')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right',this)" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800;transition:all .15s">Me interesa</button></div></div></div>`}).join('')}</div>`;
 }
-async function catalogSwipe(bookId,dir){
+async function catalogSwipe(bookId,dir,btn){
   let beforeIds = new Set();
+
+  if(btn){
+    btn.disabled=true;
+    btn.style.background=dir==='right'?'#1D4ED8':'#CBD5E1';
+    btn.style.transform='scale(.97)';
+    btn.textContent=dir==='right'?'Buscando match...':'Descartado';
+  }
+
   if(dir==='right'){
     const before = await getCurrentMatchList();
     beforeIds = new Set(before.map(matchIdOf));
@@ -715,16 +723,24 @@ async function catalogSwipe(bookId,dir){
 
   try{
     const r=await api('POST','/api/swipes',{bookId,direction:dir});
-    QUEUE=QUEUE.filter(b=>String(b._id)!==String(bookId));
-    drawCatalog();
 
     if(dir==='right'){
       const showed=await showMatchFromSwipeResult(bookId,r,beforeIds);
+      QUEUE=QUEUE.filter(b=>String(b._id)!==String(bookId));
+      drawCatalog();
       if(!showed)toast('Interés guardado','success');
     }else{
+      QUEUE=QUEUE.filter(b=>String(b._id)!==String(bookId));
+      drawCatalog();
       toast('Libro descartado','success');
     }
   }catch(e){
+    if(btn){
+      btn.disabled=false;
+      btn.style.background='#3B82F6';
+      btn.style.transform='scale(1)';
+      btn.textContent='Me interesa';
+    }
     toast(e.message,'error');
   }
 }
@@ -1361,27 +1377,71 @@ function matchPopupBook(book,label,align='left'){
 }
 
 function showMatchModal(match){
+  document.querySelectorAll('.bt-match-modal').forEach(x=>x.remove());
+
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:1000004;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:760px;left:50%;transform:translateX(-50%)';
-  const close=()=>{ov.style.opacity='0';setTimeout(()=>ov.remove(),280);};
+  ov.className='bt-match-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .18s;pointer-events:auto;padding:0';
+
+  const close=()=>{
+    ov.style.opacity='0';
+    const card=ov.querySelector('.bt-match-card');
+    if(card)card.style.transform='translateY(30px)';
+    document.removeEventListener('keydown',escClose);
+    setTimeout(()=>ov.remove(),190);
+  };
+
+  const escClose=(e)=>{if(e.key==='Escape')close();};
+
   ov.innerHTML=`
-    <div id="mmb" style="width:100%;background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;padding:40px 24px 36px;text-align:center;transform:translateY(30px);transition:transform .25s">
-      <div style="font-size:68px;line-height:1;margin-bottom:16px;animation:matchPop .5s ease">🎉</div>
-      <div style="font-family:Fraunces,serif;font-size:28px;font-weight:700;color:#3B82F6;margin-bottom:8px">¡Es un Match!</div>
-      <div style="font-size:14px;color:#6B7280;margin-bottom:24px;line-height:1.5">Tú y <strong style="color:#111827">@${esc(match.matchedUser.username)}</strong> quieren intercambiar libros</div>
+    <div class="bt-match-card" style="width:min(760px,100%);background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;padding:34px 24px 30px;text-align:center;transform:translateY(30px);transition:transform .18s;position:relative;box-shadow:0 -18px 55px rgba(15,23,42,.25);pointer-events:auto">
+      <button class="bt-match-x" type="button" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:999px;border:1px solid #BFDBFE;background:#EFF6FF;color:#1F2937;font-size:20px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+      <div style="font-size:62px;line-height:1;margin-bottom:14px;animation:matchPop .5s ease">🎉</div>
+      <div style="font-family:Fraunces,serif;font-size:27px;font-weight:900;color:#3B82F6;margin-bottom:8px">¡Es un Match!</div>
+      <div style="font-size:14px;color:#6B7280;margin-bottom:22px;line-height:1.5">Tú y <strong style="color:#111827">@${esc(match?.matchedUser?.username||'usuario')}</strong> quieren intercambiar libros</div>
       <div style="display:flex;align-items:center;gap:12px;background:#EFF6FF;border-radius:16px;padding:14px;margin-bottom:20px;text-align:left;border:1px solid #BFDBFE">
-        ${matchPopupBook(match.myBook,'Tú das','left')}
+        ${matchPopupBook(match?.myBook,'Tú das','left')}
         <span style="font-size:24px;color:#3B82F6;font-weight:900;flex-shrink:0">⇄</span>
-        ${matchPopupBook(match.theirBook,'Recibes','right')}
+        ${matchPopupBook(match?.theirBook,'Recibes','right')}
       </div>
-      <button id="mm-ver" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px">💬 Ver Matches</button>
-      <button id="mm-cont" style="width:100%;padding:12px;background:#DBEAFE;border:1px solid #BFDBFE;border-radius:10px;font-size:14px;color:#6B7280;cursor:pointer">Seguir explorando</button>
+      <button class="bt-match-view" type="button" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px">💬 Ver Matches</button>
+      <button class="bt-match-continue" type="button" style="width:100%;padding:12px;background:#DBEAFE;border:1px solid #BFDBFE;border-radius:10px;font-size:14px;color:#2563EB;font-weight:800;cursor:pointer">Seguir explorando</button>
     </div>`;
+
   document.body.appendChild(ov);
-  requestAnimationFrame(()=>{ov.style.opacity='1';$('mmb').style.transform='translateY(0)';});
-  $('mm-ver').onclick=()=>{close();showMatches();};
-  $('mm-cont').onclick=close;
-  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+
+  const card=ov.querySelector('.bt-match-card');
+  const btnView=ov.querySelector('.bt-match-view');
+  const btnContinue=ov.querySelector('.bt-match-continue');
+  const btnX=ov.querySelector('.bt-match-x');
+
+  btnView?.addEventListener('click',(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+    setTimeout(()=>showMatches(),210);
+  });
+
+  btnContinue?.addEventListener('click',(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+  });
+
+  btnX?.addEventListener('click',(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+  });
+
+  card?.addEventListener('click',e=>e.stopPropagation());
+  ov.addEventListener('click',close);
+  document.addEventListener('keydown',escClose);
+
+  requestAnimationFrame(()=>{
+    ov.style.opacity='1';
+    if(card)card.style.transform='translateY(0)';
+  });
 }
 
 /* ── Socket.io ──────────────────────────────────── */
