@@ -6,7 +6,11 @@ const router=express.Router();
 
 router.get('/',auth,async(req,res)=>{
   try{
-    const items=await Notification.find({user:req.userId}).sort({createdAt:-1}).limit(50);
+    const items=await Notification.find({user:req.userId})
+      .sort({createdAt:-1})
+      .limit(40)
+      .lean();
+
     const unread=await Notification.countDocuments({user:req.userId,read:false});
     res.json({unread,items});
   }catch(e){
@@ -14,19 +18,17 @@ router.get('/',auth,async(req,res)=>{
   }
 });
 
-/*
-  GET /api/notifications/message-unread
-  Devuelve los mensajes no leídos agrupados por sala de chat.
-  Esto hace que los numeritos rojos funcionen aunque el socket falle,
-  aunque cambies de módulo o aunque el usuario no tenga el chat abierto.
-*/
 router.get('/message-unread',auth,async(req,res)=>{
   try{
     const items=await Notification.find({
       user:req.userId,
       read:false,
       type:'message'
-    }).sort({createdAt:-1}).limit(300);
+    })
+      .select('data.roomId')
+      .sort({createdAt:-1})
+      .limit(150)
+      .lean();
 
     const rooms={};
 
@@ -37,7 +39,6 @@ router.get('/message-unread',auth,async(req,res)=>{
     }
 
     const total=Object.values(rooms).reduce((a,b)=>a+b,0);
-
     res.json({ok:true,total,rooms});
   }catch(e){
     console.error('GET /api/notifications/message-unread error:',e);
@@ -45,10 +46,6 @@ router.get('/message-unread',auth,async(req,res)=>{
   }
 });
 
-/*
-  PUT /api/notifications/read-room/:roomId
-  Marca como leídos solo los mensajes de un chat específico.
-*/
 router.put('/read-room/:roomId',auth,async(req,res)=>{
   try{
     const roomId=req.params.roomId;
