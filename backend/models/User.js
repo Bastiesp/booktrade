@@ -81,6 +81,12 @@ const userSchema = new mongoose.Schema({
     min: 0
   },
 
+
+  onboardingCompleted: {
+    type: Boolean,
+    default: false
+  },
+
   resetPasswordToken:{type:String,default:''},
   resetPasswordExpires:{type:Date,default:null},
   accountStatus:{type:String,enum:['active','blocked','deleted'],default:'active',index:true},
