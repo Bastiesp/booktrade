@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>BookTrade Admin Pro</title>
-<!-- admin-delete-fix-v1 -->
+<!-- admin-final-fix-v2 -->
 <style>
 body{margin:0;background:#F8FAFC;color:#111827;font-family:Arial,sans-serif}
 header{position:sticky;top:0;background:#fff;border-bottom:1px solid #BFDBFE;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;z-index:10}
@@ -18,6 +18,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 .input{border:1px solid #BFDBFE;border-radius:12px;padding:11px 12px;min-width:260px}
 .avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #BFDBFE}pre{white-space:pre-wrap;background:#0F172A;color:#fff;border-radius:12px;padding:12px;font-size:12px}
 .center{max-width:520px;margin:70px auto;text-align:center}
+.err{color:#991B1B;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:12px;margin-top:12px}
 </style>
 </head>
 <body>
@@ -33,6 +34,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
   <div id="loading" class="center card">
     <h2>Abriendo panel administrador...</h2>
     <p>Usando tu sesión actual de BookTrade.</p>
+    <div id="loadhint" style="font-size:13px;color:#64748B;margin-top:8px">Validando permisos...</div>
   </div>
 
   <div id="noaccess" class="center card" style="display:none">
@@ -60,6 +62,11 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 </div>
 
 <script>
+window.addEventListener('error',e=>{
+  const el=document.getElementById('loadhint');
+  if(el)el.innerHTML='<div class="err">Error JS: '+(e.message||'desconocido')+'</div>';
+});
+
 let TOKEN=localStorage.getItem('bs_token')||'';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -67,10 +74,16 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 async function api(method,path,body){
   const h={'Content-Type':'application/json'};
   if(TOKEN)h.Authorization='Bearer '+TOKEN;
-  const r=await fetch(path,{method,headers:h,body:body?JSON.stringify(body):undefined});
-  const d=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(d.error||'Error '+r.status);
-  return d;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),12000);
+  try{
+    const r=await fetch(path,{method,headers:h,body:body?JSON.stringify(body):undefined,signal:controller.signal});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||'Error '+r.status);
+    return d;
+  }finally{
+    clearTimeout(timer);
+  }
 }
 
 function showNoAccess(message){
@@ -78,6 +91,12 @@ function showNoAccess(message){
   $('panel').style.display='none';
   $('noaccess').style.display='block';
   $('noaccess-msg').textContent=message||'Inicia sesión en la app con tu cuenta administradora.';
+}
+
+function showPanel(){
+  $('loading').style.display='none';
+  $('noaccess').style.display='none';
+  $('panel').style.display='block';
 }
 
 function logout(){
@@ -89,138 +108,129 @@ function logout(){
 async function refresh(){
   try{
     if(!TOKEN)return showNoAccess('No hay sesión activa. Vuelve a la app e inicia sesión.');
+    $('loadhint').textContent='Validando administrador...';
     const w=await api('GET','/api/admin/whoami');
     if(!w.isAdmin)return showNoAccess('Tu usuario no tiene permiso de administrador.');
-    $('loading').style.display='none';
-    $('noaccess').style.display='none';
-    $('panel').style.display='block';
+    showPanel();
     $('who').innerHTML='<b>Admin conectado:</b> '+esc(w.user.email)+' · rol '+esc(w.user.role);
     await summary();
     await loadUsers();
   }catch(e){
-    showNoAccess(e.message);
+    showNoAccess(e.name==='AbortError'?'La solicitud tardó demasiado. Reintenta o revisa el deploy.':e.message);
   }
 }
 
 async function summary(){
   const s=await api('GET','/api/admin/summary');
-  $('stats').innerHTML=Object.entries({
-    'Usuarios':s.users,'Admins':s.admins,'Bloqueados':s.blocked,'Eliminados':s.deleted,
-    'Libros':s.books,'Libros activos':s.activeBooks,'Intercambiados':s.completed,
-    'En proceso':s.pending,'Mensajes':s.messages,'Reportes abiertos':s.reportsOpen,
-    'Fotos pendientes':s.pendingVerifications,'Nuevos este mes':s.newUsersMonth
-  }).map(([k,v])=>`<div class="stat"><b>${v||0}</b><span>${k}</span></div>`).join('');
+  const data={'Usuarios':s.users,'Admins':s.admins,'Bloqueados':s.blocked,'Eliminados':s.deleted,'Libros':s.books,'Libros activos':s.activeBooks,'Intercambiados':s.completed,'En proceso':s.pending,'Mensajes':s.messages,'Reportes abiertos':s.reportsOpen,'Fotos pendientes':s.pendingVerifications,'Nuevos este mes':s.newUsersMonth};
+  $('stats').innerHTML=Object.entries(data).map(([k,v])=>'<div class="stat"><b>'+(v||0)+'</b><span>'+esc(k)+'</span></div>').join('');
 }
 
 function searchBox(fn,ph){
   return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-    <input id="q" class="input" placeholder="${ph}" onkeydown="if(event.key==='Enter')${fn}()">
-    <button class="btn" onclick="${fn}()">Buscar</button>
+    <input id="q" class="input" placeholder="${esc(ph)}" onkeydown="if(event.key==='Enter')window[fn]()">
+    <button class="btn" onclick="window[fn]()">Buscar</button>
   </div>`;
 }
 
 async function loadUsers(){
   const q=$('q')?.value||'';
-  const includeDeleted=document.getElementById('includeDeleted')?.checked?'&includeDeleted=true':'';
+  const includeDeleted=$('includeDeleted')?.checked?'&includeDeleted=true':'';
   const rows=await api('GET','/api/admin/users?q='+encodeURIComponent(q)+includeDeleted);
-  $('content').innerHTML='<h2>Usuarios</h2>'+searchBox('loadUsers','Buscar usuario, email o comuna')+
-  `<label style="display:flex;align-items:center;gap:8px;margin:8px 0 12px;font-size:13px;color:#475569"><input id="includeDeleted" type="checkbox" onchange="loadUsers()"> Mostrar eliminados</label><table><tr><th>Usuario</th><th>Datos</th><th>Rol/Estado</th><th>Actividad</th><th>Creación</th><th>Acciones</th></tr>
-  ${rows.map(u=>`<tr>
-    <td>${u.profilePhoto?`<img class="avatar" src="${u.profilePhoto}">`:''}<br><b>@${esc(u.username)}</b><br>${esc(u.email)}</td>
-    <td>${esc(u.location||'Sin comuna')}<br>⭐ ${Number(u.ratingAvg||0).toFixed(1)} (${u.ratingCount||0})<br>${esc(u.verificationStatus||'pending')}</td>
-    <td><span class="pill">${esc(u.role||'user')}</span><br><span class="pill">${esc(u.accountStatus||'active')}</span></td>
-    <td>${u.totalBooks||0} libros<br>${u.completedExchanges||0} intercambios<br>${esc(u.level||'Aficionado')}</td>
-    <td>${new Date(u.createdAt).toLocaleString('es-CL')}</td>
-    <td>
-      <button class="btn secondary" onclick="role('${u._id}','${u.role==='admin'?'user':'admin'}')">${u.role==='admin'?'Quitar admin':'Hacer admin'}</button>
-      <button class="btn secondary" onclick="statusUser('${u._id}','${u.accountStatus==='blocked'?'active':'blocked'}')">${u.accountStatus==='blocked'?'Activar':'Bloquear'}</button>
-      ${u.profilePhoto&&u.verificationStatus!=='verified'?`<button class="btn" onclick="verifyPhoto('${u._id}','verified')">Verificar foto</button>`:''}
-      ${u.accountStatus==='deleted'
-        ?'<span class="pill" style="background:#FEE2E2;color:#991B1B;border-color:#FECACA">Eliminado</span>'
-        :`<button class="btn danger" onclick="deleteUser('${u._id}')">Eliminar</button>`}
-    </td>
-  </tr>`).join('')}</table>`;
+
+  let html=`<h2>Usuarios</h2>${searchBox('loadUsers','Buscar usuario, email o comuna')}
+  <label style="display:flex;align-items:center;gap:8px;margin:8px 0 12px;font-size:13px;color:#475569">
+    <input id="includeDeleted" type="checkbox" onchange="loadUsers()" ${includeDeleted?'checked':''}> Mostrar eliminados
+  </label>
+  <table><tr><th>Usuario</th><th>Datos</th><th>Rol/Estado</th><th>Actividad</th><th>Creación</th><th>Acciones</th></tr>`;
+
+  html+=rows.map(u=>{
+    const deleted=u.accountStatus==='deleted';
+    const makeRole=u.role==='admin'?'user':'admin';
+    const makeStatus=u.accountStatus==='blocked'?'active':'blocked';
+
+    const actions=deleted
+      ? `<span class="pill" style="background:#FEE2E2;color:#991B1B;border-color:#FECACA">Eliminado</span>`
+      : `<button class="btn secondary" onclick="role('${u._id}','${makeRole}')">${u.role==='admin'?'Quitar admin':'Hacer admin'}</button>
+         <button class="btn secondary" onclick="statusUser('${u._id}','${makeStatus}')">${u.accountStatus==='blocked'?'Activar':'Bloquear'}</button>
+         ${u.profilePhoto&&u.verificationStatus!=='verified'?`<button class="btn" onclick="verifyPhoto('${u._id}','verified')">Verificar foto</button>`:''}
+         <button class="btn danger" onclick="deleteUser('${u._id}')">Eliminar</button>`;
+
+    return `<tr>
+      <td>${u.profilePhoto?`<img class="avatar" src="${esc(u.profilePhoto)}">`:''}<br><b>@${esc(u.username)}</b><br>${esc(u.email)}</td>
+      <td>${esc(u.location||'Sin comuna')}<br>⭐ ${Number(u.ratingAvg||0).toFixed(1)} (${u.ratingCount||0})<br>${esc(u.verificationStatus||'pending')}</td>
+      <td><span class="pill">${esc(u.role||'user')}</span><br><span class="pill">${esc(u.accountStatus||'active')}</span></td>
+      <td>${u.totalBooks||0} libros<br>${u.completedExchanges||0} intercambios<br>${esc(u.level||'Aficionado')}</td>
+      <td>${new Date(u.createdAt).toLocaleString('es-CL')}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+
+  html+='</table>';
+  $('content').innerHTML=html;
 }
 
 async function role(id,role){await api('PUT','/api/admin/users/'+id+'/role',{role});loadUsers();summary();}
 async function statusUser(id,status){await api('PUT','/api/admin/users/'+id+'/status',{status});loadUsers();summary();}
 async function deleteUser(id){
-  if(!confirm('¿Eliminar usuario?
-
-El usuario desaparecerá del listado normal y sus libros quedarán no disponibles.'))return;
-  try{
-    const r=await api('DELETE','/api/admin/users/'+id);
-    alert('Usuario eliminado correctamente');
-    await loadUsers();
-    await summary();
-  }catch(e){
-    alert('No se pudo eliminar el usuario: '+e.message);
-  }
-}}
+  if(!confirm('¿Eliminar usuario?\n\nEl usuario desaparecerá del listado normal y sus libros quedarán no disponibles.'))return;
+  try{await api('DELETE','/api/admin/users/'+id);alert('Usuario eliminado correctamente');await loadUsers();await summary();}catch(e){alert('No se pudo eliminar: '+e.message);}
+}
 
 async function loadBooks(){
   const q=$('q')?.value||'';
   const rows=await api('GET','/api/admin/books?q='+encodeURIComponent(q));
-  $('content').innerHTML='<h2>Libros</h2>'+searchBox('loadBooks','Buscar título, autor o género')+
-  `<table><tr><th>Libro</th><th>Dueño</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr>
+  $('content').innerHTML=`<h2>Libros</h2>${searchBox('loadBooks','Buscar título, autor o género')}
+  <table><tr><th>Libro</th><th>Dueño</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr>
   ${rows.map(b=>`<tr>
-    <td>${b.photos?.[0]?`<img style="width:50px;height:68px;object-fit:cover;border-radius:8px" src="${b.photos[0]}">`:''}<br><b>${esc(b.title)}</b><br>${esc(b.author)} · ${esc(b.genre)}</td>
+    <td>${b.photos?.[0]?`<img style="width:50px;height:68px;object-fit:cover;border-radius:8px" src="${esc(b.photos[0])}">`:''}<br><b>${esc(b.title)}</b><br>${esc(b.author)} · ${esc(b.genre)}</td>
     <td>@${esc(b.owner?.username||'—')}<br>${esc(b.owner?.email||'')}</td>
-    <td><span class="pill">${b.available?'Activo':'Intercambiado/no disponible'}</span></td>
+    <td><span class="pill">${b.available?'Activo':'No disponible'}</span></td>
     <td>${new Date(b.createdAt).toLocaleString('es-CL')}</td>
     <td><button class="btn danger" onclick="delBook('${b._id}')">Eliminar libro</button></td>
   </tr>`).join('')}</table>`;
 }
-
 async function delBook(id){if(confirm('¿Eliminar libro?')){await api('DELETE','/api/admin/books/'+id);loadBooks();summary();}}
 
 async function loadExchanges(status){
-  const rows=await api('GET','/api/admin/exchanges?status='+status);
-  $('content').innerHTML=`<h2>Intercambios: ${status}</h2><table><tr><th>Usuarios</th><th>Libros</th><th>Estado</th><th>Confirmaciones</th><th>Actualizado</th></tr>
+  const rows=await api('GET','/api/admin/exchanges?status='+encodeURIComponent(status||'all'));
+  $('content').innerHTML=`<h2>Intercambios</h2><table><tr><th>Usuarios</th><th>Libros</th><th>Estado</th><th>Fecha</th></tr>
   ${rows.map(x=>`<tr>
-    <td>${(x.participants||[]).map(u=>'@'+esc(u.username)+'<br>'+esc(u.email)).join('<hr>')}</td>
+    <td>${((x.participants||[]).map(p=>'@'+esc(p.username)+'<br>'+esc(p.email)).join('<hr>'))}</td>
     <td>${esc(x.myBook?.title||'—')} ⇄ ${esc(x.theirBook?.title||'—')}</td>
     <td><span class="pill">${esc(x.status)}</span></td>
-    <td>${(x.confirmations||[]).length}/2</td>
     <td>${new Date(x.updatedAt).toLocaleString('es-CL')}</td>
   </tr>`).join('')}</table>`;
 }
 
 async function loadReports(){
   const rows=await api('GET','/api/admin/reports');
-  $('content').innerHTML=`<h2>Reportes</h2><table><tr><th>Reporta</th><th>Reportado/libro</th><th>Motivo</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr>
+  $('content').innerHTML=`<h2>Reportes / Contacto admin</h2><table><tr><th>Reporta</th><th>Reportado/libro</th><th>Motivo</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr>
   ${rows.map(r=>`<tr>
     <td>@${esc(r.reporter?.username||'—')}<br>${esc(r.reporter?.email||'')}</td>
     <td>${r.reportedUser?'@'+esc(r.reportedUser.username):''}${r.book?'<br>📘 '+esc(r.book.title):''}</td>
     <td>${esc(r.reason)}</td>
     <td><span class="pill">${esc(r.status)}</span></td>
     <td>${new Date(r.createdAt).toLocaleString('es-CL')}</td>
-    <td><button class="btn secondary" onclick="reportStatus('${r._id}','reviewing')">Revisando</button><button class="btn secondary" onclick="reportStatus('${r._id}','resolved')">Resuelto</button><button class="btn secondary" onclick="reportStatus('${r._id}','dismissed')">Descartar</button></td>
+    <td><button class="btn secondary" onclick="reportStatus('${r._id}','reviewing')">Revisando</button> <button class="btn secondary" onclick="reportStatus('${r._id}','resolved')">Resuelto</button> <button class="btn secondary" onclick="reportStatus('${r._id}','dismissed')">Descartar</button></td>
   </tr>`).join('')}</table>`;
 }
-
 async function reportStatus(id,status){await api('PUT','/api/admin/reports/'+id,{status});loadReports();summary();}
 
 async function loadVerifications(){
   const rows=await api('GET','/api/admin/verifications');
   $('content').innerHTML=`<h2>Verificación de fotos de perfil</h2>
-  <p style="color:#64748B;font-size:14px">Aprueba o rechaza las fotos de rostro subidas por los usuarios.</p>
-  ${!rows.length?'<div style="padding:26px;text-align:center;color:#64748B">No hay fotos pendientes de verificación.</div>':
+  ${!rows.length?'<div style="padding:26px;text-align:center;color:#64748B">No hay fotos pendientes.</div>':
   `<table><tr><th>Foto</th><th>Usuario</th><th>Datos</th><th>Estado</th><th>Acciones</th></tr>
-    ${rows.map(u=>`<tr>
-      <td>${u.profilePhoto?`<a href="${u.profilePhoto}" target="_blank"><img class="avatar" src="${u.profilePhoto}" style="width:76px;height:76px"></a>`:'Sin foto'}</td>
-      <td><b>@${esc(u.username)}</b><br>${esc(u.email)}</td>
-      <td>${esc(u.location||'Sin comuna')}<br>${u.completedExchanges||0} intercambios<br>${esc(u.level||'Aficionado')}</td>
-      <td><span class="pill">${esc(u.verificationStatus||'pending')}</span></td>
-      <td><button class="btn" onclick="verifyPhoto('${u._id}','verified')">Aprobar foto</button><button class="btn secondary" onclick="verifyPhoto('${u._id}','rejected')">Rechazar</button></td>
-    </tr>`).join('')}</table>`}`;
+  ${rows.map(u=>`<tr>
+    <td>${u.profilePhoto?`<a href="${esc(u.profilePhoto)}" target="_blank"><img class="avatar" src="${esc(u.profilePhoto)}" style="width:76px;height:76px"></a>`:'Sin foto'}</td>
+    <td><b>@${esc(u.username)}</b><br>${esc(u.email)}</td>
+    <td>${esc(u.location||'Sin comuna')}<br>${u.completedExchanges||0} intercambios<br>${esc(u.level||'Aficionado')}</td>
+    <td><span class="pill">${esc(u.verificationStatus||'pending')}</span></td>
+    <td><button class="btn" onclick="verifyPhoto('${u._id}','verified')">Aprobar</button> <button class="btn secondary" onclick="verifyPhoto('${u._id}','rejected')">Rechazar</button></td>
+  </tr>`).join('')}</table>`}`;
 }
-
-async function verifyPhoto(id,status){
-  await api('PUT','/api/admin/users/'+id+'/verification',{status});
-  await summary();
-  await loadVerifications();
-}
+async function verifyPhoto(id,status){await api('PUT','/api/admin/users/'+id+'/verification',{status});await summary();await loadVerifications();}
 
 async function loadActions(){
   const rows=await api('GET','/api/admin/actions');
@@ -234,7 +244,15 @@ async function loadActions(){
   </tr>`).join('')}</table>`;
 }
 
-refresh();
+window.loadUsers=loadUsers;
+window.loadBooks=loadBooks;
+window.loadReports=loadReports;
+window.loadVerifications=loadVerifications;
+window.loadActions=loadActions;
+window.refresh=refresh;
+document.addEventListener('DOMContentLoaded',refresh);
+setTimeout(()=>{if($('loading')&&$('loading').style.display!=='none')showNoAccess('El panel tardó demasiado en abrir. Recarga la página o verifica que el deploy esté activo.');},18000);
+
 </script>
 </body>
 </html>

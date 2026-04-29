@@ -1305,7 +1305,70 @@ function appendMsg2(msg){
 /* ══════════════════════════════════════════════════
    PERFIL
    ══════════════════════════════════════════════════ */
-async function reportUser(userId,type='user',bookId=null){const reason=prompt('Describe brevemente el motivo del reporte:');if(!reason||!reason.trim())return;try{await api('POST','/api/support/report',{reportedUserId:userId,bookId,type,reason});toast('Reporte enviado','success')}catch(e){toast(e.message,'error')}}
+
+function openAdminContactForm({reportedUserId=null,bookId=null,type='user'}={}){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.62);backdrop-filter:blur(4px);z-index:1000007;display:flex;align-items:center;justify-content:center;padding:18px';
+
+  ov.innerHTML=`
+    <div style="width:min(520px,94vw);background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;padding:22px;box-shadow:0 24px 70px rgba(15,23,42,.25)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px">
+        <div>
+          <div style="font-family:Fraunces,serif;font-size:23px;font-weight:900;color:#111827">Contactar administrador</div>
+          <div style="font-size:13px;color:#64748B;margin-top:3px">Formulario de soporte. No es chat en tiempo real.</div>
+        </div>
+        <button id="admin-contact-close" style="width:36px;height:36px;border-radius:999px;border:1px solid #BFDBFE;background:#EFF6FF;color:#111827;font-size:20px;font-weight:900;cursor:pointer">×</button>
+      </div>
+
+      <label style="font-size:11px;font-weight:900;color:#64748B;text-transform:uppercase">Asunto</label>
+      <select id="admin-contact-subject" style="width:100%;margin:6px 0 12px;padding:11px;border-radius:12px;border:1px solid #BFDBFE;background:#F8FAFC;color:#111827">
+        <option>Reporte por posible mal uso</option>
+        <option>Problema con un intercambio</option>
+        <option>Usuario sospechoso</option>
+        <option>Problema técnico</option>
+        <option>Otro</option>
+      </select>
+
+      <label style="font-size:11px;font-weight:900;color:#64748B;text-transform:uppercase">Mensaje</label>
+      <textarea id="admin-contact-message" rows="6" placeholder="Describe qué ocurrió. Mientras más detalle, mejor podrá ayudarte el administrador." style="width:100%;box-sizing:border-box;margin-top:6px;padding:12px;border-radius:14px;border:1px solid #BFDBFE;background:#F8FAFC;color:#111827;resize:vertical;font-family:inherit"></textarea>
+
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button id="admin-contact-cancel" style="flex:1;padding:12px;border-radius:12px;background:#EFF6FF;border:1px solid #BFDBFE;color:#2563EB;font-weight:900;cursor:pointer">Cancelar</button>
+        <button id="admin-contact-send" style="flex:1;padding:12px;border-radius:12px;background:#3B82F6;border:none;color:#fff;font-weight:900;cursor:pointer">Enviar reporte</button>
+      </div>
+    </div>`;
+
+  const close=()=>ov.remove();
+  document.body.appendChild(ov);
+
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+  $('admin-contact-close')?.addEventListener('click',close);
+  $('admin-contact-cancel')?.addEventListener('click',close);
+
+  $('admin-contact-send')?.addEventListener('click',async()=>{
+    const btn=$('admin-contact-send');
+    const subject=$('admin-contact-subject')?.value||'Reporte';
+    const message=$('admin-contact-message')?.value||'';
+    if(!message.trim()){toast('Escribe un mensaje para el administrador','error');return;}
+
+    try{
+      btn.disabled=true;
+      btn.textContent='Enviando...';
+      await api('POST','/api/support/contact-admin',{subject,message,reportedUserId,bookId,type});
+      toast('Mensaje enviado al administrador','success');
+      close();
+    }catch(e){
+      toast(e.message,'error');
+      btn.disabled=false;
+      btn.textContent='Enviar reporte';
+    }
+  });
+}
+
+async function reportUser(userId,type='user',bookId=null){
+  openAdminContactForm({reportedUserId:userId,bookId,type});
+}
+
 async function blockUser(userId){if(!confirm('¿Bloquear a este usuario?'))return;try{await api('POST','/api/support/block/'+userId,{});toast('Usuario bloqueado','success');showMatches?.()}catch(e){toast(e.message,'error')}}
 async function deleteMyAccount(){if(!confirm('Esta acción eliminará tu cuenta. ¿Continuar?'))return;if(!confirm('Confirmación final: tu cuenta quedará eliminada.'))return;try{await api('DELETE','/api/support/account');localStorage.removeItem('bs_token');localStorage.removeItem('bs_user');TOKEN='';ME=null;updateNavProfilePhoto?.();toast('Cuenta eliminada','success');showAuth('login')}catch(e){toast(e.message,'error')}}
 
@@ -1349,6 +1412,7 @@ async function showProfile(){
         </div>
         <button id="psave" onclick="pgSave()" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px">Guardar cambios</button>
         ${IS_ADMIN?`${IS_ADMIN?`<button onclick="window.location.href='/admin'" style="width:100%;padding:14px;background:#111827;color:#FFFFFF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px">⚙️ Abrir panel admin</button>`:''}`:''}
+        <button onclick="openAdminContactForm({type:'contact_admin'})" style="width:100%;padding:13px;background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:800;margin-top:10px;cursor:pointer">Contactar administrador</button>
         <button onclick="deleteMyAccount()" style="width:100%;padding:14px;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;font-size:14px;color:#991B1B;font-weight:800;cursor:pointer;margin-bottom:10px">Eliminar cuenta</button>
         <button onclick="doLogout()" style="width:100%;padding:14px;background:transparent;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;color:#6B7280;cursor:pointer">Cerrar sesión</button>
       </div>`);
