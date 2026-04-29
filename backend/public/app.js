@@ -373,8 +373,8 @@ function showAuth(tab){
       <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #BFDBFE;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
         
-        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:0 0 6px">
-          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(680px,90vw);max-width:100%;height:auto;max-height:210px;object-fit:contain;filter:drop-shadow(0 8px 20px rgba(0,0,0,.32))">
+        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:0 0 2px">
+          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(520px,82vw);max-width:100%;height:auto;max-height:160px;object-fit:contain;filter:drop-shadow(0 7px 18px rgba(0,0,0,.28))">
         </div>
         <div style="font-size:14px;color:#FFFFFF;margin-top:4px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
       </div>
@@ -604,14 +604,14 @@ async function showDiscover(){
         >${esc(g)}</button>`).join('')}
     </div>
     <div style="display:flex;gap:8px;padding:0 16px 10px">
-      <input id="cin" type="text" value="${esc(CITY)}" placeholder="🏙 Filtrar por ciudad..."
+      <input id="cin" type="text" value="${esc(CITY)}" placeholder="🏙 Filtrar por comuna..."
         style="flex:1;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:9px 14px;font-size:13px;color:#111827;outline:none"
         onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'"
         onkeydown="if(event.key==='Enter'){CITY=$('cin').value.trim();loadQueue()}">
       <button onclick="CITY=$('cin').value.trim();loadQueue()"
         style="padding:9px 16px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Buscar</button>
     </div>
-    <div style="display:flex;gap:8px;padding:0 16px 12px">
+    <div style="display:flex;gap:8px;padding:0 16px 12px;max-width:400px;margin:0 auto;justify-content:center">
       <button id="mode-swipe" onclick="setDiscoverMode('swipe')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='swipe'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='swipe'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='swipe'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">🔥 Deslizar</button>
       <button id="mode-catalog" onclick="setDiscoverMode('catalog')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='catalog'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='catalog'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='catalog'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">📚 Catálogo</button>
     </div>
@@ -919,7 +919,7 @@ function drawBooksGrid(){
       </div>
       <div style="padding:10px 12px">
         <div style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.title)}</div>
-        <div style="font-size:11px;color:#6B7280;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.author)}</div>
+        <div style="font-size:11px;color:#6B7280;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.author)}</div><div style="font-size:10px;color:#94A3B8;margin-bottom:8px">Agregado: ${new Date(b.createdAt||b.updatedAt||Date.now()).toLocaleDateString('es-CL')}</div>
         <div style="display:flex;gap:6px">
           <button onclick="openBookModal('${b._id}')" style="flex:1;padding:7px 4px;border-radius:8px;font-size:11px;font-weight:500;border:1px solid #BFDBFE;color:#6B7280;background:#EFF6FF;cursor:pointer">Editar</button>
           <button onclick="deleteBook('${b._id}')" style="flex:1;padding:7px 4px;border-radius:8px;font-size:11px;font-weight:500;border:1px solid rgba(212,90,74,.2);color:rgba(212,90,74,.7);background:rgba(212,90,74,.06);cursor:pointer">Eliminar</button>
@@ -1110,11 +1110,15 @@ function drawMatches(){
       <div style="margin:0 16px 10px;background:${isExchangeDone(m)?'#DCFCE7':'#EFF6FF'};border:1px solid ${isExchangeDone(m)?'#86EFAC':'#BFDBFE'};border-radius:10px;padding:10px;font-size:12px;color:${isExchangeDone(m)?'#166534':'#6B7280'}">
         Estado del intercambio: <strong style="color:${isExchangeDone(m)?'#166534':'#111827'}">${isExchangeDone(m)?'Intercambio hecho':(m.exchangeState?.label||'Coordinando')}</strong>
       </div>
-      <div style="display:flex;gap:8px;padding:0 16px 16px;flex-wrap:wrap">
-        <button onclick="openChat(${i})" style="flex:1;padding:11px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">💬 Chat</button>
-        <button onclick="confirmExchange(${i})" style="flex:1;padding:11px;background:#10B981;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">✅ Intercambiado</button>
-        <button onclick="reportUser('${m.matchedUser.id}','user')" style="padding:11px;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Reportar</button>
-        <button onclick="blockUser('${m.matchedUser.id}')" style="padding:11px;background:#111827;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Bloquear</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;padding:0 16px 16px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;justify-content:flex-start;flex:1;min-width:230px">
+          <button onclick="openChat(${i})" style="width:112px;padding:11px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">💬 Chat</button>
+          <button onclick="confirmExchange(${i})" style="width:112px;padding:11px;background:#10B981;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">✅ Hecho</button>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex:1;min-width:230px">
+          <button onclick="reportUser('${m.matchedUser.id}','user')" style="width:112px;padding:11px;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">Reportar</button>
+          <button onclick="blockUser('${m.matchedUser.id}')" style="width:112px;padding:11px;background:#991B1B;color:#FFFFFF;border:1px solid #7F1D1D;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">Bloquear</button>
+        </div>
       </div>
     </div>`).join('');
 }
@@ -1136,14 +1140,50 @@ async function showChats(){
   updateBadge();
   if(!requireLogin())return;
   document.querySelector('.fab-btn')?.remove();
-  setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Chats</div><div style="font-size:12px;color:#6B7280;margin-top:2px">Conversaciones con tus matches</div></div><button onclick="loadNotifications();showNotifications?.()" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#3B82F6;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800">🔔 ${NOTIFS?.unread||0}</button></div><div id="clist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:12px"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
+  setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Chats</div><div style="font-size:12px;color:#6B7280;margin-top:2px">Conversaciones con tus matches</div></div><button onclick="loadNotifications();showNotifications?.()" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#3B82F6;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800">🔔 ${NOTIFS?.unread||0}</button></div><div id="clist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:12px;max-width:560px;margin:0 auto;width:100%"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
   try{await syncChatUnreadFromServer();MATCHES=await api('GET','/api/swipes/matches')||[];drawChats();}catch(e){toast(e.message,'error');}
 }
+
+const CHAT_PREVIEWS = {};
+async function loadChatPreview(room){
+  if(!room)return;
+  try{
+    const msgs=await api('GET','/api/chat/'+room);
+    const last=Array.isArray(msgs)&&msgs.length?msgs[msgs.length-1]:null;
+    CHAT_PREVIEWS[room]=last||null;
+    const el=document.querySelector(`[data-preview-room="${CSS.escape(room)}"]`);
+    if(!el)return;
+    if(!last){
+      el.textContent='Sin mensajes aún';
+      return;
+    }
+    const mine=(last.sender?._id||last.sender?.id||last.sender||'').toString()===getCurrentUserId();
+    el.innerHTML=`${mine?'<span style="color:#3B82F6;font-weight:800">Tú: </span>':''}${esc(last.text||'')}`;
+    const ticks=document.querySelector(`[data-ticks-room="${CSS.escape(room)}"]`);
+    if(ticks)ticks.innerHTML=mine?'<span style="color:#3B82F6;font-weight:900">✓✓</span>':'';
+  }catch(e){}
+}
+function loadChatPreviews(){
+  document.querySelectorAll('[data-preview-room]').forEach(el=>loadChatPreview(el.getAttribute('data-preview-room')));
+}
+
 function drawChats(){
   const c=$('clist');if(!c)return;
+  c.style.maxWidth='560px';
+  c.style.margin='0 auto';
+  c.style.width='100%';
   if(!MATCHES.length){c.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.45">💬</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin chats todavía</div><div style="font-size:13px;color:#6B7280">Cuando tengas matches, tus conversaciones aparecerán aquí.</div></div>`;return;}
-  const myId=getCurrentUserId();
-  c.innerHTML=MATCHES.map((m,i)=>{const r=matchRoomId(m);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:100%;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)"><div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div><div style="flex:1;min-width:0"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div><div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando intercambio')}</div></div>${unread?`<span title="Mensajes sin leer" style="background:#EF4444;color:#fff;border-radius:999px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid #fff;box-shadow:0 6px 14px rgba(239,68,68,.28);flex-shrink:0">${unread>9?'9+':unread}</span>`:''}</button>`}).join('');
+  c.innerHTML=MATCHES.map((m,i)=>{const r=matchRoomId(m);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:min(100%,560px);margin:0 auto;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)">
+    <div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div>
+      <div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div>
+      <div data-preview-room="${esc(r)}" style="font-size:12px;color:#334155;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cargando último mensaje...</div>
+      <div style="font-size:11px;color:#9CA3AF;margin-top:3px;display:flex;align-items:center;gap:6px"><span>${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando intercambio')}</span><span data-ticks-room="${esc(r)}"></span></div>
+    </div>
+    ${unread?`<span title="Mensajes sin leer" style="background:#EF4444;color:#fff;border-radius:999px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid #fff;box-shadow:0 6px 14px rgba(239,68,68,.28);flex-shrink:0">${unread>9?'9+':unread}</span>`:''}
+  </button>`}).join('');
+  loadChatPreviews();
 }
 
 async function showHistory(){
@@ -1152,14 +1192,14 @@ async function showHistory(){
   setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between">
     <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Historial</div>
     <button onclick="showNotifications()" style="position:relative;background:#EFF6FF;border:1px solid #BFDBFE;color:#3B82F6;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700">🔔 <span>${NOTIFS?.unread||0}</span></button>
-  </div><div id="hlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:14px"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
+  </div><div id="hlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:14px;max-width:560px;margin:0 auto;width:100%"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
   try{HISTORY=await api('GET','/api/exchanges/history');drawHistory();}catch(e){toast(e.message,'error');}
 }
 function drawHistory(){
   const h=$('hlist');if(!h)return;
   if(!HISTORY.length){h.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.45">📜</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin historial aún</div><div style="font-size:13px;color:#6B7280">Cuando ambos confirmen un intercambio aparecerá aquí.</div></div>`;return;}
   const myId=getCurrentUserId();
-  h.innerHTML=HISTORY.map(x=>{const other=(String(x.requester?._id||x.requester?.id)===String(myId))?x.matchedUser:x.requester;const doneLabel=x.state?.label||'Intercambio hecho';return `<div style="position:relative;background:#FFFFFF;border:1px solid #BBF7D0;border-radius:16px;padding:16px;box-shadow:0 10px 28px rgba(22,101,52,.08)">
+  h.innerHTML=HISTORY.map(x=>{const other=(String(x.requester?._id||x.requester?.id)===String(myId))?x.matchedUser:x.requester;const doneLabel=x.state?.label||'Intercambio hecho';return `<div style="position:relative;background:#FFFFFF;border:1px solid #BBF7D0;border-radius:16px;padding:16px;box-shadow:0 10px 28px rgba(22,101,52,.08);width:min(100%,560px);margin:0 auto;box-sizing:border-box">
     <div title="Intercambio confirmado por ambas partes" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:#22C55E;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;box-shadow:0 8px 22px rgba(34,197,94,.35);z-index:2">✓</div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:44px;height:44px;border-radius:50%;background:#3B82F6;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;overflow:hidden">${other?.profilePhoto?`<img src="${esc(other.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(other?.username)}</div><div style="flex:1"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827">@${esc(other?.username||'Usuario')}</div><div style="font-size:12px;color:#6B7280">${levelEmoji(other?.level)} ${esc(other?.level||'Aficionado')} · ${other?.completedExchanges||0} intercambios</div></div><span style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;border-radius:999px;padding:4px 34px 4px 10px;font-size:11px;font-weight:900">Intercambio hecho</span></div>
     <div style="display:flex;gap:8px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px"><div style="flex:1"><div style="font-size:9px;color:#9CA3AF;font-weight:800;text-transform:uppercase">Tu libro</div><div style="font-weight:700;color:#111827;font-size:13px">${esc(x.myBook?.title||'—')}</div><div style="font-size:11px;color:#6B7280">${esc(x.myBook?.author||'')}</div></div><div style="font-size:20px;color:#3B82F6;display:flex;align-items:center">⇄</div><div style="flex:1;text-align:right"><div style="font-size:9px;color:#9CA3AF;font-weight:800;text-transform:uppercase">Recibido</div><div style="font-weight:700;color:#111827;font-size:13px">${esc(x.theirBook?.title||'—')}</div><div style="font-size:11px;color:#6B7280">${esc(x.theirBook?.author||'')}</div></div></div>
@@ -1296,7 +1336,7 @@ function appendMsg2(msg){
 
   el.style.cssText = `max-width:78%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.4;word-break:break-word;align-self:${mine?'flex-end':'flex-start'};${mine?'background:#3B82F6;color:#FFFFFF;border-bottom-right-radius:4px':'background:#DBEAFE;color:#111827;border:1px solid #BFDBFE;border-bottom-left-radius:4px'}`;
 
-  el.innerHTML = `<div>${esc(msg.text)}</div><div style="font-size:10px;opacity:.6;margin-top:3px;${mine?'text-align:right':''}">${fmtT(msg.createdAt || new Date())}</div>`;
+  el.innerHTML = `<div>${esc(msg.text)}</div><div style="font-size:10px;opacity:.75;margin-top:3px;${mine?'text-align:right':''}">${fmtT(msg.createdAt || new Date())}${mine?' <span style="font-weight:900;margin-left:4px">✓✓</span>':''}</div>`;
 
   b.appendChild(el);
   b.scrollTop = b.scrollHeight;
@@ -1410,11 +1450,13 @@ async function showProfile(){
             style="padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid;transition:all .15s;
             ${sg.includes(g)?'background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35);color:#3B82F6':'background:#EFF6FF;border-color:#BFDBFE;color:#6B7280'}">${g}</button>`).join('')}
         </div>
-        <button id="psave" onclick="pgSave()" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px">Guardar cambios</button>
-        ${IS_ADMIN?`${IS_ADMIN?`<button onclick="window.location.href='/admin'" style="width:100%;padding:14px;background:#111827;color:#FFFFFF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px">⚙️ Abrir panel admin</button>`:''}`:''}
-        <button onclick="openAdminContactForm({type:'contact_admin'})" style="width:100%;padding:13px;background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:800;margin-top:10px;cursor:pointer">Contactar administrador</button>
-        <button onclick="deleteMyAccount()" style="width:100%;padding:14px;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;font-size:14px;color:#991B1B;font-weight:800;cursor:pointer;margin-bottom:10px">Eliminar cuenta</button>
-        <button onclick="doLogout()" style="width:100%;padding:14px;background:transparent;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;color:#6B7280;cursor:pointer">Cerrar sesión</button>
+        <div style="max-width:400px;margin:0 auto;display:flex;flex-direction:column;gap:10px">
+          <button id="psave" onclick="pgSave()" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">Guardar cambios</button>
+          ${IS_ADMIN?`${IS_ADMIN?`<button onclick="window.location.href='/admin'" style="width:100%;padding:14px;background:#111827;color:#FFFFFF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer">⚙️ Abrir panel admin</button>`:''}`:''}
+          <button onclick="openAdminContactForm({type:'contact_admin'})" style="width:100%;padding:13px;background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer">Contactar administrador</button>
+          <button onclick="deleteMyAccount()" style="width:100%;padding:14px;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;font-size:14px;color:#991B1B;font-weight:800;cursor:pointer">Eliminar cuenta</button>
+          <button onclick="doLogout()" style="width:100%;padding:14px;background:transparent;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;color:#6B7280;cursor:pointer">Cerrar sesión</button>
+        </div>
       </div>`);
     window._pg=sg;
     window.pgToggle=g=>{const has=window._pg.includes(g);if(has)window._pg=window._pg.filter(x=>x!==g);else window._pg.push(g);const btn=$('pg-'+g);if(!btn)return;const on=window._pg.includes(g);btn.style.background=on?'rgba(59,130,246,.12)':'#EFF6FF';btn.style.borderColor=on?'rgba(59,130,246,.35)':'#BFDBFE';btn.style.color=on?'#3B82F6':'#6B7280';};
