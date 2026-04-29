@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>BookTrade Admin Pro</title>
+<!-- admin-delete-fix-v1 -->
 <style>
 body{margin:0;background:#F8FAFC;color:#111827;font-family:Arial,sans-serif}
 header{position:sticky;top:0;background:#fff;border-bottom:1px solid #BFDBFE;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;z-index:10}
@@ -120,9 +121,10 @@ function searchBox(fn,ph){
 
 async function loadUsers(){
   const q=$('q')?.value||'';
-  const rows=await api('GET','/api/admin/users?q='+encodeURIComponent(q));
+  const includeDeleted=document.getElementById('includeDeleted')?.checked?'&includeDeleted=true':'';
+  const rows=await api('GET','/api/admin/users?q='+encodeURIComponent(q)+includeDeleted);
   $('content').innerHTML='<h2>Usuarios</h2>'+searchBox('loadUsers','Buscar usuario, email o comuna')+
-  `<table><tr><th>Usuario</th><th>Datos</th><th>Rol/Estado</th><th>Actividad</th><th>Creación</th><th>Acciones</th></tr>
+  `<label style="display:flex;align-items:center;gap:8px;margin:8px 0 12px;font-size:13px;color:#475569"><input id="includeDeleted" type="checkbox" onchange="loadUsers()"> Mostrar eliminados</label><table><tr><th>Usuario</th><th>Datos</th><th>Rol/Estado</th><th>Actividad</th><th>Creación</th><th>Acciones</th></tr>
   ${rows.map(u=>`<tr>
     <td>${u.profilePhoto?`<img class="avatar" src="${u.profilePhoto}">`:''}<br><b>@${esc(u.username)}</b><br>${esc(u.email)}</td>
     <td>${esc(u.location||'Sin comuna')}<br>⭐ ${Number(u.ratingAvg||0).toFixed(1)} (${u.ratingCount||0})<br>${esc(u.verificationStatus||'pending')}</td>
@@ -133,14 +135,28 @@ async function loadUsers(){
       <button class="btn secondary" onclick="role('${u._id}','${u.role==='admin'?'user':'admin'}')">${u.role==='admin'?'Quitar admin':'Hacer admin'}</button>
       <button class="btn secondary" onclick="statusUser('${u._id}','${u.accountStatus==='blocked'?'active':'blocked'}')">${u.accountStatus==='blocked'?'Activar':'Bloquear'}</button>
       ${u.profilePhoto&&u.verificationStatus!=='verified'?`<button class="btn" onclick="verifyPhoto('${u._id}','verified')">Verificar foto</button>`:''}
-      <button class="btn danger" onclick="deleteUser('${u._id}')">Eliminar</button>
+      ${u.accountStatus==='deleted'
+        ?'<span class="pill" style="background:#FEE2E2;color:#991B1B;border-color:#FECACA">Eliminado</span>'
+        :`<button class="btn danger" onclick="deleteUser('${u._id}')">Eliminar</button>`}
     </td>
   </tr>`).join('')}</table>`;
 }
 
 async function role(id,role){await api('PUT','/api/admin/users/'+id+'/role',{role});loadUsers();summary();}
 async function statusUser(id,status){await api('PUT','/api/admin/users/'+id+'/status',{status});loadUsers();summary();}
-async function deleteUser(id){if(confirm('¿Eliminar usuario?')){await api('DELETE','/api/admin/users/'+id);loadUsers();summary();}}
+async function deleteUser(id){
+  if(!confirm('¿Eliminar usuario?
+
+El usuario desaparecerá del listado normal y sus libros quedarán no disponibles.'))return;
+  try{
+    const r=await api('DELETE','/api/admin/users/'+id);
+    alert('Usuario eliminado correctamente');
+    await loadUsers();
+    await summary();
+  }catch(e){
+    alert('No se pudo eliminar el usuario: '+e.message);
+  }
+}}
 
 async function loadBooks(){
   const q=$('q')?.value||'';
