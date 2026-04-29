@@ -1473,6 +1473,23 @@ setInterval(forceShowNav,1000);
 window.showForgotPassword=showForgotPassword;
 window.sendForgotPassword=sendForgotPassword;
 
- if(ME)ME.onboardingCompleted=false; showOnboarding();};
 
-window.showOnboardingGuide=function(){try{localStorage.removeItem(onboardingKey())}catch{}; if(ME)ME.onboardingCompleted=false; showOnboarding(true);};
+
+/* Safe onboarding guide export */
+window.showOnboardingGuide=function(){
+  try{localStorage.removeItem(onboardingKey())}catch{}
+  if(ME)ME.onboardingCompleted=false;
+  showOnboarding(true);
+};
+
+/* Safe global exports for inline onclick buttons */
+try{
+  window.showDiscover=showDiscover;
+  window.showBooks=showBooks;
+  window.showMatches=showMatches;
+  window.showChats=showChats;
+  window.showHistory=showHistory;
+  window.showProfile=showProfile;
+  window.showNotifications=showNotifications;
+  window.forceLogout=forceLogout;
+}catch(e){console.warn('global exports error',e);}
