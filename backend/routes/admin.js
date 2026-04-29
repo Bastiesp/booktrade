@@ -7,16 +7,36 @@ async function requireAdmin(req,res,next){const u=await User.findById(req.userId
 async function log(req,action,targetType,targetId,detail={}){try{await AdminAction.create({admin:req.adminUser._id,action,targetType,targetId:String(targetId||''),detail})}catch{}}
 router.get('/whoami',auth,async(req,res)=>{const u=await User.findById(req.userId).select('-password');const isAdmin=!!u&&(u.role==='admin'||adminEmails().includes(String(u.email).toLowerCase()));res.json({ok:true,isAdmin,user:u?{id:u._id,username:u.username,email:u.email,role:u.role,accountStatus:u.accountStatus}:null})});
 router.get('/summary',auth,requireAdmin,async(req,res)=>{const start=new Date(new Date().getFullYear(),new Date().getMonth(),1);const vals=await Promise.all([User.countDocuments({accountStatus:{$ne:'deleted'}}),User.countDocuments({role:'admin'}),User.countDocuments({accountStatus:'blocked'}),User.countDocuments({accountStatus:'deleted'}),Book.countDocuments(),Book.countDocuments({available:true}),Exchange.countDocuments({status:'completed'}),Exchange.countDocuments({status:'pending'}),Message.countDocuments(),Report.countDocuments({status:'open'}),User.countDocuments({profilePhoto:{$ne:''},verificationStatus:'pending'}),User.countDocuments({createdAt:{$gte:start}})]);res.json({users:vals[0],admins:vals[1],blocked:vals[2],deleted:vals[3],books:vals[4],activeBooks:vals[5],completed:vals[6],pending:vals[7],messages:vals[8],reportsOpen:vals[9],pendingVerifications:vals[10],newUsersMonth:vals[11]})});
-router.get('/users',auth,requireAdmin,async(req,res)=>{const q=String(req.query.q||'').trim();const filter=q?{$or:[{username:new RegExp(q,'i')},{email:new RegExp(q,'i')},{location:new RegExp(q,'i')}]}:{};const users=await User.find(filter).select('-password').sort({createdAt:-1}).limit(500);const ids=users.map(u=>u._id);const counts=await Book.aggregate([{$match:{owner:{$in:ids}}},{$group:{_id:'$owner',total:{$sum:1},active:{$sum:{$cond:['$available',1,0]}}}}]);const m={};counts.forEach(x=>m[String(x._id)]=x);res.json(users.map(u=>{const o=u.toJSON();o.totalBooks=m[String(u._id)]?.total||0;o.activeBooks=m[String(u._id)]?.active||0;return o}))});
-router.get('/books',auth,requireAdmin,async(req,res)=>{const q=String(req.query.q||'').trim();const filter=q?{$or:[{title:new RegExp(q,'i')},{author:new RegExp(q,'i')},{genre:new RegExp(q,'i')}]}:{};res.json(await Book.find(filter).populate('owner','username email location role accountStatus profilePhoto level completedExchanges verificationStatus').sort({createdAt:-1}).limit(500))});
-router.get('/exchanges',auth,requireAdmin,async(req,res)=>{const status=req.query.status;const filter=status&&status!=='all'?{status}:{};res.json(await Exchange.find(filter).populate('participants','username email location role accountStatus').populate('requester','username email').populate('matchedUser','username email').populate('myBook','title author').populate('theirBook','title author').sort({updatedAt:-1}).limit(500))});
-router.get('/reports',auth,requireAdmin,async(req,res)=>{res.json(await Report.find().populate('reporter','username email').populate('reportedUser','username email accountStatus').populate('book','title author').sort({createdAt:-1}).limit(300))});
-router.put('/reports/:id',auth,requireAdmin,async(req,res)=>{const r=await Report.findByIdAndUpdate(req.params.id,{status:req.body.status,adminNote:req.body.adminNote},{new:true});await log(req,'update_report','report',req.params.id,req.body);res.json(r)});
-router.get('/actions',auth,requireAdmin,async(req,res)=>{res.json(await AdminAction.find().populate('admin','username email').sort({createdAt:-1}).limit(300))});
-router.get('/verifications',auth,requireAdmin,async(req,res)=>{res.json(await User.find({profilePhoto:{$ne:''},verificationStatus:'pending'}).select('-password').sort({updatedAt:-1}).limit(200))});
-router.put('/users/:id/verification',auth,requireAdmin,async(req,res)=>{const u=await User.findByIdAndUpdate(req.params.id,{verificationStatus:req.body.status},{new:true}).select('-password');await log(req,'verify_user','user',req.params.id,req.body);res.json(u)});
-router.put('/users/:id/role',auth,requireAdmin,async(req,res)=>{const u=await User.findByIdAndUpdate(req.params.id,{role:req.body.role},{new:true}).select('-password');await log(req,'change_role','user',req.params.id,req.body);res.json(u)});
-router.put('/users/:id/status',auth,requireAdmin,async(req,res)=>{const u=await User.findByIdAndUpdate(req.params.id,{accountStatus:req.body.status},{new:true}).select('-password');await log(req,req.body.status==='blocked'?'block_user':'activate_user','user',req.params.id,req.body);res.json(u)});
-router.delete('/users/:id',auth,requireAdmin,async(req,res)=>{const u=await User.findByIdAndUpdate(req.params.id,{accountStatus:'deleted',deletedAt:new Date()},{new:true}).select('-password');await log(req,'delete_user','user',req.params.id,{soft:true});res.json({ok:true,user:u})});
+router.get('/users',auth,requireAdmin,async(req,res)=>{
+  const q=String(req.query.q||'').trim();
+  const includeDeleted=String(req.query.includeDeleted||'')==='true';
+
+  const baseFilter=includeDeleted?{}:{accountStatus:{$ne:'deleted'}};
+  const searchFilter=q?{$or:[
+    {username:new RegExp(q,'i')},
+    {email:new RegExp(q,'i')},
+    {location:new RegExp(q,'i')}
+  ]}:{};
+
+  const filter=q?{$and:[baseFilter,searchFilter]}:baseFilter;
+
+  const users=await User.find(filter).select('-password -resetPasswordToken -resetPasswordExpires').sort({createdAt:-1}).limit(500);
+  const ids=users.map(u=>u._id);
+
+  const counts=await Book.aggregate([
+    {$match:{owner:{$in:ids}}},
+    {$group:{_id:'$owner',total:{$sum:1},active:{$sum:{$cond:['$available',1,0]}}}}
+  ]);
+
+  const m={};
+  counts.forEach(x=>m[String(x._id)]=x);
+
+  res.json(users.map(u=>{
+    const o=u.toJSON();
+    o.totalBooks=m[String(u._id)]?.total||0;
+    o.activeBooks=m[String(u._id)]?.active||0;
+    return o;
+  }));
+});
 router.delete('/books/:id',auth,requireAdmin,async(req,res)=>{await Book.findByIdAndDelete(req.params.id);await log(req,'delete_book','book',req.params.id,{});res.json({ok:true})});
 module.exports=router;
