@@ -360,58 +360,108 @@ async function sendForgotPassword(){
 
 
 function showAuth(tab){
-  setTimeout(()=>{ensureForgotFixedButton?.();injectForgotInsideLogin?.();},50);setTimeout(()=>injectForgotInsideLogin?.(),300);setTimeout(()=>injectForgotInsideLogin?.(),800);
-  forceShowNav();
   tab=tab||'login';
-  const nav=$('nav');if(nav)nav.style.display='flex';
-  const view=VIEW();if(view){view.style.bottom='0';view.style.left=(window.innerWidth<=720?'78px':'96px');}
+
+  const nav=$('nav');
+  if(nav)nav.style.display='none';
+
+  const view=VIEW();
+  if(view){
+    view.style.left='0';
+    view.style.right='0';
+    view.style.bottom='0';
+  }
+
+  const logo=`
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:22px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+        <div style="display:flex;gap:3px;align-items:flex-end;height:38px">
+          <div style="width:12px;height:30px;background:#DC2626;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
+          <div style="width:12px;height:36px;background:#F59E0B;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
+          <div style="width:12px;height:33px;background:#16A34A;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
+        </div>
+      </div>
+      <div style="font-family:Arial,system-ui,sans-serif;font-size:30px;line-height:1;font-weight:900;letter-spacing:-1px;color:#111827">
+        Book<span style="color:#0B5ED7">Trade</span>
+      </div>
+      <div style="font-size:15px;color:#6B7280;margin-top:8px">Intercambia libros, crea conexiones.</div>
+    </div>`;
 
   setView(`
-    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;position:relative;overflow:hidden;
-      background:url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=85&w=1400&auto=format') center center/cover">
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.10),rgba(0,0,0,.04),rgba(0,0,0,.16))"></div>
-      <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #BFDBFE;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
-      <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
-        
-        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:0 0 2px">
-          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(520px,82vw);max-width:100%;height:auto;max-height:160px;object-fit:contain;filter:drop-shadow(0 7px 18px rgba(0,0,0,.28))">
-        </div>
-        <div style="font-size:14px;color:#FFFFFF;margin-top:4px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
-      </div>
-      <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.55);border-radius:22px;padding:18px 18px;backdrop-filter:blur(8px);box-shadow:0 24px 70px rgba(17,24,39,.20)">
-        <div style="display:flex;background:#FFFFFF;border-radius:10px;padding:4px;margin-bottom:22px">
-          <button onclick="showAuth('login')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='login'?'background:#3B82F6;color:#FFFFFF':'background:transparent;color:#6B7280'}">Ingresar</button>
-          <button onclick="showAuth('register')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='register'?'background:#3B82F6;color:#FFFFFF':'background:transparent;color:#6B7280'}">Registrarse</button>
-        </div>
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden;background:url('https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=85&w=1600&auto=format') center center/cover no-repeat">
+      <div style="position:absolute;inset:0;background:rgba(12,18,28,.30);backdrop-filter:blur(2px)"></div>
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.16),transparent 42%),linear-gradient(to bottom,rgba(0,0,0,.14),rgba(0,0,0,.08),rgba(0,0,0,.22))"></div>
+
+      <div style="position:relative;z-index:1;width:min(460px,92vw);background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.72);border-radius:18px;padding:38px 38px 32px;box-shadow:0 28px 80px rgba(15,23,42,.28)">
+        ${logo}
+
         ${tab==='login'?`
-          <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Correo o usuario</div>
-          <input id="fi" type="text" placeholder="tucorreo@email.com" autocomplete="username"
-            style="width:100%;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box;margin-bottom:14px"
-            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'" onkeydown="if(event.key==='Enter')doLogin()">
-          <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Contraseña</div>
-          <input id="fp" type="password" placeholder="••••••••" autocomplete="current-password"
-            style="width:100%;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box;margin-bottom:14px"
-            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'" onkeydown="if(event.key==='Enter')doLogin()">
-          <button id="btn-login" onclick="doLogin()"
-            style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">Ingresar</button>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="position:relative">
+              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">✉</div>
+              <input id="fi" type="text" placeholder="Email o nombre de usuario" autocomplete="username"
+                style="width:100%;height:56px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
+                onfocus="this.style.borderColor='#3B82F6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
+                onblur="this.style.borderColor='#D1D5DB';this.style.boxShadow='none'"
+                onkeydown="if(event.key==='Enter')doLogin()">
+            </div>
+
+            <div style="position:relative">
+              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">🔒</div>
+              <input id="fp" type="password" placeholder="Contraseña" autocomplete="current-password"
+                style="width:100%;height:56px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 46px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
+                onfocus="this.style.borderColor='#3B82F6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
+                onblur="this.style.borderColor='#D1D5DB';this.style.boxShadow='none'"
+                onkeydown="if(event.key==='Enter')doLogin()">
+              <button type="button" onclick="const p=$('fp');p.type=p.type==='password'?'text':'password'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#94A3B8;font-size:17px;cursor:pointer">👁</button>
+            </div>
+
+            <button id="btn-login" onclick="doLogin()"
+              style="width:100%;height:58px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 10px 20px rgba(59,130,246,.22)">Ingresar</button>
+
+            <button id="forgot-inline-link" type="button" onclick="showForgotPassword()"
+              style="width:100%;background:transparent;border:none;color:#3B82F6;font-size:14px;font-weight:800;margin-top:4px;cursor:pointer;padding:8px">¿Olvidaste tu contraseña?</button>
+
+            <div style="display:flex;align-items:center;gap:16px;margin:8px 0 4px;color:#6B7280;font-size:13px">
+              <div style="height:1px;background:#E5E7EB;flex:1"></div>
+              <span>o</span>
+              <div style="height:1px;background:#E5E7EB;flex:1"></div>
+            </div>
+
+            <div style="text-align:center;font-size:14px;color:#6B7280;margin-top:2px">
+              ¿No tienes cuenta?
+              <button onclick="showAuth('register')" style="background:transparent;border:none;color:#3B82F6;font-weight:900;cursor:pointer;font-size:14px">Regístrate aquí</button>
+            </div>
+          </div>
         `:`
-          <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Nombre de usuario</div>
-          <input id="fu" type="text" placeholder="mi_usuario" autocomplete="username"
-            style="width:100%;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box;margin-bottom:14px"
-            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'">
-          <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Correo electrónico</div>
-          <input id="fe" type="email" placeholder="tucorreo@email.com" autocomplete="email"
-            style="width:100%;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box;margin-bottom:14px"
-            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'">
-          <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Contraseña (mín. 6 caracteres)</div>
-          <input id="fp2" type="password" placeholder="••••••••" autocomplete="new-password"
-            style="width:100%;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box;margin-bottom:14px"
-            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'">
-          <button id="btn-reg" onclick="doRegister()"
-            style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">Crear cuenta</button>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="position:relative">
+              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">👤</div>
+              <input id="fu" type="text" placeholder="Nombre de usuario" autocomplete="username"
+                style="width:100%;height:54px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box">
+            </div>
+            <div style="position:relative">
+              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">✉</div>
+              <input id="fe" type="email" placeholder="Correo electrónico" autocomplete="email"
+                style="width:100%;height:54px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box">
+            </div>
+            <div style="position:relative">
+              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">🔒</div>
+              <input id="fp2" type="password" placeholder="Contraseña" autocomplete="new-password"
+                style="width:100%;height:54px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
+                onkeydown="if(event.key==='Enter')doRegister()">
+            </div>
+            <button id="btn-reg" onclick="doRegister()"
+              style="width:100%;height:56px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 10px 20px rgba(59,130,246,.22)">Crear cuenta</button>
+            <div style="text-align:center;font-size:14px;color:#6B7280;margin-top:4px">
+              ¿Ya tienes cuenta?
+              <button onclick="showAuth('login')" style="background:transparent;border:none;color:#3B82F6;font-weight:900;cursor:pointer;font-size:14px">Ingresar</button>
+            </div>
+          </div>
         `}
       </div>
-    </div>`);
+    </div>
+  `);
 }
 
 async function doLogin(){
