@@ -85,6 +85,60 @@ async function updateUserLevel(userId) {
   return user;
 }
 
+
+function idOf(v) {
+  return String(v?._id || v?.id || v || '');
+}
+
+async function applyCompletedExchangeBookOwners(exchange) {
+  if (!exchange || exchange.status !== 'completed') return false;
+
+  const requesterId = idOf(exchange.requester);
+  const matchedUserId = idOf(exchange.matchedUser);
+  const myBookId = idOf(exchange.myBook);
+  const theirBookId = idOf(exchange.theirBook);
+
+  if (!requesterId || !matchedUserId || !myBookId || !theirBookId) return false;
+
+  /*
+    Regla final:
+    - myBook era el libro que entregaba el requester.
+      Por lo tanto, al completarse pasa al matchedUser.
+    - theirBook era el libro que recibía el requester.
+      Por lo tanto, al completarse pasa al requester.
+
+    Esta función es idempotente:
+    puedes ejecutarla muchas veces y siempre deja los dueños correctos.
+  */
+  await Promise.all([
+    Book.findByIdAndUpdate(myBookId, {
+      owner: matchedUserId,
+      available: true
+    }),
+    Book.findByIdAndUpdate(theirBookId, {
+      owner: requesterId,
+      available: true
+    })
+  ]);
+
+  return true;
+}
+
+async function repairCompletedExchangesForUser(userId) {
+  const completed = await Exchange.find({
+    participants: userId,
+    status: 'completed'
+  });
+
+  let repaired = 0;
+  for (const ex of completed) {
+    const ok = await applyCompletedExchangeBookOwners(ex);
+    if (ok) repaired++;
+  }
+
+  return repaired;
+}
+
 function populateExchange(q) {
   return q
     .populate('requester', 'username email location profilePhoto level completedExchanges ratingAvg ratingCount verificationStatus')
@@ -97,6 +151,9 @@ function populateExchange(q) {
 
 router.get('/history', auth, async (req, res) => {
   try {
+    // Repara intercambios antiguos que ya estaban completados antes de esta mejora.
+    await repairCompletedExchangesForUser(req.userId);
+
     const items = await populateExchange(Exchange.find({
       participants: req.userId,
       status: 'completed'
@@ -129,6 +186,17 @@ router.get('/pending', auth, async (req, res) => {
     }));
   } catch (err) {
     console.error('GET /api/exchanges/pending error:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
+
+router.post('/repair-my-books', auth, async (req, res) => {
+  try {
+    const repaired = await repairCompletedExchangesForUser(req.userId);
+    res.json({ ok: true, repaired });
+  } catch (err) {
+    console.error('POST /api/exchanges/repair-my-books error:', err);
     res.status(500).json({ error: 'Error del servidor' });
   }
 });
@@ -181,27 +249,9 @@ router.post('/confirm', auth, async (req, res) => {
         exchange.completedAt = new Date();
 
 
-        // Intercambio real: al confirmarse por ambas partes, los libros cambian de dueño.
-        // Ejemplo: si Usuario A entrega Libro X y recibe Libro Y, entonces:
-        // - Libro X pasa al perfil de Usuario B.
-        // - Libro Y pasa al perfil de Usuario A.
-        const bookA = await Book.findById(exchange.myBook);
-        const bookB = await Book.findById(exchange.theirBook);
-
-        if (bookA && bookB) {
-          const ownerA = String(bookA.owner);
-          const ownerB = String(bookB.owner);
-
-          bookA.owner = ownerB;
-          bookB.owner = ownerA;
-
-          // Quedan disponibles en el perfil del nuevo dueño.
-          // Si en el futuro quieres que vayan a una sección "recibidos", se puede agregar otro campo.
-          bookA.available = true;
-          bookB.available = true;
-
-          await Promise.all([bookA.save(), bookB.save()]);
-        }
+        // Transferir propiedad real de los libros.
+        // myBook pasa al otro usuario; theirBook pasa al requester.
+        await applyCompletedExchangeBookOwners(exchange);
 
 
         await User.updateMany(
