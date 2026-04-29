@@ -90,8 +90,8 @@ function populateExchange(q) {
     .populate('requester', 'username email location profilePhoto level completedExchanges ratingAvg ratingCount verificationStatus')
     .populate('matchedUser', 'username email location profilePhoto level completedExchanges ratingAvg ratingCount verificationStatus')
     .populate('participants', 'username email location profilePhoto level completedExchanges ratingAvg ratingCount verificationStatus')
-    .populate('myBook', 'title author photos')
-    .populate('theirBook', 'title author photos')
+    .populate('myBook', 'title author photos owner')
+    .populate('theirBook', 'title author photos owner')
     .populate('confirmations.user', 'username profilePhoto');
 }
 
@@ -180,10 +180,29 @@ router.post('/confirm', auth, async (req, res) => {
         exchange.status = 'completed';
         exchange.completedAt = new Date();
 
-        await Book.updateMany(
-          { _id: { $in: [exchange.myBook, exchange.theirBook] } },
-          { available: false }
-        );
+
+        // Intercambio real: al confirmarse por ambas partes, los libros cambian de dueño.
+        // Ejemplo: si Usuario A entrega Libro X y recibe Libro Y, entonces:
+        // - Libro X pasa al perfil de Usuario B.
+        // - Libro Y pasa al perfil de Usuario A.
+        const bookA = await Book.findById(exchange.myBook);
+        const bookB = await Book.findById(exchange.theirBook);
+
+        if (bookA && bookB) {
+          const ownerA = String(bookA.owner);
+          const ownerB = String(bookB.owner);
+
+          bookA.owner = ownerB;
+          bookB.owner = ownerA;
+
+          // Quedan disponibles en el perfil del nuevo dueño.
+          // Si en el futuro quieres que vayan a una sección "recibidos", se puede agregar otro campo.
+          bookA.available = true;
+          bookB.available = true;
+
+          await Promise.all([bookA.save(), bookB.save()]);
+        }
+
 
         await User.updateMany(
           { _id: { $in: exchange.participants } },

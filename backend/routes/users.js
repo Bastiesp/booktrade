@@ -95,4 +95,22 @@ router.put('/me', auth, async (req, res) => {
   }
 });
 
+
+/* ── PUT /api/users/me/onboarding ───────────────── */
+router.put('/me/onboarding', auth, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { onboardingCompleted: true },
+      { new: true }
+    ).select('-password');
+
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    res.json({ ok: true, onboardingCompleted: true });
+  } catch (err) {
+    console.error('PUT /api/users/me/onboarding error:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
 module.exports = router;
