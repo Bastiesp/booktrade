@@ -1302,9 +1302,10 @@ function openChat(idx){
   clearUnread(room);if($('clist'))drawChats();
 
   const ov=document.createElement('div');
+  ov.className='bt-chat-overlay';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:760px;left:50%;transform:translateX(-50%)';
   ov.innerHTML=`
-    <div id="cp" style="width:100%;height:min(88vh,calc(100vh - 24px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
+    <div id="cp" class="bt-chat-panel" style="width:100%;height:min(88vh,calc(100vh - 24px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #BFDBFE;flex-shrink:0;position:relative">
         <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#93C5FD;border-radius:2px"></div>
         <button onclick="openPublicProfile('${m.matchedUser.id}')" style="width:38px;height:38px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;border:none;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</button>

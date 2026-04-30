@@ -95,6 +95,35 @@ body.login-screen #nav{display:none!important;visibility:hidden!important;pointe
   }
 }
 
+
+@media(max-width:720px){
+  .bt-chat-overlay{
+    left:0!important;
+    right:0!important;
+    width:100vw!important;
+    max-width:100vw!important;
+    transform:none!important;
+    padding:0!important;
+    align-items:flex-end!important;
+  }
+  .bt-chat-panel{
+    width:100vw!important;
+    max-width:100vw!important;
+    height:min(92vh,calc(100vh - 8px))!important;
+    border-radius:18px 18px 0 0!important;
+    border-left:none!important;
+    border-right:none!important;
+  }
+  .bt-chat-panel #cmsgs{
+    padding:14px 12px!important;
+  }
+}
+@media(max-width:390px){
+  .bt-chat-panel{
+    height:min(94vh,calc(100vh - 4px))!important;
+  }
+}
+
 </style></head><body class="login-screen"><div id="app"><div id="view"></div></div><div id="nav">
 <button class="nb" id="nb-discover" onclick="window.showDiscover?showDiscover():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Explorar</span></button>
 <button class="nb" id="nb-books" onclick="window.showBooks?showBooks():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Libros</span></button>
@@ -113,4 +142,4 @@ body.login-screen #nav{display:none!important;visibility:hidden!important;pointe
 
 
 
-<script src="/socket.io/socket.io.js"></script><script>if(typeof io==='undefined'){document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>')}</script><script src="./app.js?v=matches-profile-explore-fix-v1"></script></body></html>
+<script src="/socket.io/socket.io.js"></script><script>if(typeof io==='undefined'){document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>')}</script><script src="./app.js?v=chat-mobile-width-v1"></script></body></html>
