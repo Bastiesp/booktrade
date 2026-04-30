@@ -298,7 +298,7 @@ function injectForgotInsideLogin(){
 
 function showForgotPassword(){
   const nav=$('nav');
-  if(nav){nav.style.display='none';nav.style.visibility='hidden';nav.style.pointerEvents='none';}
+  if(nav){nav.style.setProperty('display','none','important');nav.style.setProperty('visibility','hidden','important');nav.style.setProperty('pointer-events','none','important');}
 
   const view=VIEW();
   if(view){
@@ -358,6 +358,10 @@ async function sendForgotPassword(){
 
 function showAuth(tab){
   document.body.classList.add('login-screen');
+  document.documentElement.classList.add('login-screen');
+  const appRoot=document.getElementById('app');
+  if(appRoot){appRoot.style.maxWidth='100%';appRoot.style.width='100%';appRoot.style.margin='0';}
+
   tab=tab||'login';
 
   const nav=$('nav');
@@ -365,9 +369,13 @@ function showAuth(tab){
 
   const view=VIEW();
   if(view){
-    view.style.left='0';
-    view.style.right='0';
-    view.style.bottom='0';
+    view.style.setProperty('left','0','important');
+    view.style.setProperty('right','0','important');
+    view.style.setProperty('top','0','important');
+    view.style.setProperty('bottom','0','important');
+    view.style.setProperty('width','100vw','important');
+    view.style.setProperty('background','transparent','important');
+    view.style.setProperty('overflow','hidden','important');
   }
 
   const logo=`
@@ -386,7 +394,7 @@ function showAuth(tab){
     </div>`;
 
   setView(`
-    <div style="min-height:100vh;width:100vw;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden;box-sizing:border-box;background:url('/assets/login-bg-booktrade-full-clean-hd.jpg') center center/cover no-repeat">
+    <div id="bt-login-screen" style="position:fixed;inset:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;position:fixed;overflow:hidden;box-sizing:border-box;background:url('/assets/login-bg-booktrade-full-clean-hd.jpg') center center/cover no-repeat;background-attachment:fixed;background-position:center center;z-index:1">
       <div style="position:absolute;inset:0;background:rgba(12,18,28,.02);backdrop-filter:none"></div>
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.01),rgba(0,0,0,0),rgba(0,0,0,.04))"></div>
 
@@ -605,7 +613,7 @@ async function repairMyReceivedBooks(){
 }
 
 async function launchApp(){
-  document.body.classList.remove('login-screen');
+  document.body.classList.remove('login-screen');document.documentElement.classList.remove('login-screen');
   const nav=$('nav');if(nav){nav.style.display='flex';nav.style.visibility='visible';nav.style.pointerEvents='auto';}
   try{localStorage.removeItem('bt_onboarding_done');}catch{}
   document.body.classList.add('logged-in');
