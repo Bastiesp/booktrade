@@ -82,6 +82,18 @@ function requireLogin(){
 }
 
 
+
+function bookTradeWordmarkHTML(scale=1){
+  return `<div style="display:flex;align-items:center;gap:${Math.round(10*scale)}px">
+    <div style="display:flex;gap:3px;align-items:flex-end;height:${Math.round(34*scale)}px">
+      <div style="width:${Math.round(12*scale)}px;height:${Math.round(27*scale)}px;background:#DC2626;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)"></div>
+      <div style="width:${Math.round(12*scale)}px;height:${Math.round(32*scale)}px;background:#F59E0B;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)"></div>
+      <div style="width:${Math.round(12*scale)}px;height:${Math.round(30*scale)}px;background:#16A34A;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)"></div>
+    </div>
+    <div style="font-family:Arial,system-ui,sans-serif;font-size:${Math.round(28*scale)}px;line-height:1;font-weight:900;letter-spacing:-1px;color:#111827">Book<span style="color:#0B5ED7">Trade</span></div>
+  </div>`;
+}
+
 function setNav(id){
   ['nb-discover','nb-books','nb-matches','nb-chats','nb-history','nb-profile'].forEach(n=>{
     const b=$(n);if(b)b.className='nb'+(n===id?' active':'');
@@ -108,13 +120,14 @@ async function openPublicProfile(userId){
     const u=await api('GET','/api/users/'+userId+'/public');
     const p=u.levelProgress||nextLevelInfo(u.completedExchanges);
     const ov=document.createElement('div');
-    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000003;display:flex;align-items:flex-end;max-width:1180px;margin:0 auto;left:50%;transform:translateX(-50%)';
-    ov.innerHTML=`<div style="width:100%;background:#FFFFFF;border-radius:24px 24px 0 0;border:1px solid #BFDBFE;padding:24px;max-height:86vh;overflow:auto">
-      <div style="width:44px;height:4px;background:#93C5FD;border-radius:8px;margin:0 auto 18px"></div>
-      <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
-        <div style="width:76px;height:76px;border-radius:50%;background:#3B82F6;color:#fff;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;overflow:hidden">${u.profilePhoto?`<img src="${esc(u.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(u.username)}</div>
-        <div style="flex:1">
-          <div style="font-family:Fraunces,serif;font-size:24px;font-weight:800;color:#111827">@${esc(u.username)}</div>
+    ov.className='bt-public-profile-modal';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(4px)';
+    ov.innerHTML=`<div style="width:min(540px,94vw);background:#FFFFFF;border-radius:24px;border:1px solid #BFDBFE;padding:22px;max-height:88vh;overflow:auto;box-shadow:0 26px 80px rgba(15,23,42,.26);position:relative">
+      <button class="bt-profile-close" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:999px;border:1px solid #BFDBFE;background:#EFF6FF;color:#111827;font-size:20px;font-weight:900;cursor:pointer">×</button>
+      <div style="display:flex;gap:16px;align-items:center;margin:16px 0 16px">
+        <div style="width:76px;height:76px;border-radius:50%;background:#3B82F6;color:#fff;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${u.profilePhoto?`<img src="${esc(u.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(u.username)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:Fraunces,serif;font-size:24px;font-weight:800;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@${esc(u.username)}</div>
           <div style="font-size:13px;color:#6B7280;margin-top:3px">📍 ${esc(u.location||'Sin comuna')} · ${u.verificationStatus==='verified'?'✅ Verificado':'🕒 No verificado'}</div>
           <div style="font-size:13px;color:#6B7280;margin-top:3px">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))} · ${ratingText(u)}</div>
         </div>
@@ -126,13 +139,14 @@ async function openPublicProfile(userId){
       </div>
       <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:14px;padding:14px;margin-bottom:14px">
         <div style="font-size:12px;color:#6B7280;font-weight:800;text-transform:uppercase;margin-bottom:6px">Progreso de nivel</div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;color:#111827;font-weight:800"><span>${levelEmoji(u.level)} ${esc(u.level)}</span><span>${p.next?`Faltan ${p.remaining} para ${p.next}`:'Nivel máximo'}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#111827;font-weight:800"><span>${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</span><span>${p.next?`Faltan ${p.remaining} para ${p.next}`:'Nivel máximo'}</span></div>
         <div style="height:10px;background:#DBEAFE;border-radius:999px;overflow:hidden;margin-top:8px"><div style="height:100%;width:${Math.max(0,Math.min(100,p.percent||0))}%;background:#3B82F6;border-radius:999px"></div></div>
       </div>
       <div style="font-size:13px;color:#6B7280;line-height:1.5;margin-bottom:18px">${esc(u.bio||'Sin biografía todavía.')}</div>
-      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:13px;border:none;border-radius:12px;background:#3B82F6;color:#fff;font-weight:800">Cerrar</button>
+      <button class="bt-profile-close" style="width:100%;padding:13px;border:none;border-radius:12px;background:#3B82F6;color:#fff;font-weight:800">Cerrar</button>
     </div>`;
     document.body.appendChild(ov);
+    ov.querySelectorAll('.bt-profile-close').forEach(b=>b.onclick=()=>ov.remove());
     ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
   }catch(e){toast(e.message,'error');}
 }
@@ -650,7 +664,7 @@ async function showDiscover(){
 
   setView(`
     <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;min-width:0"><img src="/assets/booktrade-logo-explore.png" alt="BookTrade" style="width:min(260px,58vw);max-width:100%;height:auto;max-height:82px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.16))"></div>
+      <div style="display:flex;align-items:center;min-width:0">${bookTradeWordmarkHTML(.82)}</div>
       <div id="qcnt" style="display:none;background:#3B82F6;color:#FFFFFF;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600"></div>
     </div>
     <div id="gbar" style="display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none">
@@ -672,12 +686,12 @@ async function showDiscover(){
       <button id="mode-swipe" onclick="setDiscoverMode('swipe')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='swipe'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='swipe'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='swipe'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">🔥 Deslizar</button>
       <button id="mode-catalog" onclick="setDiscoverMode('catalog')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='catalog'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='catalog'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='catalog'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">📚 Catálogo</button>
     </div>
-    <div style="position:relative;margin:0 auto;max-width:380px;width:calc(100% - 32px);height:560px;min-height:560px" id="stack"></div>
-    <div id="swipe-actions" style="display:${DISCOVER_MODE==='swipe'?'flex':'none'};justify-content:center;align-items:center;gap:22px;padding:12px 16px 20px">
+    <div style="position:relative;margin:0 auto;max-width:340px;width:min(340px,calc(100% - 44px));height:440px;min-height:440px" id="stack"></div>
+    <div id="swipe-actions" style="display:${DISCOVER_MODE==='swipe'?'flex':'none'};justify-content:center;align-items:center;gap:18px;padding:8px 16px 16px">
       <button onclick="swipeBtn('left')"
-        style="width:60px;height:60px;border-radius:50%;background:#FFFFFF;border:2px solid #D45A4A;color:#D45A4A;font-size:24px;display:flex;align-items:center;justify-content:center">✕</button>
+        style="width:52px;height:52px;border-radius:50%;background:#FFFFFF;border:2px solid #D45A4A;color:#D45A4A;font-size:24px;display:flex;align-items:center;justify-content:center">✕</button>
       <button onclick="swipeBtn('right')"
-        style="width:72px;height:72px;border-radius:50%;background:#3B82F6;border:none;color:#FFFFFF;font-size:28px;display:flex;align-items:center;justify-content:center">♥</button>
+        style="width:62px;height:62px;border-radius:50%;background:#3B82F6;border:none;color:#FFFFFF;font-size:28px;display:flex;align-items:center;justify-content:center">♥</button>
     </div>`);
 
   await loadQueue();
@@ -761,7 +775,7 @@ function drawCatalog(){
   s.style.height='auto';s.style.minHeight='420px';s.style.maxWidth='none';s.style.width='auto';s.style.margin='0 16px';
   if(cnt){cnt.style.display=QUEUE.length?'block':'none';cnt.textContent=QUEUE.length+' libros';}
   if(!QUEUE.length){s.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:10px;text-align:center;padding:20px"><div style="font-size:48px;opacity:.4">🔭</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">¡Todo explorado!</div><div style="font-size:13px;color:#6B7280">Vuelve pronto o cambia los filtros</div></div>';return;}
-  s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · @${esc(book.owner?.username||'usuario')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right',this)" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800;transition:all .15s">Me interesa</button></div></div></div>`}).join('')}</div>`;
+  s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · <button onclick="event.stopPropagation();openPublicProfile('${book.owner?._id||book.owner?.id}')" style="border:none;background:transparent;color:#3B82F6;font-weight:800;padding:0;cursor:pointer">@${esc(book.owner?.username||'usuario')}</button></div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right',this)" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800;transition:all .15s">Me interesa</button></div></div></div>`}).join('')}</div>`;
 }
 async function catalogSwipe(bookId,dir,btn){
   let beforeIds = new Set();
@@ -805,7 +819,7 @@ async function catalogSwipe(bookId,dir,btn){
 function drawStack(){
   if(DISCOVER_MODE==='catalog')return drawCatalog();
   const s=$('stack'),cnt=$('qcnt');if(!s)return;
-  s.style.height='560px';s.style.minHeight='560px';s.style.maxWidth='380px';s.style.width='calc(100% - 32px)';s.style.margin='0 auto';const actions=$('swipe-actions');if(actions)actions.style.display='flex';
+  s.style.height='440px';s.style.minHeight='440px';s.style.maxWidth='340px';s.style.width='min(340px,calc(100% - 44px))';s.style.margin='0 auto';const actions=$('swipe-actions');if(actions)actions.style.display='flex';
   if(!QUEUE.length){
     if(cnt)cnt.style.display='none';
     s.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;text-align:center;padding:20px"><div style="font-size:48px;opacity:.4">🔭</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">¡Todo explorado!</div><div style="font-size:13px;color:#6B7280">Vuelve pronto o cambia los filtros</div></div>';
@@ -822,18 +836,18 @@ function drawStack(){
     card.innerHTML=`
       <div id="sl" style="position:absolute;top:28px;left:18px;padding:7px 16px;border-radius:6px;font-size:18px;font-weight:800;letter-spacing:2px;color:#4CAF7D;border:3px solid #4CAF7D;transform:rotate(-12deg);opacity:0;z-index:10;pointer-events:none">ME GUSTA</div>
       <div id="sn" style="position:absolute;top:28px;right:18px;padding:7px 16px;border-radius:6px;font-size:18px;font-weight:800;letter-spacing:2px;color:#D45A4A;border:3px solid #D45A4A;transform:rotate(12deg);opacity:0;z-index:10;pointer-events:none">PASO</div>
-      <div style="height:68%;background:${clr(book._id)};position:relative;overflow:hidden">
+      <div style="height:60%;background:${clr(book._id)};position:relative;overflow:hidden">
         ${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`
         :`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}
       </div>
-      <div style="padding:16px 18px">
-        <div style="font-family:Fraunces,serif;font-size:19px;font-weight:700;color:#111827;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(book.title)}</div>
-        <div style="font-size:13px;color:#6B7280;margin-bottom:8px">${esc(book.author)}</div>
+      <div style="padding:12px 14px">
+        <div style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(book.title)}</div>
+        <div style="font-size:12px;color:#6B7280;margin-bottom:6px">${esc(book.author)}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
           <span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span>
           <span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(240,228,205,.06);color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span>
         </div>
-        ${book.owner?`<div style="font-size:11px;color:#9CA3AF">📍 ${esc(book.owner.location||'—')} · @${esc(book.owner.username)}</div>`:''}
+        ${book.owner?`<div style="font-size:11px;color:#9CA3AF">📍 ${esc(book.owner.location||'—')} · <button onclick="event.stopPropagation();openPublicProfile('${book.owner._id||book.owner.id}')" style="border:none;background:transparent;color:#3B82F6;font-weight:800;padding:0;cursor:pointer">@${esc(book.owner.username)}</button></div>`:''}
       </div>`;
     if(isTop)attachDrag(card,book._id);
     s.appendChild(card);
@@ -1293,9 +1307,9 @@ function openChat(idx){
     <div id="cp" style="width:100%;height:min(88vh,calc(100vh - 24px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #BFDBFE;flex-shrink:0;position:relative">
         <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#93C5FD;border-radius:2px"></div>
-        <div style="width:38px;height:38px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">${ini(m.matchedUser.username)}</div>
+        <button onclick="openPublicProfile('${m.matchedUser.id}')" style="width:38px;height:38px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;border:none;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</button>
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:700;color:#111827">@${esc(m.matchedUser.username)}</div>
+          <button onclick="openPublicProfile('${m.matchedUser.id}')" style="font-size:15px;font-weight:700;color:#111827;border:none;background:transparent;padding:0;text-align:left;cursor:pointer">@${esc(m.matchedUser.username)}</button>
           <div style="font-size:11px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook?.title||'')} ⇄ ${esc(m.theirBook?.title||'')}</div>
           <div style="font-size:11px;margin-top:2px;font-weight:800;color:${isExchangeDone(m)?'#166534':'#64748B'}">${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando')}</div>
         </div>
