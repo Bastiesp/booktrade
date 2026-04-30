@@ -71,13 +71,11 @@ function forceLogout(){
   }catch{}
   try{SOCKET?.disconnect();}catch{}
   SOCKET=null;
-  forceShowNav();
   showAuth('login');setTimeout(()=>ensureForgotFixedButton?.(),80);
 }
 
 function requireLogin(){
   if(TOKEN)return true;
-  forceShowNav();
   toast('Inicia sesión para usar este módulo','error');
   showAuth('login');
   return false;
@@ -85,7 +83,6 @@ function requireLogin(){
 
 
 function setNav(id){
-  forceShowNav();
   ['nb-discover','nb-books','nb-matches','nb-chats','nb-history','nb-profile'].forEach(n=>{
     const b=$(n);if(b)b.className='nb'+(n===id?' active':'');
   });
@@ -301,7 +298,7 @@ function injectForgotInsideLogin(){
 
 function showForgotPassword(){
   const nav=$('nav');
-  if(nav)nav.style.display='none';
+  if(nav){nav.style.display='none';nav.style.visibility='hidden';nav.style.pointerEvents='none';}
 
   const view=VIEW();
   if(view){
@@ -360,6 +357,7 @@ async function sendForgotPassword(){
 
 
 function showAuth(tab){
+  document.body.classList.add('login-screen');
   tab=tab||'login';
 
   const nav=$('nav');
@@ -388,9 +386,9 @@ function showAuth(tab){
     </div>`;
 
   setView(`
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden;background:url('/assets/login-bg-booktrade-hd.jpg') center center/cover no-repeat no-repeat">
-      <div style="position:absolute;inset:0;background:rgba(12,18,28,.08);backdrop-filter:blur(.4px)"></div>
-      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.08),transparent 46%),linear-gradient(to bottom,rgba(0,0,0,.04),rgba(0,0,0,.01),rgba(0,0,0,.08))"></div>
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden;background:url('/assets/login-bg-booktrade-clean-hd.jpg') center center/cover no-repeat no-repeat">
+      <div style="position:absolute;inset:0;background:rgba(12,18,28,.03);backdrop-filter:none"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.02),rgba(0,0,0,.00),rgba(0,0,0,.06))"></div>
 
       <div style="position:relative;z-index:1;width:min(410px,90vw);background:rgba(255,255,255,.97);border:1px solid rgba(255,255,255,.78);border-radius:18px;padding:32px 32px 28px;box-shadow:0 28px 80px rgba(15,23,42,.28)">
         ${logo}
@@ -607,12 +605,13 @@ async function repairMyReceivedBooks(){
 }
 
 async function launchApp(){
+  document.body.classList.remove('login-screen');
+  const nav=$('nav');if(nav){nav.style.display='flex';nav.style.visibility='visible';nav.style.pointerEvents='auto';}
   try{localStorage.removeItem('bt_onboarding_done');}catch{}
   document.body.classList.add('logged-in');
   document.getElementById('forgot-fixed-btn')?.style.setProperty('display','none','important');
-  forceShowNav();
   /* Mostrar nav */
-  const nav=$('nav');if(nav)nav.style.display='flex';
+  if(nav)nav.style.display='flex';
   /* Restaurar #view con espacio para nav */
   const view=VIEW();if(view){view.style.bottom='0';view.style.left=(window.innerWidth<=720?'78px':'96px');}
 
