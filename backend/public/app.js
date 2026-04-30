@@ -379,18 +379,18 @@ function showAuth(tab){
   }
 
   const logo=`
-    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:22px">
+    <div class="bt-login-logo-block" style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:22px">
       <div style="display:flex;align-items:center;justify-content:center;gap:10px">
-        <div style="display:flex;gap:3px;align-items:flex-end;height:34px">
+        <div class="bt-login-books" style="display:flex;gap:3px;align-items:flex-end;height:34px">
           <div style="width:12px;height:27px;background:#DC2626;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
           <div style="width:12px;height:32px;background:#F59E0B;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
           <div style="width:12px;height:30px;background:#16A34A;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
         </div>
       </div>
-      <div style="font-family:Arial,system-ui,sans-serif;font-size:28px;line-height:1;font-weight:900;letter-spacing:-1px;color:#111827">
+      <div class="bt-login-wordmark" style="font-family:Arial,system-ui,sans-serif;font-size:28px;line-height:1;font-weight:900;letter-spacing:-1px;color:#111827">
         Book<span style="color:#0B5ED7">Trade</span>
       </div>
-      <div style="font-size:15px;color:#6B7280;margin-top:8px">Intercambia libros, crea conexiones.</div>
+      <div class="bt-login-subtitle" style="font-size:15px;color:#6B7280;margin-top:8px">Intercambia libros, crea conexiones.</div>
     </div>`;
 
   setView(`
@@ -398,7 +398,7 @@ function showAuth(tab){
       <div style="position:absolute;inset:0;background:rgba(12,18,28,.02);backdrop-filter:none"></div>
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.01),rgba(0,0,0,0),rgba(0,0,0,.04))"></div>
 
-      <div style="position:relative;z-index:1;width:min(410px,90vw);background:rgba(255,255,255,.97);border:1px solid rgba(255,255,255,.78);border-radius:18px;padding:32px 32px 28px;box-shadow:0 28px 80px rgba(15,23,42,.28)">
+      <div class="bt-login-card" style="position:relative;z-index:1;width:min(410px,90vw);background:rgba(255,255,255,.97);border:1px solid rgba(255,255,255,.78);border-radius:18px;padding:32px 32px 28px;box-shadow:0 28px 80px rgba(15,23,42,.28)">
         ${logo}
 
         ${tab==='login'?`
