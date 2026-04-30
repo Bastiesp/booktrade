@@ -103,8 +103,12 @@ router.post('/',auth,async(req,res)=>{
         direction:'right'
       }).sort({createdAt:-1}).lean();
 
-      if(theirSwipe){
+      if(theirSwipe && String(theirSwipe.book)!==String(book._id)){
         const myBook=myBookMap.get(String(theirSwipe.book));
+        if(!myBook){
+          return res.json({swiped:true,match:null});
+        }
+
         const exchange=await Exchange.findOne({
           matchKey:makeMatchKey(req.userId,ownerId,book._id,theirSwipe.book)
         }).lean();
@@ -148,7 +152,48 @@ router.post('/',auth,async(req,res)=>{
 
 router.get('/matches',auth,async(req,res)=>{
   try{
-    // 1) Mis libros
+    const matches=[];
+    const seen=new Set();
+    const currentUserId=String(req.userId);
+
+    const addMatch=(m)=>{
+      if(!m?.matchedUser?.id||!m?.myBook?.id||!m?.theirBook?.id)return;
+      if(String(m.myBook.id)===String(m.theirBook.id))return;
+      const key=String(m.id||makeMatchKey(currentUserId,m.matchedUser.id,m.myBook.id,m.theirBook.id));
+      if(seen.has(key))return;
+      seen.add(key);
+      matches.push({...m,id:key});
+    };
+
+    // 1) Intercambios ya creados: orientarlos siempre desde el usuario actual.
+    // Esto evita que, después de cambiar dueños de libros, aparezca mi foto
+    // o el mismo libro en "Tú das" y "Recibes".
+    const exchanges=await Exchange.find({participants:req.userId})
+      .populate('requester','username email location profilePhoto level completedExchanges')
+      .populate('matchedUser','username email location profilePhoto level completedExchanges')
+      .populate('myBook','title author photos')
+      .populate('theirBook','title author photos')
+      .sort({updatedAt:-1})
+      .lean();
+
+    for(const ex of exchanges){
+      const requesterId=String(ex.requester?._id||ex.requester);
+      const amRequester=requesterId===currentUserId;
+      const other=amRequester?ex.matchedUser:ex.requester;
+      const myBook=amRequester?ex.myBook:ex.theirBook;
+      const theirBook=amRequester?ex.theirBook:ex.myBook;
+
+      addMatch({
+        id:makeMatchKey(currentUserId,other?._id,myBook?._id,theirBook?._id),
+        matchedUser:userSummary(other),
+        myBook:bookSummary(myBook),
+        theirBook:bookSummary(theirBook),
+        createdAt:ex.createdAt||ex.updatedAt,
+        exchangeState:stateFromExchange(ex,req.userId)
+      });
+    }
+
+    // 2) Matches por swipes recíprocos que aún no tienen intercambio creado.
     const myBooks=await Book.find({owner:req.userId})
       .select('_id title author photos')
       .lean();
@@ -156,111 +201,66 @@ router.get('/matches',auth,async(req,res)=>{
     const myBookIds=myBooks.map(b=>b._id);
     const myBookMap=new Map(myBooks.map(b=>[String(b._id),b]));
 
-    if(!myBookIds.length){
-      return res.json([]);
-    }
+    if(myBookIds.length){
+      const myRight=await Swipe.find({swiper:req.userId,direction:'right'})
+        .populate({
+          path:'book',
+          select:'_id title author photos owner',
+          populate:{path:'owner',select:'username email location profilePhoto level completedExchanges'}
+        })
+        .sort({createdAt:-1})
+        .limit(500)
+        .lean();
 
-    // 2) Mis right swipes sobre libros de otros
-    const myRight=await Swipe.find({swiper:req.userId,direction:'right'})
-      .populate({
-        path:'book',
-        select:'_id title author photos owner',
-        populate:{path:'owner',select:'username email location profilePhoto level completedExchanges'}
-      })
-      .sort({createdAt:-1})
-      .limit(500)
-      .lean();
+      const validMyRight=myRight.filter(s=>
+        s.book?.owner?._id &&
+        String(s.book.owner._id)!==currentUserId
+      );
 
-    const ownerIds=[...new Set(
-      myRight
-        .map(s=>s.book?.owner?._id)
-        .filter(Boolean)
-        .map(String)
-    )];
+      const ownerIds=[...new Set(validMyRight.map(s=>String(s.book.owner._id)))];
 
-    if(!ownerIds.length){
-      return res.json([]);
-    }
+      if(ownerIds.length){
+        const theirRight=await Swipe.find({
+          swiper:{$in:ownerIds},
+          book:{$in:myBookIds},
+          direction:'right'
+        }).sort({createdAt:-1}).limit(1000).lean();
 
-    // 3) Swipes de esos usuarios sobre mis libros, una consulta.
-    const theirRight=await Swipe.find({
-      swiper:{$in:ownerIds},
-      book:{$in:myBookIds},
-      direction:'right'
-    })
-      .sort({createdAt:-1})
-      .limit(1000)
-      .lean();
-
-    const theirByOwner=new Map();
-    for(const s of theirRight){
-      const k=String(s.swiper);
-      if(!theirByOwner.has(k))theirByOwner.set(k,[]);
-      theirByOwner.get(k).push(s);
-    }
-
-    // 4) Traer exchanges relacionados una vez.
-    const possibleKeys=[];
-    for(const swipe of myRight){
-      if(!swipe.book?.owner)continue;
-      const ownerId=String(swipe.book.owner._id);
-      const theirSwipes=theirByOwner.get(ownerId)||[];
-      for(const ts of theirSwipes){
-        possibleKeys.push(makeMatchKey(req.userId,ownerId,swipe.book._id,ts.book));
-      }
-    }
-
-    const exchanges=possibleKeys.length
-      ? await Exchange.find({matchKey:{$in:possibleKeys}}).lean()
-      : [];
-
-    const exchangeMap=new Map(exchanges.map(e=>[e.matchKey,e]));
-
-    const matches=[];
-    const seenExact=new Set();
-    const lockedByPair=new Set();
-
-    for(const swipe of myRight){
-      if(!swipe.book?.owner)continue;
-
-      const ownerId=String(swipe.book.owner._id);
-      const theirBookId=String(swipe.book._id);
-      const theirSwipes=theirByOwner.get(ownerId)||[];
-
-      for(const theirSwipe of theirSwipes){
-        const myBookId=String(theirSwipe.book);
-        const exactKey=`${ownerId}_${[theirBookId,myBookId].sort().join('_')}`;
-
-        if(seenExact.has(exactKey))continue;
-
-        const matchKey=makeMatchKey(req.userId,ownerId,theirBookId,myBookId);
-        const exchange=exchangeMap.get(matchKey);
-        const state=stateFromExchange(exchange,req.userId);
-
-        const lockTheir=`${ownerId}:${theirBookId}`;
-        const lockMine=`${ownerId}:${myBookId}`;
-
-        // Mantener regla: entre dos usuarios, un libro no genera múltiples matches simultáneos.
-        if(state.code!=='exchange_done'&&(lockedByPair.has(lockTheir)||lockedByPair.has(lockMine))){
-          continue;
+        const theirByOwner=new Map();
+        for(const s of theirRight){
+          const k=String(s.swiper);
+          if(!theirByOwner.has(k))theirByOwner.set(k,[]);
+          theirByOwner.get(k).push(s);
         }
 
-        seenExact.add(exactKey);
-        lockedByPair.add(lockTheir);
-        lockedByPair.add(lockMine);
+        for(const swipe of validMyRight){
+          const ownerId=String(swipe.book.owner._id);
+          const theirBookId=String(swipe.book._id);
+          const candidates=theirByOwner.get(ownerId)||[];
 
-        matches.push({
-          id:`${req.userId}_${ownerId}_${theirBookId}_${myBookId}`,
-          matchedUser:userSummary(swipe.book.owner),
-          theirBook:bookSummary(swipe.book),
-          myBook:bookSummary(myBookMap.get(myBookId)),
-          createdAt:theirSwipe.createdAt,
-          exchangeState:state
-        });
+          for(const ts of candidates){
+            const myBookId=String(ts.book);
+            if(myBookId===theirBookId)continue;
+
+            const myBook=myBookMap.get(myBookId);
+            if(!myBook)continue;
+
+            addMatch({
+              id:makeMatchKey(currentUserId,ownerId,myBookId,theirBookId),
+              matchedUser:userSummary(swipe.book.owner),
+              myBook:bookSummary(myBook),
+              theirBook:bookSummary(swipe.book),
+              createdAt:ts.createdAt,
+              exchangeState:stateFromExchange(null,req.userId)
+            });
+
+            break;
+          }
+        }
       }
     }
 
-    matches.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+    matches.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
     res.json(matches);
   }catch(e){
     console.error('GET /api/swipes/matches error:',e);
