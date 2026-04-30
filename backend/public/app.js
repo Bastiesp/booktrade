@@ -388,9 +388,9 @@ function showAuth(tab){
     </div>`;
 
   setView(`
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden;background:url('https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=85&w=1600&auto=format') center center/cover no-repeat">
-      <div style="position:absolute;inset:0;background:rgba(12,18,28,.30);backdrop-filter:blur(2px)"></div>
-      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.16),transparent 42%),linear-gradient(to bottom,rgba(0,0,0,.14),rgba(0,0,0,.08),rgba(0,0,0,.22))"></div>
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden;background:url('/assets/login-bg-booktrade.png') center center/cover no-repeat no-repeat">
+      <div style="position:absolute;inset:0;background:rgba(12,18,28,.18);backdrop-filter:blur(1.5px)"></div>
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.10),transparent 44%),linear-gradient(to bottom,rgba(0,0,0,.08),rgba(0,0,0,.03),rgba(0,0,0,.14))"></div>
 
       <div style="position:relative;z-index:1;width:min(460px,92vw);background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.72);border-radius:18px;padding:38px 38px 32px;box-shadow:0 28px 80px rgba(15,23,42,.28)">
         ${logo}
