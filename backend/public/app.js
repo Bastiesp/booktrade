@@ -375,24 +375,24 @@ function showAuth(tab){
   const logo=`
     <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:22px">
       <div style="display:flex;align-items:center;justify-content:center;gap:10px">
-        <div style="display:flex;gap:3px;align-items:flex-end;height:38px">
-          <div style="width:12px;height:30px;background:#DC2626;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
-          <div style="width:12px;height:36px;background:#F59E0B;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
-          <div style="width:12px;height:33px;background:#16A34A;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
+        <div style="display:flex;gap:3px;align-items:flex-end;height:34px">
+          <div style="width:12px;height:27px;background:#DC2626;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
+          <div style="width:12px;height:32px;background:#F59E0B;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
+          <div style="width:12px;height:30px;background:#16A34A;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
         </div>
       </div>
-      <div style="font-family:Arial,system-ui,sans-serif;font-size:30px;line-height:1;font-weight:900;letter-spacing:-1px;color:#111827">
+      <div style="font-family:Arial,system-ui,sans-serif;font-size:28px;line-height:1;font-weight:900;letter-spacing:-1px;color:#111827">
         Book<span style="color:#0B5ED7">Trade</span>
       </div>
       <div style="font-size:15px;color:#6B7280;margin-top:8px">Intercambia libros, crea conexiones.</div>
     </div>`;
 
   setView(`
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden;background:url('/assets/login-bg-booktrade.png') center center/cover no-repeat no-repeat">
-      <div style="position:absolute;inset:0;background:rgba(12,18,28,.18);backdrop-filter:blur(1.5px)"></div>
-      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.10),transparent 44%),linear-gradient(to bottom,rgba(0,0,0,.08),rgba(0,0,0,.03),rgba(0,0,0,.14))"></div>
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden;background:url('/assets/login-bg-booktrade-hd.jpg') center center/cover no-repeat no-repeat">
+      <div style="position:absolute;inset:0;background:rgba(12,18,28,.08);backdrop-filter:blur(.4px)"></div>
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.08),transparent 46%),linear-gradient(to bottom,rgba(0,0,0,.04),rgba(0,0,0,.01),rgba(0,0,0,.08))"></div>
 
-      <div style="position:relative;z-index:1;width:min(460px,92vw);background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.72);border-radius:18px;padding:38px 38px 32px;box-shadow:0 28px 80px rgba(15,23,42,.28)">
+      <div style="position:relative;z-index:1;width:min(410px,90vw);background:rgba(255,255,255,.97);border:1px solid rgba(255,255,255,.78);border-radius:18px;padding:32px 32px 28px;box-shadow:0 28px 80px rgba(15,23,42,.28)">
         ${logo}
 
         ${tab==='login'?`
@@ -400,7 +400,7 @@ function showAuth(tab){
             <div style="position:relative">
               <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">✉</div>
               <input id="fi" type="text" placeholder="Email o nombre de usuario" autocomplete="username"
-                style="width:100%;height:56px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
+                style="width:100%;height:52px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
                 onfocus="this.style.borderColor='#3B82F6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
                 onblur="this.style.borderColor='#D1D5DB';this.style.boxShadow='none'"
                 onkeydown="if(event.key==='Enter')doLogin()">
@@ -409,7 +409,7 @@ function showAuth(tab){
             <div style="position:relative">
               <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">🔒</div>
               <input id="fp" type="password" placeholder="Contraseña" autocomplete="current-password"
-                style="width:100%;height:56px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 46px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
+                style="width:100%;height:52px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 46px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
                 onfocus="this.style.borderColor='#3B82F6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
                 onblur="this.style.borderColor='#D1D5DB';this.style.boxShadow='none'"
                 onkeydown="if(event.key==='Enter')doLogin()">
@@ -417,7 +417,7 @@ function showAuth(tab){
             </div>
 
             <button id="btn-login" onclick="doLogin()"
-              style="width:100%;height:58px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 10px 20px rgba(59,130,246,.22)">Ingresar</button>
+              style="width:100%;height:54px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 10px 20px rgba(59,130,246,.22)">Ingresar</button>
 
             <button id="forgot-inline-link" type="button" onclick="showForgotPassword()"
               style="width:100%;background:transparent;border:none;color:#3B82F6;font-size:14px;font-weight:800;margin-top:4px;cursor:pointer;padding:8px">¿Olvidaste tu contraseña?</button>
@@ -452,7 +452,7 @@ function showAuth(tab){
                 onkeydown="if(event.key==='Enter')doRegister()">
             </div>
             <button id="btn-reg" onclick="doRegister()"
-              style="width:100%;height:56px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 10px 20px rgba(59,130,246,.22)">Crear cuenta</button>
+              style="width:100%;height:52px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 10px 20px rgba(59,130,246,.22)">Crear cuenta</button>
             <div style="text-align:center;font-size:14px;color:#6B7280;margin-top:4px">
               ¿Ya tienes cuenta?
               <button onclick="showAuth('login')" style="background:transparent;border:none;color:#3B82F6;font-weight:900;cursor:pointer;font-size:14px">Ingresar</button>
@@ -718,7 +718,7 @@ function firstBookPhoto(book){
 function miniBookCover(book,label){
   const src=firstBookPhoto(book);
   return `<div style="display:flex;align-items:center;gap:10px;min-width:0">
-    <div style="width:42px;height:58px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;overflow:hidden;flex-shrink:0;box-shadow:0 5px 12px rgba(17,24,39,.10)">
+    <div style="width:42px;height:54px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;overflow:hidden;flex-shrink:0;box-shadow:0 5px 12px rgba(17,24,39,.10)">
       ${src?`<img src="${esc(cldThumb(src,120,170))}" alt="${esc(book?.title||'Libro')}" style="width:100%;height:100%;object-fit:cover">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:18px">📘</div>`}
     </div>
     <div style="min-width:0">
@@ -951,7 +951,7 @@ async function showBooks(){
   const fab=document.createElement('button');
   fab.className='fab-btn';
   fab.textContent='+';
-  fab.style.cssText='position:fixed;bottom:84px;right:max(24px,calc(50% - 590px + 24px));width:56px;height:56px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-size:28px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(59,130,246,.4);z-index:200;transition:transform .2s;display:flex;align-items:center;justify-content:center';
+  fab.style.cssText='position:fixed;bottom:84px;right:max(24px,calc(50% - 590px + 24px));width:56px;height:52px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-size:28px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(59,130,246,.4);z-index:200;transition:transform .2s;display:flex;align-items:center;justify-content:center';
   fab.onclick=()=>openBookModal(null);
   document.body.appendChild(fab);
 
