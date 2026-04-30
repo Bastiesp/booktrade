@@ -386,9 +386,9 @@ function showAuth(tab){
     </div>`;
 
   setView(`
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden;background:url('/assets/login-bg-booktrade-clean-hd.jpg') center center/cover no-repeat no-repeat">
-      <div style="position:absolute;inset:0;background:rgba(12,18,28,.03);backdrop-filter:none"></div>
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.02),rgba(0,0,0,.00),rgba(0,0,0,.06))"></div>
+    <div style="min-height:100vh;width:100vw;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden;box-sizing:border-box;background:url('/assets/login-bg-booktrade-full-clean-hd.jpg') center center/cover no-repeat">
+      <div style="position:absolute;inset:0;background:rgba(12,18,28,.02);backdrop-filter:none"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.01),rgba(0,0,0,0),rgba(0,0,0,.04))"></div>
 
       <div style="position:relative;z-index:1;width:min(410px,90vw);background:rgba(255,255,255,.97);border:1px solid rgba(255,255,255,.78);border-radius:18px;padding:32px 32px 28px;box-shadow:0 28px 80px rgba(15,23,42,.28)">
         ${logo}
