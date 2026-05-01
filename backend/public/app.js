@@ -1969,3 +1969,22 @@ try{
   window.showNotifications=showNotifications;
   window.forceLogout=forceLogout;
 }catch(e){console.warn('global exports error',e);}
+
+
+/* ── Safe global exports: evita “app.js aún no cargó” en botones inline ── */
+try{
+  if (typeof showDiscover === 'function') window.showDiscover = showDiscover;
+  if (typeof showBooks === 'function') window.showBooks = showBooks;
+  if (typeof showMatches === 'function') window.showMatches = showMatches;
+  if (typeof showChats === 'function') window.showChats = showChats;
+  if (typeof showHistory === 'function') window.showHistory = showHistory;
+  if (typeof showProfile === 'function') window.showProfile = showProfile;
+  if (typeof showNotifications === 'function') window.showNotifications = showNotifications;
+  if (typeof showAboutBookTrade === 'function') window.showAboutBookTrade = showAboutBookTrade;
+  if (typeof openPublicProfile === 'function') window.openPublicProfile = openPublicProfile;
+  if (typeof forceLogout === 'function') window.forceLogout = forceLogout;
+  if (typeof doLogout === 'function') window.doLogout = doLogout;
+}catch(e){
+  console.warn('global exports error', e);
+}
+
