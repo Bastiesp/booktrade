@@ -370,6 +370,176 @@ async function sendForgotPassword(){
 }
 
 
+
+function showAboutBookTrade(){
+  const ov=document.createElement('div');
+  ov.className='bt-about-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.68);backdrop-filter:blur(5px);z-index:2147482500;display:flex;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .18s';
+
+  const sections=[
+    ['Propósito de BookTrade',[
+      'BookTrade es una comunidad pensada para conectar lectores y facilitar el intercambio de libros físicos entre personas.',
+      'La app busca promover la lectura, la reutilización de libros y la creación de vínculos seguros entre usuarios.',
+      'BookTrade no funciona como una tienda tradicional, sino como una plataforma de encuentro entre personas interesadas en intercambiar libros.'
+    ]],
+    ['Publicación de libros',[
+      'Cada usuario debe publicar libros reales que tenga físicamente disponibles para intercambiar.',
+      'La información del libro debe ser clara y honesta: título, autor, género, estado y descripción.',
+      'No se permite publicar libros que el usuario no tenga en su poder, libros falsos, inexistentes o con información engañosa.',
+      'El usuario debe actualizar o retirar publicaciones si el libro ya no está disponible.'
+    ]],
+    ['Fotos de los libros',[
+      'Cada usuario debe subir fotos reales tomadas por sí mismo del ejemplar físico que desea intercambiar.',
+      'No se permite subir imágenes descargadas de internet, portadas oficiales de tiendas, editoriales, Google, Amazon, Goodreads u otras plataformas.',
+      'Las fotos deben representar fielmente el estado real del libro.',
+      'Se recomienda subir fotos de la portada, contraportada o lomo, y algún detalle del estado físico del ejemplar.',
+      'BookTrade podrá eliminar imágenes que parezcan descargadas de internet, engañosas o que no correspondan al libro publicado.'
+    ]],
+    ['Estado real del ejemplar',[
+      'El usuario debe describir el estado real del libro de forma honesta.',
+      'Debe informar si el libro tiene daños importantes, páginas faltantes, rayados graves, humedad, manchas, roturas u otros defectos relevantes.',
+      'No se permite ocultar información importante sobre el estado del ejemplar.'
+    ]],
+    ['Intercambios responsables',[
+      'Los usuarios deben confirmar un intercambio solo cuando este ya se haya realizado.',
+      'Ambas partes deben haber recibido el libro acordado antes de confirmar el intercambio como completado.',
+      'No se debe presionar, engañar o manipular a otro usuario para confirmar un intercambio no realizado.',
+      'Si existe un problema con el intercambio, se recomienda usar el botón de reportar o contactar al administrador.'
+    ]],
+    ['Seguridad en encuentros presenciales',[
+      'BookTrade recomienda realizar intercambios en lugares públicos y seguros.',
+      'Se sugieren puntos como librerías, bibliotecas, cafeterías, universidades, centros culturales, plazas concurridas o puntos de encuentro con buena visibilidad.',
+      'No recomendamos realizar intercambios en domicilios particulares.',
+      'No recomendamos compartir información personal innecesaria, como dirección exacta, documentos personales, claves, datos bancarios u otra información sensible.'
+    ]],
+    ['Respeto entre usuarios',[
+      'Todos los usuarios deben tratarse con respeto.',
+      'No se permite lenguaje ofensivo, amenazas, acoso, discriminación, hostigamiento, intimidación ni conductas abusivas.',
+      'No se permite molestar reiteradamente a otro usuario si este no desea continuar la conversación.'
+    ]],
+    ['Uso correcto del chat',[
+      'El chat debe utilizarse principalmente para coordinar intercambios de libros y resolver dudas relacionadas con el ejemplar ofrecido.',
+      'No se permite enviar spam, publicidad no autorizada, contenido sexual, amenazas, insultos, enlaces sospechosos o mensajes que no tengan relación con el intercambio.',
+      'Los usuarios pueden reportar conversaciones inapropiadas.'
+    ]],
+    ['Perfil real y verificación',[
+      'Cada usuario debe usar información verídica en su perfil.',
+      'La comuna indicada debe ayudar a coordinar intercambios cercanos, sin exponer la dirección exacta del usuario.',
+      'La foto de perfil, cuando sea solicitada para verificación, debe corresponder al rostro real del usuario.',
+      'No se permite usar fotos de terceros, personajes públicos, imágenes falsas o contenido engañoso como foto de perfil.'
+    ]],
+    ['Protección de datos personales',[
+      'BookTrade recopila solo los datos necesarios para el funcionamiento de la comunidad.',
+      'Estos datos pueden incluir nombre de usuario, correo electrónico, comuna, foto de perfil, libros publicados, mensajes, matches, reportes e historial de intercambios.',
+      'Estos datos se utilizan para operar la app, facilitar los intercambios, mejorar la seguridad, administrar reportes y mantener la confianza dentro de la comunidad.',
+      'BookTrade no venderá datos personales de los usuarios.'
+    ]],
+    ['Datos sensibles',[
+      'Los usuarios no deben publicar datos sensibles propios o de terceros en perfiles, chats, publicaciones o reportes.',
+      'Esto incluye dirección exacta, documentos de identidad, información bancaria, datos médicos, contraseñas, información íntima u otros antecedentes privados.',
+      'BookTrade podrá eliminar contenido que exponga datos sensibles.'
+    ]],
+    ['Reportes y moderación',[
+      'Los usuarios pueden reportar conductas sospechosas, mal uso de la app, perfiles falsos, contenido ofensivo, intentos de estafa, incumplimientos de intercambio o imágenes no autorizadas.',
+      'BookTrade podrá revisar reportes y tomar medidas según la gravedad del caso.',
+      'Las medidas pueden incluir advertencias, eliminación de publicaciones, bloqueo de usuarios, restricción de funciones o eliminación de cuentas.',
+      'El sistema de reportes debe usarse de buena fe. No se permite usar reportes falsos para perjudicar a otros usuarios.'
+    ]],
+    ['Bloqueo de usuarios',[
+      'Los usuarios pueden bloquear a otros usuarios si no desean seguir recibiendo mensajes o interacciones.',
+      'El bloqueo puede utilizarse ante molestias, mal comportamiento, insistencia excesiva o cualquier situación incómoda.'
+    ]],
+    ['Eliminación de cuenta',[
+      'Los usuarios pueden solicitar o ejecutar la eliminación de su cuenta.',
+      'Al eliminar una cuenta, BookTrade podrá desactivar el perfil y ocultar sus publicaciones activas.',
+      'BookTrade podrá conservar ciertos registros mínimos cuando sean necesarios para seguridad, prevención de abusos, historial administrativo o cumplimiento legal.'
+    ]],
+    ['Responsabilidad sobre los libros',[
+      'Cada usuario es responsable de los libros que publica, de la veracidad de la información entregada y del cumplimiento de los acuerdos de intercambio.',
+      'BookTrade no es dueño de los libros publicados ni garantiza por sí mismo el estado, autenticidad, disponibilidad o entrega de cada ejemplar.',
+      'BookTrade actúa como plataforma de conexión entre usuarios.'
+    ]],
+    ['Contenido prohibido',[
+      'No se permite publicar libros, imágenes, mensajes o contenido que promueva actividades ilegales, violencia, odio, explotación, acoso, fraude, suplantación de identidad o cualquier conducta que ponga en riesgo a otros usuarios.',
+      'No se permite usar BookTrade para difundir contenido ofensivo, discriminatorio, sexual explícito, amenazante o engañoso.'
+    ]],
+    ['Derechos de autor e imágenes',[
+      'Los usuarios deben subir únicamente fotos propias del ejemplar físico que desean intercambiar.',
+      'Al subir imágenes, el usuario declara que son fotografías tomadas por él o que cuenta con autorización suficiente para publicarlas.',
+      'No se permite usar imágenes descargadas de internet, portadas oficiales de tiendas, editoriales o plataformas externas.',
+      'BookTrade podrá retirar imágenes o publicaciones si recibe reportes o detecta posible infracción de derechos de autor, marcas u otros derechos de terceros.'
+    ]],
+    ['Uso no comercial de la comunidad',[
+      'BookTrade está orientada a facilitar el intercambio de libros entre lectores.',
+      'No se permite utilizar la app como tienda comercial, canal de reventa masiva, spam publicitario o vitrina de negocios sin autorización previa de BookTrade.',
+      'Las librerías, instituciones o aliados que quieran participar de forma organizada deberán contar con autorización o acuerdo previo.'
+    ]],
+    ['Cuentas falsas o suplantación',[
+      'No se permite crear cuentas falsas, hacerse pasar por otra persona, usar fotos ajenas, nombres engañosos o información falsa para manipular la confianza de otros usuarios.',
+      'BookTrade podrá bloquear o eliminar cuentas que presenten señales de suplantación o uso engañoso.'
+    ]],
+    ['Conductas que pueden generar sanción',[
+      'BookTrade podrá advertir, limitar, bloquear o eliminar cuentas que incumplan las reglas de la comunidad.',
+      'Entre las conductas sancionables se incluyen acoso, insultos, estafas, reportes reiterados, publicación de contenido falso, uso de imágenes no autorizadas, incumplimientos graves de intercambio o uso abusivo del sistema.',
+      'La gravedad de la medida dependerá del caso y de los antecedentes disponibles.'
+    ]],
+    ['Cambios en las reglas',[
+      'BookTrade podrá actualizar estas reglas para mejorar la seguridad, la experiencia de uso y el funcionamiento de la comunidad.',
+      'Los usuarios serán responsables de revisar y respetar las reglas vigentes al utilizar la app.',
+      'El uso continuo de la app implica la aceptación de las reglas actualizadas.'
+    ]]
+  ];
+
+  const content=sections.map(([title,items],i)=>`
+    <section style="background:#F8FAFC;border:1px solid #DBEAFE;border-radius:16px;padding:14px;margin-bottom:12px">
+      <h3 style="margin:0 0 8px;font-family:Fraunces,serif;font-size:17px;color:#111827">${i+1}. ${esc(title)}</h3>
+      <ul style="margin:0;padding-left:18px;color:#475569;font-size:13px;line-height:1.48">
+        ${items.map(x=>`<li style="margin:5px 0">${esc(x)}</li>`).join('')}
+      </ul>
+    </section>`).join('');
+
+  ov.innerHTML=`
+    <div class="bt-about-card" style="width:min(760px,94vw);max-height:88vh;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:24px;box-shadow:0 28px 90px rgba(15,23,42,.32);display:flex;flex-direction:column;overflow:hidden;transform:translateY(14px);transition:transform .18s">
+      <div style="padding:20px 20px 16px;border-bottom:1px solid #DBEAFE;display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+        <div>
+          <div style="font-family:Fraunces,serif;font-size:25px;font-weight:900;color:#111827">Nosotros y reglas de comunidad</div>
+          <div style="font-size:13px;color:#64748B;margin-top:4px;line-height:1.4">Conoce el propósito de BookTrade, cómo protegemos la comunidad y las reglas básicas para intercambiar con confianza.</div>
+        </div>
+        <button class="bt-about-close" style="width:38px;height:38px;border-radius:999px;border:1px solid #BFDBFE;background:#EFF6FF;color:#111827;font-size:22px;font-weight:900;cursor:pointer;flex-shrink:0">×</button>
+      </div>
+      <div style="padding:16px 20px;overflow:auto">
+        <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;margin-bottom:14px;color:#334155;font-size:13px;line-height:1.5">
+          <b>Resumen:</b> BookTrade busca construir una comunidad lectora basada en confianza, respeto y colaboración. Cada usuario cumple un rol importante para que los intercambios sean seguros, honestos y positivos.
+        </div>
+        ${content}
+        <div style="font-size:12px;color:#64748B;line-height:1.45;margin:14px 0 4px">
+          Este texto es una base comunitaria y de uso responsable. Para un lanzamiento público amplio, se recomienda revisar los términos definitivos con asesoría legal.
+        </div>
+      </div>
+      <div style="padding:14px 20px;border-top:1px solid #DBEAFE;background:#FFFFFF">
+        <button class="bt-about-close" style="width:100%;padding:13px;border:none;border-radius:12px;background:#3B82F6;color:#fff;font-weight:900;cursor:pointer">Entendido</button>
+      </div>
+    </div>`;
+
+  const close=()=>{
+    ov.style.opacity='0';
+    const card=ov.querySelector('.bt-about-card');
+    if(card)card.style.transform='translateY(14px)';
+    setTimeout(()=>ov.remove(),190);
+  };
+
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>{
+    ov.style.opacity='1';
+    const card=ov.querySelector('.bt-about-card');
+    if(card)card.style.transform='translateY(0)';
+  });
+
+  ov.querySelectorAll('.bt-about-close').forEach(b=>b.onclick=close);
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+}
+
+
 function showAuth(tab){
   document.body.classList.add('login-screen');
   document.documentElement.classList.add('login-screen');
@@ -441,6 +611,9 @@ function showAuth(tab){
 
             <button id="forgot-inline-link" type="button" onclick="showForgotPassword()"
               style="width:100%;background:transparent;border:none;color:#3B82F6;font-size:14px;font-weight:800;margin-top:4px;cursor:pointer;padding:8px">¿Olvidaste tu contraseña?</button>
+
+            <button type="button" onclick="showAboutBookTrade()"
+              style="width:100%;background:transparent;border:1px solid #DBEAFE;color:#475569;font-size:13px;font-weight:800;margin-top:2px;cursor:pointer;padding:10px;border-radius:10px">Nosotros · Privacidad · Reglas</button>
 
             <div style="display:flex;align-items:center;gap:16px;margin:8px 0 4px;color:#6B7280;font-size:13px">
               <div style="height:1px;background:#E5E7EB;flex:1"></div>
