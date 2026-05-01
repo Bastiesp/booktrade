@@ -60,9 +60,10 @@ router.post('/image', auth, async (req, res) => {
       return res.status(400).json({ error: 'Formato de imagen inválido' });
     }
 
-    // ~8MB en base64 aprox. El cliente ya comprime, esto evita abusos.
-    if (image.length > 11_000_000) {
-      return res.status(413).json({ error: 'Imagen demasiado grande' });
+    // El cliente comprime antes de subir. Este límite evita abusos o imágenes sin comprimir.
+    // 6.5MB en base64 equivale aproximadamente a 4.8MB binarios, suficiente para imágenes ya optimizadas.
+    if (image.length > 6_500_000) {
+      return res.status(413).json({ error: 'Imagen demasiado grande después de comprimir. Intenta con otra foto.' });
     }
 
     const safeFolder = ['books', 'profiles'].includes(folder) ? folder : 'misc';
@@ -75,6 +76,7 @@ router.post('/image', auth, async (req, res) => {
       unique_filename: true,
       use_filename: false,
       transformation: [
+        { width: 1200, height: 1200, crop: 'limit' },
         { quality: 'auto:good', fetch_format: 'auto' }
       ],
       context: {
