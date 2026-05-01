@@ -1214,7 +1214,7 @@ function openBookModal(idOrNull){
           </div>`).join('')}
         </div>
         <input type="file" id="bm-file" accept="image/*" style="display:none">
-        <div style="font-size:11px;color:#9CA3AF;margin-top:6px">Toca cada cuadro para elegir una foto. Las imágenes se guardan en Cloudinary.</div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:6px">Toca cada cuadro para elegir una foto real del ejemplar. Máximo 10MB por foto; la app la comprime antes de subirla a Cloudinary.</div>
       </div>
       <div style="margin-bottom:20px"><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Color de portada</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -1285,19 +1285,36 @@ function openBookModal(idOrNull){
 
   $('bm-file').addEventListener('change',async()=>{
     const f=$('bm-file').files[0];if(!f)return;
-    if(f.size>10*1024*1024)return toast('Imagen muy grande (máx 10MB)','error');
-    const btn=$('bm-save');btn.disabled=true;btn.textContent='Subiendo a Cloudinary...';
+    try{validateImageFile(f);}catch(e){toast(e.message,'error');$('bm-file').value='';return;}
+    const btn=$('bm-save');btn.disabled=true;btn.textContent='Comprimiendo imagen...';
     try{
       const url=await compressAndUploadImg(f,'books');
       bmFillSlot(activeSlot,url);state.photos[activeSlot]=url;
       const nx=state.photos.findIndex(x=>!x);if(nx!==-1)activeSlot=nx;
-    }catch{toast('Error al procesar foto','error');}
+    }catch(e){toast(e.message||'Error al procesar foto','error');}
     finally{btn.disabled=false;btn.textContent=state.editing?'Guardar cambios':'Agregar libro';}
   });
 }
 
 function bmFillSlot(i,src){const img=$('pi'+i),ph=$('pp'+i),rm=$('pr'+i),sl=$('ps'+i);if(!img)return;img.src=src;img.style.display='block';ph.style.display='none';rm.style.display='block';sl.style.borderStyle='solid';sl.style.borderColor='#3B82F6';}
 function bmField(label,id,type,val){return `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${label}</div><input id="${id}" type="${type}" value="${esc(val)}" style="width:100%;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'"/></div>`;}
+
+const MAX_IMAGE_ORIGINAL_BYTES = 10 * 1024 * 1024; // 10MB máximo por archivo original
+
+function prettyBytes(bytes){
+  const n=Number(bytes||0);
+  if(n>=1024*1024)return (n/(1024*1024)).toFixed(1)+' MB';
+  if(n>=1024)return Math.round(n/1024)+' KB';
+  return n+' bytes';
+}
+
+function validateImageFile(file){
+  if(!file)throw new Error('Selecciona una imagen');
+  if(!String(file.type||'').startsWith('image/'))throw new Error('El archivo debe ser una imagen');
+  if(file.size>MAX_IMAGE_ORIGINAL_BYTES){
+    throw new Error('La imagen pesa '+prettyBytes(file.size)+'. El máximo permitido es 10MB.');
+  }
+}
 
 async function uploadImageToCloudinary(dataUrl, folder='books'){
   const r = await api('POST','/api/upload/image',{ image:dataUrl, folder });
@@ -1306,27 +1323,75 @@ async function uploadImageToCloudinary(dataUrl, folder='books'){
 }
 
 async function compressAndUploadImg(file, folder='books'){
-  const dataUrl = await compressImg(file);
+  validateImageFile(file);
+
+  const opts = folder === 'profiles'
+    ? { maxSize: 720, quality: 0.82, maxCompressedBytes: 850 * 1024 }
+    : { maxSize: 1200, quality: 0.78, maxCompressedBytes: 1200 * 1024 };
+
+  const dataUrl = await compressImg(file, opts);
   return await uploadImageToCloudinary(dataUrl, folder);
 }
 
-async function compressImg(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const ratio=Math.min(900/img.width,900/img.height,1);const c=document.createElement('canvas');c.width=Math.round(img.width*ratio);c.height=Math.round(img.height*ratio);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.78));};img.onerror=rej;img.src=e.target.result;};r.onerror=rej;r.readAsDataURL(file);});}
+async function compressImg(file,{maxSize=1200,quality=0.78,maxCompressedBytes=1200*1024}={}){
+  validateImageFile(file);
 
-/* ══════════════════════════════════════════════════
-   MATCHES
-   ══════════════════════════════════════════════════ */
-async function showMatches(){
-  setNav('nb-matches');
-  if(!requireLogin())return;
-  document.querySelector('.fab-btn')?.remove();
-  UNREAD=(()=>{try{return JSON.parse(localStorage.getItem('bt_unread_chats')||'{}')}catch{return {}}})();updateBadge();
-  setView(`
-    <div style="padding:16px 20px 12px"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Matches</div></div>
-    <div id="mlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:16px;align-items:center">
-      <div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div>
-    </div>`);
-  try{MATCHES=await api('GET','/api/swipes/matches')||[];drawMatches();}
-  catch(e){toast(e.message,'error');}
+  const img = await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const im=new Image();
+      im.onload=()=>resolve(im);
+      im.onerror=()=>reject(new Error('No se pudo leer la imagen'));
+      im.src=e.target.result;
+    };
+    reader.onerror=()=>reject(new Error('No se pudo leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+
+  let width=img.naturalWidth||img.width;
+  let height=img.naturalHeight||img.height;
+
+  if(!width||!height)throw new Error('Imagen inválida');
+
+  const ratio=Math.min(maxSize/width,maxSize/height,1);
+  width=Math.max(1,Math.round(width*ratio));
+  height=Math.max(1,Math.round(height*ratio));
+
+  const canvas=document.createElement('canvas');
+  canvas.width=width;
+  canvas.height=height;
+
+  const ctx=canvas.getContext('2d',{alpha:false});
+  ctx.fillStyle='#FFFFFF';
+  ctx.fillRect(0,0,width,height);
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  ctx.drawImage(img,0,0,width,height);
+
+  async function canvasToBlob(q){
+    return await new Promise((resolve,reject)=>{
+      canvas.toBlob(blob=>{
+        if(!blob)return reject(new Error('No se pudo comprimir la imagen'));
+        resolve(blob);
+      },'image/jpeg',q);
+    });
+  }
+
+  let q=quality;
+  let blob=await canvasToBlob(q);
+
+  // Si aun queda pesada, baja la calidad progresivamente sin perder demasiado.
+  while(blob.size>maxCompressedBytes && q>0.55){
+    q=Math.max(0.55,q-0.07);
+    blob=await canvasToBlob(q);
+  }
+
+  return await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=()=>reject(new Error('No se pudo preparar la imagen comprimida'));
+    reader.readAsDataURL(blob);
+  });
 }
 
 function drawMatches(){
@@ -1683,7 +1748,7 @@ async function showProfile(){
           <div style="font-size:11px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Nivel de usuario</div>
           ${(()=>{const p=u.levelProgress||nextLevelInfo(u.completedExchanges);return `<div style="font-family:Fraunces,serif;font-size:20px;font-weight:800;color:#111827">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${u.completedExchanges||0} intercambios realizados · ${p.next?`faltan ${p.remaining} para ${p.next}`:'nivel máximo alcanzado'} · Verificación: ${esc(u.verificationStatus||'pending')}</div><div style="height:10px;background:#DBEAFE;border-radius:999px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${Math.max(0,Math.min(100,p.percent||0))}%;background:#3B82F6;border-radius:999px"></div></div>`})()}
         </div>
-        <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Foto de rostro / perfil</div><div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px;margin-bottom:16px"><input type="file" id="pf-file" accept="image/*" style="width:100%;font-size:13px;color:#6B7280"><div style="font-size:11px;color:#9CA3AF;margin-top:8px">Sube una foto clara de tu rostro. Quedará pendiente de verificación.</div></div>
+        <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Foto de rostro / perfil</div><div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px;margin-bottom:16px"><input type="file" id="pf-file" accept="image/*" style="width:100%;font-size:13px;color:#6B7280"><div style="font-size:11px;color:#9CA3AF;margin-top:8px">Sube una foto clara de tu rostro. Máximo 10MB; la app la comprime antes de subirla. Quedará pendiente de verificación.</div></div>
         <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Sobre mí</div>
         <textarea id="pb" rows="3" placeholder="Cuéntale a otros qué tipo de lector eres..." style="width:100%;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;resize:none;margin-bottom:12px;box-sizing:border-box;line-height:1.5;font-family:inherit">${esc(u.bio||'')}</textarea>
         <input id="pl" type="text" value="${esc(u.location||'')}" placeholder="Ej: Concepción, Chile"
@@ -1705,7 +1770,7 @@ async function showProfile(){
       </div>`);
     window._pg=sg;
     window.pgToggle=g=>{const has=window._pg.includes(g);if(has)window._pg=window._pg.filter(x=>x!==g);else window._pg.push(g);const btn=$('pg-'+g);if(!btn)return;const on=window._pg.includes(g);btn.style.background=on?'rgba(59,130,246,.12)':'#EFF6FF';btn.style.borderColor=on?'rgba(59,130,246,.35)':'#BFDBFE';btn.style.color=on?'#3B82F6':'#6B7280';};
-    window.pgSave=async()=>{const btn=$('psave');btn.disabled=true;btn.textContent='Guardando...';try{let profilePhoto;const file=$('pf-file')?.files?.[0];if(file)profilePhoto=await compressAndUploadImg(file,'profiles');const payload={bio:$('pb').value.trim(),location:$('pl').value.trim(),favoriteGenres:window._pg};if(profilePhoto)payload.profilePhoto=profilePhoto;const updated=await api('PUT','/api/users/me',payload);rememberUser({...ME,...updated});updateNavProfilePhoto();toast('Perfil actualizado ✓','success');showProfile();}catch(e){toast(e.message,'error');}finally{btn.disabled=false;btn.textContent='Guardar cambios';}};
+    window.pgSave=async()=>{const btn=$('psave');btn.disabled=true;btn.textContent='Guardando...';try{let profilePhoto;const file=$('pf-file')?.files?.[0];if(file){validateImageFile(file);btn.textContent='Comprimiendo foto...';profilePhoto=await compressAndUploadImg(file,'profiles');btn.textContent='Guardando...';}const payload={bio:$('pb').value.trim(),location:$('pl').value.trim(),favoriteGenres:window._pg};if(profilePhoto)payload.profilePhoto=profilePhoto;const updated=await api('PUT','/api/users/me',payload);rememberUser({...ME,...updated});updateNavProfilePhoto();toast('Perfil actualizado ✓','success');showProfile();}catch(e){toast(e.message,'error');}finally{btn.disabled=false;btn.textContent='Guardar cambios';}};
   }catch(e){toast(e.message,'error');}
 }
 
