@@ -1394,6 +1394,20 @@ async function compressImg(file,{maxSize=1200,quality=0.78,maxCompressedBytes=12
   });
 }
 
+
+async function showMatches(){
+  setNav('nb-matches');
+  if(!requireLogin())return;
+  document.querySelector('.fab-btn')?.remove();
+  setView(`<div style="padding:16px 20px 12px"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Matches</div><div style="font-size:12px;color:#6B7280;margin-top:2px">Personas con interés mutuo para intercambiar</div></div><div id="mlist" style="padding:0 16px 80px;display:flex;flex-direction:column;align-items:center;gap:14px"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
+  try{
+    MATCHES=await api('GET','/api/swipes/matches')||[];
+    drawMatches();
+  }catch(e){
+    toast(e.message,'error');
+  }
+}
+
 function drawMatches(){
   const ml=$('mlist');if(!ml)return;
   if(!MATCHES.length){ml.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.4">💔</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin matches aún</div><div style="font-size:13px;color:#6B7280">Cuando alguien quiera tu libro aparecerá aquí</div></div>`;return;}
@@ -1971,7 +1985,22 @@ try{
 }catch(e){console.warn('global exports error',e);}
 
 
-/* ── Safe global exports: evita “app.js aún no cargó” en botones inline ── */
+/* ── BookTrade safe navigation bridge v5 ───────────────── */
+window.btGo = function(section){
+  const map = {
+    discover: 'showDiscover',
+    books: 'showBooks',
+    matches: 'showMatches',
+    chats: 'showChats',
+    history: 'showHistory',
+    profile: 'showProfile'
+  };
+  const fnName = map[section] || section;
+  const fn = window[fnName];
+  if (typeof fn === 'function') return fn();
+  alert('La app todavía está cargando. Recarga con ?fresh=navfix5');
+};
+
 try{
   if (typeof showDiscover === 'function') window.showDiscover = showDiscover;
   if (typeof showBooks === 'function') window.showBooks = showBooks;
@@ -1979,12 +2008,7 @@ try{
   if (typeof showChats === 'function') window.showChats = showChats;
   if (typeof showHistory === 'function') window.showHistory = showHistory;
   if (typeof showProfile === 'function') window.showProfile = showProfile;
-  if (typeof showNotifications === 'function') window.showNotifications = showNotifications;
   if (typeof showAboutBookTrade === 'function') window.showAboutBookTrade = showAboutBookTrade;
   if (typeof openPublicProfile === 'function') window.openPublicProfile = openPublicProfile;
-  if (typeof forceLogout === 'function') window.forceLogout = forceLogout;
-  if (typeof doLogout === 'function') window.doLogout = doLogout;
-}catch(e){
-  console.warn('global exports error', e);
-}
+}catch(e){ console.warn('BookTrade nav export warning:', e); }
 
