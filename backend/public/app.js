@@ -310,40 +310,66 @@ function injectForgotInsideLogin(){
 }
 
 function showForgotPassword(){
+  document.body.classList.add('login-screen');
+  document.documentElement.classList.add('login-screen');
+
   const nav=$('nav');
-  if(nav){nav.style.setProperty('display','none','important');nav.style.setProperty('visibility','hidden','important');nav.style.setProperty('pointer-events','none','important');}
+  if(nav){
+    nav.style.setProperty('display','none','important');
+    nav.style.setProperty('visibility','hidden','important');
+    nav.style.setProperty('pointer-events','none','important');
+  }
+
+  const appRoot=document.getElementById('app');
+  if(appRoot){
+    appRoot.style.setProperty('max-width','100%','important');
+    appRoot.style.setProperty('width','100%','important');
+    appRoot.style.setProperty('margin','0','important');
+  }
 
   const view=VIEW();
   if(view){
-    view.style.left='0';
-    view.style.bottom='0';
-    view.style.right='0';
+    view.style.setProperty('position','fixed','important');
+    view.style.setProperty('inset','0','important');
+    view.style.setProperty('left','0','important');
+    view.style.setProperty('right','0','important');
+    view.style.setProperty('top','0','important');
+    view.style.setProperty('bottom','0','important');
+    view.style.setProperty('width','100vw','important');
+    view.style.setProperty('height','100vh','important');
+    view.style.setProperty('background','transparent','important');
+    view.style.setProperty('overflow','hidden','important');
   }
 
   setView(`
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#EFF6FF">
-      <div style="width:100%;max-width:760px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;padding:24px;box-shadow:0 24px 70px rgba(17,24,39,.10)">
-        <div style="font-family:Fraunces,serif;font-size:28px;font-weight:900;color:#111827;margin-bottom:8px">Recuperar contraseña</div>
+    <div id="bt-forgot-screen" style="position:fixed;inset:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;background:url('/assets/login-bg-booktrade-full-clean-hd.jpg') center center/cover no-repeat;z-index:1">
+      <div style="position:absolute;inset:0;background:rgba(12,18,28,.10)"></div>
+      <div style="position:relative;z-index:2;width:min(410px,90vw);background:rgba(255,255,255,.97);border:1px solid rgba(255,255,255,.78);border-radius:18px;padding:28px 28px 24px;box-shadow:0 24px 70px rgba(15,23,42,.28)">
+        <div style="font-family:Fraunces,serif;font-size:27px;font-weight:900;color:#111827;margin-bottom:8px">Recuperar contraseña</div>
         <div style="font-size:14px;color:#6B7280;line-height:1.45;margin-bottom:18px">
           Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.
         </div>
 
         <input id="fp-email" type="email" placeholder="tu-correo@email.com"
-          style="width:100%;padding:14px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;font-size:15px;color:#111827;outline:none;margin-bottom:12px">
+          style="width:100%;box-sizing:border-box;padding:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:12px;font-size:15px;color:#111827;outline:none;margin-bottom:12px">
 
         <button id="fp-btn" onclick="sendForgotPassword()"
-          style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:900">
+          style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer">
           Enviar enlace
         </button>
 
+        <div id="fp-status" style="min-height:18px;font-size:13px;color:#64748B;margin-top:10px;text-align:center"></div>
+
         <button onclick="showAuth('login')"
-          style="width:100%;padding:13px;margin-top:4px;background:transparent;color:#6B7280;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:700">
+          style="width:100%;padding:13px;margin-top:10px;background:transparent;color:#6B7280;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">
           Volver al login
         </button>
       </div>
     </div>
   `);
 }
+
+
 
 async function sendForgotPassword(){
   const btn=$('fp-btn');
@@ -1971,7 +1997,7 @@ if(viewEl)viewEl.style.bottom='68px';
 
 updateBadge();
 if(TOKEN){launchApp();}else{showAuth('login');}
-setInterval(forceShowNav,1000);
+setInterval(()=>{if(!document.body.classList.contains('login-screen'))forceShowNav();},1000);
 
 window.showForgotPassword=showForgotPassword;
 window.sendForgotPassword=sendForgotPassword;
