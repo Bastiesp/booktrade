@@ -638,11 +638,22 @@ function showAuth(tab){
                 style="width:100%;height:54px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box">
             </div>
             <div style="position:relative">
+              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">🎂</div>
+              <input id="fbirth" type="date" autocomplete="bday"
+                style="width:100%;height:54px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box">
+            </div>
+
+            <div style="position:relative">
               <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">🔒</div>
               <input id="fp2" type="password" placeholder="Contraseña" autocomplete="new-password"
                 style="width:100%;height:54px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
                 onkeydown="if(event.key==='Enter')doRegister()">
             </div>
+
+            <label style="display:flex;gap:10px;align-items:flex-start;background:#F8FAFC;border:1px solid #DBEAFE;border-radius:12px;padding:11px;color:#475569;font-size:12.5px;line-height:1.35">
+              <input id="fterms" type="checkbox" style="margin-top:2px;flex-shrink:0">
+              <span>Acepto haber leído los <button type="button" onclick="showAboutBookTrade()" style="border:none;background:transparent;color:#0B5ED7;font-weight:900;padding:0;cursor:pointer;text-decoration:underline">términos legales, reglas y política de comunidad</button>.</span>
+            </label>
             <button id="btn-reg" onclick="doRegister()"
               style="width:100%;height:52px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 10px 20px rgba(59,130,246,.22)">Crear cuenta</button>
             <div style="text-align:center;font-size:14px;color:#6B7280;margin-top:4px">
@@ -672,10 +683,13 @@ async function doLogin(){
 
 async function doRegister(){
   const u=$('fu')?.value?.trim(),e=$('fe')?.value?.trim(),p=$('fp2')?.value;
-  if(!u||!e||!p)return toast('Completa todos los campos','error');
+  const birthDate=$('fbirth')?.value;
+  const acceptedTerms=!!$('fterms')?.checked;
+  if(!u||!e||!p||!birthDate)return toast('Completa todos los campos','error');
+  if(!acceptedTerms)return toast('Debes aceptar los términos legales, reglas y política de comunidad','error');
   const btn=$('btn-reg');if(btn){btn.disabled=true;btn.textContent='Creando cuenta...';}
   try{
-    const d=await api('POST','/api/auth/register',{username:u,email:e,password:p});
+    const d=await api('POST','/api/auth/register',{username:u,email:e,password:p,birthDate,acceptedTerms});
     TOKEN=d.token;localStorage.setItem('bs_token',TOKEN);rememberUser(d.user);
     toast('¡Bienvenido a BookTrade! 📚','success');
     await launchApp();
