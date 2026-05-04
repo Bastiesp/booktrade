@@ -47,6 +47,18 @@ function runIdle(fn,delay=80){
   setTimeout(()=>{try{fn()}catch{}},delay);
 }
 
+
+function bookTradeWordmarkHTML(scale=1){
+  return `<div style="display:flex;align-items:center;gap:${Math.round(10*scale)}px">
+    <div style="display:flex;gap:${Math.max(2,Math.round(3*scale))}px;align-items:flex-end;height:${Math.round(34*scale)}px">
+      <div style="width:${Math.round(12*scale)}px;height:${Math.round(27*scale)}px;background:#DC2626;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)"></div>
+      <div style="width:${Math.round(12*scale)}px;height:${Math.round(32*scale)}px;background:#F59E0B;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)"></div>
+      <div style="width:${Math.round(12*scale)}px;height:${Math.round(30*scale)}px;background:#16A34A;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)"></div>
+    </div>
+    <div style="font-family:Arial,system-ui,sans-serif;font-size:${Math.round(28*scale)}px;line-height:1;font-weight:900;letter-spacing:-1px;color:#111827">Book<span style="color:#0B5ED7">Trade</span></div>
+  </div>`;
+}
+
 function forceShowNav(){
   const nav=document.getElementById('nav');
   const view=document.getElementById('view');
@@ -692,8 +704,8 @@ async function showDiscover(){
   document.querySelector('.fab-btn')?.remove();
 
   setView(`
-    <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;min-width:0"><img src="/assets/booktrade-logo-explore.png" alt="BookTrade" style="width:min(260px,58vw);max-width:100%;height:auto;max-height:82px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.16))"></div>
+    <div style="padding:14px 20px 8px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;min-width:0">${bookTradeWordmarkHTML(.82)}</div>
       <div id="qcnt" style="display:none;background:#3B82F6;color:#FFFFFF;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600"></div>
     </div>
     <div id="gbar" style="display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none">
