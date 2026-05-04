@@ -45,6 +45,21 @@ const userSchema = new mongoose.Schema({
     default: []
   },
 
+  birthDate: {
+    type: Date,
+    default: null
+  },
+
+  acceptedTermsAt: {
+    type: Date,
+    default: null
+  },
+
+  acceptedTermsVersion: {
+    type: String,
+    default: ''
+  },
+
   profilePhoto: {
     type: String,
     default: ''
