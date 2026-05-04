@@ -119,7 +119,7 @@ router.get('/reports',auth,requireAdmin,async(req,res)=>{
 
 router.put('/reports/:id',auth,requireAdmin,async(req,res)=>{
   try{
-    const r=await Report.findByIdAndUpdate(req.params.id,{status:req.body.status,adminNote:req.body.adminNote},{new:true});
+    const r=await Report.findByIdAndUpdate(req.params.id,{status:req.body.status,adminNote:req.body.adminNote,priority:req.body.priority},{new:true});
     await log(req,'update_report','report',req.params.id,req.body);
     res.json(r);
   }catch(e){
@@ -188,6 +188,145 @@ router.delete('/books/:id',auth,requireAdmin,async(req,res)=>{
   await Book.findByIdAndDelete(req.params.id);
   await log(req,'delete_book','book',req.params.id,{});
   res.json({ok:true});
+});
+
+
+// Dashboard visual avanzado
+router.get('/dashboard',auth,requireAdmin,async(req,res)=>{
+  try{
+    const now=new Date();
+    const dayAgo=new Date(now.getTime()-24*60*60*1000);
+    const weekAgo=new Date(now.getTime()-7*24*60*60*1000);
+    const monthAgo=new Date(now.getTime()-30*24*60*60*1000);
+
+    const [
+      users, usersWeek, usersMonth, admins, blocked, deleted,
+      books, activeBooks, booksWeek,
+      exchangesCompleted, exchangesPending, exchangesWeek,
+      reportsOpen, reportsReviewing, reportsWaiting, reportsCritical,
+      pendingVerifications, messages, messagesDay, actions
+    ] = await Promise.all([
+      User.countDocuments({accountStatus:{$ne:'deleted'}}),
+      User.countDocuments({createdAt:{$gte:weekAgo},accountStatus:{$ne:'deleted'}}),
+      User.countDocuments({createdAt:{$gte:monthAgo},accountStatus:{$ne:'deleted'}}),
+      User.countDocuments({role:'admin'}),
+      User.countDocuments({accountStatus:'blocked'}),
+      User.countDocuments({accountStatus:'deleted'}),
+      Book.countDocuments(),
+      Book.countDocuments({available:true}),
+      Book.countDocuments({createdAt:{$gte:weekAgo}}),
+      Exchange.countDocuments({status:'completed'}),
+      Exchange.countDocuments({status:'pending'}),
+      Exchange.countDocuments({updatedAt:{$gte:weekAgo}}),
+      Report.countDocuments({status:'open'}),
+      Report.countDocuments({status:'reviewing'}),
+      Report.countDocuments({status:'waiting_user'}),
+      Report.countDocuments({priority:{$in:['high','critical']},status:{$in:['open','reviewing','waiting_user']}}),
+      User.countDocuments({profilePhoto:{$ne:''},verificationStatus:'pending',accountStatus:{$ne:'deleted'}}),
+      Message.countDocuments(),
+      Message.countDocuments({createdAt:{$gte:dayAgo}}),
+      AdminAction.find().populate('admin','username email').sort({createdAt:-1}).limit(12).lean()
+    ]);
+
+    const topUsers=await User.find({accountStatus:{$ne:'deleted'}})
+      .select('username email location profilePhoto completedExchanges level ratingAvg ratingCount accountStatus verificationStatus createdAt')
+      .sort({completedExchanges:-1,createdAt:-1})
+      .limit(8)
+      .lean();
+
+    const topGenres=await Book.aggregate([
+      {$group:{_id:'$genre',count:{$sum:1}}},
+      {$sort:{count:-1}},
+      {$limit:8}
+    ]);
+
+    const comunas=await User.aggregate([
+      {$match:{accountStatus:{$ne:'deleted'},location:{$nin:[null,'']}}},
+      {$group:{_id:'$location',count:{$sum:1}}},
+      {$sort:{count:-1}},
+      {$limit:8}
+    ]);
+
+    const recentReports=await Report.find({status:{$in:['open','reviewing','waiting_user']}})
+      .populate('reporter','username email')
+      .populate('reportedUser','username email accountStatus')
+      .populate('book','title author')
+      .sort({priority:-1,createdAt:-1})
+      .limit(8)
+      .lean();
+
+    const health = reportsCritical>0 || reportsOpen>5 || blocked>5
+      ? 'critical'
+      : (reportsOpen>0 || pendingVerifications>0 ? 'warning' : 'ok');
+
+    res.json({
+      health,
+      kpis:{users,usersWeek,usersMonth,admins,blocked,deleted,books,activeBooks,booksWeek,exchangesCompleted,exchangesPending,exchangesWeek,reportsOpen,reportsReviewing,reportsWaiting,reportsCritical,pendingVerifications,messages,messagesDay},
+      topUsers,topGenres,comunas,recentReports,actions
+    });
+  }catch(e){
+    console.error('GET /api/admin/dashboard error:',e);
+    res.status(500).json({error:'Error cargando dashboard'});
+  }
+});
+
+// Ficha completa usuario admin
+router.get('/users/:id/detail',auth,requireAdmin,async(req,res)=>{
+  try{
+    const id=req.params.id;
+    const user=await User.findById(id).select('-password -resetPasswordToken -resetPasswordExpires').lean();
+    if(!user)return res.status(404).json({error:'Usuario no encontrado'});
+
+    const [books, exchanges, reportsReceived, reportsSent, messagesCount, adminActions] = await Promise.all([
+      Book.find({owner:id}).sort({createdAt:-1}).limit(80).lean(),
+      Exchange.find({participants:id})
+        .populate('participants','username email profilePhoto location accountStatus')
+        .populate('requester','username email')
+        .populate('matchedUser','username email')
+        .populate('myBook','title author photos')
+        .populate('theirBook','title author photos')
+        .sort({updatedAt:-1}).limit(80).lean(),
+      Report.find({reportedUser:id}).populate('reporter','username email').populate('book','title author').sort({createdAt:-1}).limit(50).lean(),
+      Report.find({reporter:id}).populate('reportedUser','username email').populate('book','title author').sort({createdAt:-1}).limit(50).lean(),
+      Message.countDocuments({sender:id}),
+      AdminAction.find({targetId:String(id)}).populate('admin','username email').sort({createdAt:-1}).limit(40).lean()
+    ]);
+
+    const openReports=reportsReceived.filter(r=>['open','reviewing','waiting_user'].includes(r.status)).length;
+    const completed=exchanges.filter(e=>e.status==='completed').length;
+    const pending=exchanges.filter(e=>e.status==='pending').length;
+
+    res.json({user,stats:{books:books.length,activeBooks:books.filter(b=>b.available).length,completed,pending,openReports,reportsReceived:reportsReceived.length,reportsSent:reportsSent.length,messagesCount},books,exchanges,reportsReceived,reportsSent,adminActions});
+  }catch(e){
+    console.error('GET /api/admin/users/:id/detail error:',e);
+    res.status(500).json({error:'Error cargando ficha usuario'});
+  }
+});
+
+// Reporte detallado
+router.get('/reports/:id/detail',auth,requireAdmin,async(req,res)=>{
+  try{
+    const report=await Report.findById(req.params.id)
+      .populate('reporter','username email location profilePhoto accountStatus role verificationStatus completedExchanges level')
+      .populate('reportedUser','username email location profilePhoto accountStatus role verificationStatus completedExchanges level')
+      .populate('book','title author genre photos owner available')
+      .lean();
+    if(!report)return res.status(404).json({error:'Reporte no encontrado'});
+
+    const related=await Report.find({
+      _id:{$ne:report._id},
+      $or:[
+        report.reportedUser?{reportedUser:report.reportedUser._id}:null,
+        report.reporter?{reporter:report.reporter._id}:null,
+        report.book?{book:report.book._id}:null
+      ].filter(Boolean)
+    }).populate('reporter','username email').populate('reportedUser','username email').populate('book','title author').sort({createdAt:-1}).limit(20).lean();
+
+    res.json({report,related});
+  }catch(e){
+    console.error('GET /api/admin/reports/:id/detail error:',e);
+    res.status(500).json({error:'Error cargando detalle reporte'});
+  }
 });
 
 module.exports=router;
