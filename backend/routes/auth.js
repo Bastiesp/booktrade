@@ -80,12 +80,13 @@ async function sendResetEmail(email, resetUrl) {
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
-    }
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000
   });
 
-  await transporter.verify();
-
-  await transporter.sendMail({
+  const sendPromise = transporter.sendMail({
     from: process.env.MAIL_FROM || `BookTrade <${process.env.SMTP_USER}>`,
     to: email,
     subject: 'Restablecer contraseña — BookTrade',
@@ -104,6 +105,12 @@ async function sendResetEmail(email, resetUrl) {
       </div>
     `
   });
+
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Timeout enviando correo SMTP')), 18000)
+  );
+
+  await Promise.race([sendPromise, timeoutPromise]);
 
   return { sent: true };
 }
