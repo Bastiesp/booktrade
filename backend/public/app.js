@@ -23,6 +23,30 @@ const roomId=(...a)=>a.map(String).sort().join('_');
 const matchRoomId=(m)=>{const users=[getCurrentUserId(),m?.matchedUser?.id].map(String).sort().join('_');const books=[m?.myBook?.id,m?.theirBook?.id].map(String).sort().join('_');return `match_${users}_${books}`;};
 
 
+
+/* ── Optimización de carga visual ───────────────── */
+const CACHE_TTL = 60 * 1000;
+
+function cacheSet(key,data){
+  try{localStorage.setItem(key,JSON.stringify({t:Date.now(),data}));}catch{}
+}
+function cacheGet(key,maxAge=CACHE_TTL){
+  try{
+    const raw=localStorage.getItem(key);
+    if(!raw)return null;
+    const obj=JSON.parse(raw);
+    if(!obj || !('data' in obj))return null;
+    if(Date.now()-(obj.t||0)>maxAge)return null;
+    return obj.data;
+  }catch{return null;}
+}
+function quickLoader(text='Cargando...'){
+  return `<div style="display:flex;align-items:center;justify-content:center;min-height:240px;color:#64748B;font-size:14px;gap:10px"><div class="spin"></div><span>${text}</span></div>`;
+}
+function runIdle(fn,delay=80){
+  setTimeout(()=>{try{fn()}catch{}},delay);
+}
+
 function forceShowNav(){
   const nav=document.getElementById('nav');
   const view=document.getElementById('view');
@@ -71,30 +95,21 @@ function forceLogout(){
   }catch{}
   try{SOCKET?.disconnect();}catch{}
   SOCKET=null;
+  forceShowNav();
   showAuth('login');setTimeout(()=>ensureForgotFixedButton?.(),80);
 }
 
 function requireLogin(){
   if(TOKEN)return true;
+  forceShowNav();
   toast('Inicia sesión para usar este módulo','error');
   showAuth('login');
   return false;
 }
 
 
-
-function bookTradeWordmarkHTML(scale=1){
-  return `<div style="display:flex;align-items:center;gap:${Math.round(10*scale)}px">
-    <div style="display:flex;gap:3px;align-items:flex-end;height:${Math.round(34*scale)}px">
-      <div style="width:${Math.round(12*scale)}px;height:${Math.round(27*scale)}px;background:#DC2626;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)"></div>
-      <div style="width:${Math.round(12*scale)}px;height:${Math.round(32*scale)}px;background:#F59E0B;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)"></div>
-      <div style="width:${Math.round(12*scale)}px;height:${Math.round(30*scale)}px;background:#16A34A;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)"></div>
-    </div>
-    <div style="font-family:Arial,system-ui,sans-serif;font-size:${Math.round(28*scale)}px;line-height:1;font-weight:900;letter-spacing:-1px;color:#111827">Book<span style="color:#0B5ED7">Trade</span></div>
-  </div>`;
-}
-
 function setNav(id){
+  forceShowNav();
   ['nb-discover','nb-books','nb-matches','nb-chats','nb-history','nb-profile'].forEach(n=>{
     const b=$(n);if(b)b.className='nb'+(n===id?' active':'');
   });
@@ -120,14 +135,13 @@ async function openPublicProfile(userId){
     const u=await api('GET','/api/users/'+userId+'/public');
     const p=u.levelProgress||nextLevelInfo(u.completedExchanges);
     const ov=document.createElement('div');
-    ov.className='bt-public-profile-modal';
-    ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(4px)';
-    ov.innerHTML=`<div style="width:min(540px,94vw);background:#FFFFFF;border-radius:24px;border:1px solid #BFDBFE;padding:22px;max-height:88vh;overflow:auto;box-shadow:0 26px 80px rgba(15,23,42,.26);position:relative">
-      <button class="bt-profile-close" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:999px;border:1px solid #BFDBFE;background:#EFF6FF;color:#111827;font-size:20px;font-weight:900;cursor:pointer">×</button>
-      <div style="display:flex;gap:16px;align-items:center;margin:16px 0 16px">
-        <div style="width:76px;height:76px;border-radius:50%;background:#3B82F6;color:#fff;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${u.profilePhoto?`<img src="${esc(u.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(u.username)}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-family:Fraunces,serif;font-size:24px;font-weight:800;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@${esc(u.username)}</div>
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000003;display:flex;align-items:flex-end;max-width:1180px;margin:0 auto;left:50%;transform:translateX(-50%)';
+    ov.innerHTML=`<div style="width:100%;background:#FFFFFF;border-radius:24px 24px 0 0;border:1px solid #BFDBFE;padding:24px;max-height:86vh;overflow:auto">
+      <div style="width:44px;height:4px;background:#93C5FD;border-radius:8px;margin:0 auto 18px"></div>
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
+        <div style="width:76px;height:76px;border-radius:50%;background:#3B82F6;color:#fff;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;overflow:hidden">${u.profilePhoto?`<img src="${esc(u.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(u.username)}</div>
+        <div style="flex:1">
+          <div style="font-family:Fraunces,serif;font-size:24px;font-weight:800;color:#111827">@${esc(u.username)}</div>
           <div style="font-size:13px;color:#6B7280;margin-top:3px">📍 ${esc(u.location||'Sin comuna')} · ${u.verificationStatus==='verified'?'✅ Verificado':'🕒 No verificado'}</div>
           <div style="font-size:13px;color:#6B7280;margin-top:3px">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))} · ${ratingText(u)}</div>
         </div>
@@ -139,14 +153,13 @@ async function openPublicProfile(userId){
       </div>
       <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:14px;padding:14px;margin-bottom:14px">
         <div style="font-size:12px;color:#6B7280;font-weight:800;text-transform:uppercase;margin-bottom:6px">Progreso de nivel</div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;color:#111827;font-weight:800"><span>${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</span><span>${p.next?`Faltan ${p.remaining} para ${p.next}`:'Nivel máximo'}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#111827;font-weight:800"><span>${levelEmoji(u.level)} ${esc(u.level)}</span><span>${p.next?`Faltan ${p.remaining} para ${p.next}`:'Nivel máximo'}</span></div>
         <div style="height:10px;background:#DBEAFE;border-radius:999px;overflow:hidden;margin-top:8px"><div style="height:100%;width:${Math.max(0,Math.min(100,p.percent||0))}%;background:#3B82F6;border-radius:999px"></div></div>
       </div>
       <div style="font-size:13px;color:#6B7280;line-height:1.5;margin-bottom:18px">${esc(u.bio||'Sin biografía todavía.')}</div>
-      <button class="bt-profile-close" style="width:100%;padding:13px;border:none;border-radius:12px;background:#3B82F6;color:#fff;font-weight:800">Cerrar</button>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:13px;border:none;border-radius:12px;background:#3B82F6;color:#fff;font-weight:800">Cerrar</button>
     </div>`;
     document.body.appendChild(ov);
-    ov.querySelectorAll('.bt-profile-close').forEach(b=>b.onclick=()=>ov.remove());
     ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
   }catch(e){toast(e.message,'error');}
 }
@@ -312,7 +325,7 @@ function injectForgotInsideLogin(){
 
 function showForgotPassword(){
   const nav=$('nav');
-  if(nav){nav.style.setProperty('display','none','important');nav.style.setProperty('visibility','hidden','important');nav.style.setProperty('pointer-events','none','important');}
+  if(nav)nav.style.display='none';
 
   const view=VIEW();
   if(view){
@@ -370,291 +383,59 @@ async function sendForgotPassword(){
 }
 
 
-
-function showAboutBookTrade(){
-  const ov=document.createElement('div');
-  ov.className='bt-about-modal';
-  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.68);backdrop-filter:blur(5px);z-index:2147482500;display:flex;align-items:center;justify-content:center;padding:18px;opacity:0;transition:opacity .18s';
-
-  const sections=[
-    ['Propósito de BookTrade',[
-      'BookTrade es una comunidad pensada para conectar lectores y facilitar el intercambio de libros físicos entre personas.',
-      'La app busca promover la lectura, la reutilización de libros y la creación de vínculos seguros entre usuarios.',
-      'BookTrade no funciona como una tienda tradicional, sino como una plataforma de encuentro entre personas interesadas en intercambiar libros.'
-    ]],
-    ['Publicación de libros',[
-      'Cada usuario debe publicar libros reales que tenga físicamente disponibles para intercambiar.',
-      'La información del libro debe ser clara y honesta: título, autor, género, estado y descripción.',
-      'No se permite publicar libros que el usuario no tenga en su poder, libros falsos, inexistentes o con información engañosa.',
-      'El usuario debe actualizar o retirar publicaciones si el libro ya no está disponible.'
-    ]],
-    ['Fotos de los libros',[
-      'Cada usuario debe subir fotos reales tomadas por sí mismo del ejemplar físico que desea intercambiar.',
-      'No se permite subir imágenes descargadas de internet, portadas oficiales de tiendas, editoriales, Google, Amazon, Goodreads u otras plataformas.',
-      'Las fotos deben representar fielmente el estado real del libro.',
-      'Se recomienda subir fotos de la portada, contraportada o lomo, y algún detalle del estado físico del ejemplar.',
-      'BookTrade podrá eliminar imágenes que parezcan descargadas de internet, engañosas o que no correspondan al libro publicado.'
-    ]],
-    ['Estado real del ejemplar',[
-      'El usuario debe describir el estado real del libro de forma honesta.',
-      'Debe informar si el libro tiene daños importantes, páginas faltantes, rayados graves, humedad, manchas, roturas u otros defectos relevantes.',
-      'No se permite ocultar información importante sobre el estado del ejemplar.'
-    ]],
-    ['Intercambios responsables',[
-      'Los usuarios deben confirmar un intercambio solo cuando este ya se haya realizado.',
-      'Ambas partes deben haber recibido el libro acordado antes de confirmar el intercambio como completado.',
-      'No se debe presionar, engañar o manipular a otro usuario para confirmar un intercambio no realizado.',
-      'Si existe un problema con el intercambio, se recomienda usar el botón de reportar o contactar al administrador.'
-    ]],
-    ['Seguridad en encuentros presenciales',[
-      'BookTrade recomienda realizar intercambios en lugares públicos y seguros.',
-      'Se sugieren puntos como librerías, bibliotecas, cafeterías, universidades, centros culturales, plazas concurridas o puntos de encuentro con buena visibilidad.',
-      'No recomendamos realizar intercambios en domicilios particulares.',
-      'No recomendamos compartir información personal innecesaria, como dirección exacta, documentos personales, claves, datos bancarios u otra información sensible.'
-    ]],
-    ['Respeto entre usuarios',[
-      'Todos los usuarios deben tratarse con respeto.',
-      'No se permite lenguaje ofensivo, amenazas, acoso, discriminación, hostigamiento, intimidación ni conductas abusivas.',
-      'No se permite molestar reiteradamente a otro usuario si este no desea continuar la conversación.'
-    ]],
-    ['Uso correcto del chat',[
-      'El chat debe utilizarse principalmente para coordinar intercambios de libros y resolver dudas relacionadas con el ejemplar ofrecido.',
-      'No se permite enviar spam, publicidad no autorizada, contenido sexual, amenazas, insultos, enlaces sospechosos o mensajes que no tengan relación con el intercambio.',
-      'Los usuarios pueden reportar conversaciones inapropiadas.'
-    ]],
-    ['Perfil real y verificación',[
-      'Cada usuario debe usar información verídica en su perfil.',
-      'La comuna indicada debe ayudar a coordinar intercambios cercanos, sin exponer la dirección exacta del usuario.',
-      'La foto de perfil, cuando sea solicitada para verificación, debe corresponder al rostro real del usuario.',
-      'No se permite usar fotos de terceros, personajes públicos, imágenes falsas o contenido engañoso como foto de perfil.'
-    ]],
-    ['Protección de datos personales',[
-      'BookTrade recopila solo los datos necesarios para el funcionamiento de la comunidad.',
-      'Estos datos pueden incluir nombre de usuario, correo electrónico, comuna, foto de perfil, libros publicados, mensajes, matches, reportes e historial de intercambios.',
-      'Estos datos se utilizan para operar la app, facilitar los intercambios, mejorar la seguridad, administrar reportes y mantener la confianza dentro de la comunidad.',
-      'BookTrade no venderá datos personales de los usuarios.'
-    ]],
-    ['Datos sensibles',[
-      'Los usuarios no deben publicar datos sensibles propios o de terceros en perfiles, chats, publicaciones o reportes.',
-      'Esto incluye dirección exacta, documentos de identidad, información bancaria, datos médicos, contraseñas, información íntima u otros antecedentes privados.',
-      'BookTrade podrá eliminar contenido que exponga datos sensibles.'
-    ]],
-    ['Reportes y moderación',[
-      'Los usuarios pueden reportar conductas sospechosas, mal uso de la app, perfiles falsos, contenido ofensivo, intentos de estafa, incumplimientos de intercambio o imágenes no autorizadas.',
-      'BookTrade podrá revisar reportes y tomar medidas según la gravedad del caso.',
-      'Las medidas pueden incluir advertencias, eliminación de publicaciones, bloqueo de usuarios, restricción de funciones o eliminación de cuentas.',
-      'El sistema de reportes debe usarse de buena fe. No se permite usar reportes falsos para perjudicar a otros usuarios.'
-    ]],
-    ['Bloqueo de usuarios',[
-      'Los usuarios pueden bloquear a otros usuarios si no desean seguir recibiendo mensajes o interacciones.',
-      'El bloqueo puede utilizarse ante molestias, mal comportamiento, insistencia excesiva o cualquier situación incómoda.'
-    ]],
-    ['Eliminación de cuenta',[
-      'Los usuarios pueden solicitar o ejecutar la eliminación de su cuenta.',
-      'Al eliminar una cuenta, BookTrade podrá desactivar el perfil y ocultar sus publicaciones activas.',
-      'BookTrade podrá conservar ciertos registros mínimos cuando sean necesarios para seguridad, prevención de abusos, historial administrativo o cumplimiento legal.'
-    ]],
-    ['Responsabilidad sobre los libros',[
-      'Cada usuario es responsable de los libros que publica, de la veracidad de la información entregada y del cumplimiento de los acuerdos de intercambio.',
-      'BookTrade no es dueño de los libros publicados ni garantiza por sí mismo el estado, autenticidad, disponibilidad o entrega de cada ejemplar.',
-      'BookTrade actúa como plataforma de conexión entre usuarios.'
-    ]],
-    ['Contenido prohibido',[
-      'No se permite publicar libros, imágenes, mensajes o contenido que promueva actividades ilegales, violencia, odio, explotación, acoso, fraude, suplantación de identidad o cualquier conducta que ponga en riesgo a otros usuarios.',
-      'No se permite usar BookTrade para difundir contenido ofensivo, discriminatorio, sexual explícito, amenazante o engañoso.'
-    ]],
-    ['Derechos de autor e imágenes',[
-      'Los usuarios deben subir únicamente fotos propias del ejemplar físico que desean intercambiar.',
-      'Al subir imágenes, el usuario declara que son fotografías tomadas por él o que cuenta con autorización suficiente para publicarlas.',
-      'No se permite usar imágenes descargadas de internet, portadas oficiales de tiendas, editoriales o plataformas externas.',
-      'BookTrade podrá retirar imágenes o publicaciones si recibe reportes o detecta posible infracción de derechos de autor, marcas u otros derechos de terceros.'
-    ]],
-    ['Uso no comercial de la comunidad',[
-      'BookTrade está orientada a facilitar el intercambio de libros entre lectores.',
-      'No se permite utilizar la app como tienda comercial, canal de reventa masiva, spam publicitario o vitrina de negocios sin autorización previa de BookTrade.',
-      'Las librerías, instituciones o aliados que quieran participar de forma organizada deberán contar con autorización o acuerdo previo.'
-    ]],
-    ['Cuentas falsas o suplantación',[
-      'No se permite crear cuentas falsas, hacerse pasar por otra persona, usar fotos ajenas, nombres engañosos o información falsa para manipular la confianza de otros usuarios.',
-      'BookTrade podrá bloquear o eliminar cuentas que presenten señales de suplantación o uso engañoso.'
-    ]],
-    ['Conductas que pueden generar sanción',[
-      'BookTrade podrá advertir, limitar, bloquear o eliminar cuentas que incumplan las reglas de la comunidad.',
-      'Entre las conductas sancionables se incluyen acoso, insultos, estafas, reportes reiterados, publicación de contenido falso, uso de imágenes no autorizadas, incumplimientos graves de intercambio o uso abusivo del sistema.',
-      'La gravedad de la medida dependerá del caso y de los antecedentes disponibles.'
-    ]],
-    ['Cambios en las reglas',[
-      'BookTrade podrá actualizar estas reglas para mejorar la seguridad, la experiencia de uso y el funcionamiento de la comunidad.',
-      'Los usuarios serán responsables de revisar y respetar las reglas vigentes al utilizar la app.',
-      'El uso continuo de la app implica la aceptación de las reglas actualizadas.'
-    ]]
-  ];
-
-  const content=sections.map(([title,items],i)=>`
-    <section style="background:#F8FAFC;border:1px solid #DBEAFE;border-radius:16px;padding:14px;margin-bottom:12px">
-      <h3 style="margin:0 0 8px;font-family:Fraunces,serif;font-size:17px;color:#111827">${i+1}. ${esc(title)}</h3>
-      <ul style="margin:0;padding-left:18px;color:#475569;font-size:13px;line-height:1.48">
-        ${items.map(x=>`<li style="margin:5px 0">${esc(x)}</li>`).join('')}
-      </ul>
-    </section>`).join('');
-
-  ov.innerHTML=`
-    <div class="bt-about-card" style="width:min(760px,94vw);max-height:88vh;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:24px;box-shadow:0 28px 90px rgba(15,23,42,.32);display:flex;flex-direction:column;overflow:hidden;transform:translateY(14px);transition:transform .18s">
-      <div style="padding:20px 20px 16px;border-bottom:1px solid #DBEAFE;display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
-        <div>
-          <div style="font-family:Fraunces,serif;font-size:25px;font-weight:900;color:#111827">Nosotros y reglas de comunidad</div>
-          <div style="font-size:13px;color:#64748B;margin-top:4px;line-height:1.4">Conoce el propósito de BookTrade, cómo protegemos la comunidad y las reglas básicas para intercambiar con confianza.</div>
-        </div>
-        <button class="bt-about-close" style="width:38px;height:38px;border-radius:999px;border:1px solid #BFDBFE;background:#EFF6FF;color:#111827;font-size:22px;font-weight:900;cursor:pointer;flex-shrink:0">×</button>
-      </div>
-      <div style="padding:16px 20px;overflow:auto">
-        <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;margin-bottom:14px;color:#334155;font-size:13px;line-height:1.5">
-          <b>Resumen:</b> BookTrade busca construir una comunidad lectora basada en confianza, respeto y colaboración. Cada usuario cumple un rol importante para que los intercambios sean seguros, honestos y positivos.
-        </div>
-        ${content}
-        <div style="font-size:12px;color:#64748B;line-height:1.45;margin:14px 0 4px">
-          Este texto es una base comunitaria y de uso responsable. Para un lanzamiento público amplio, se recomienda revisar los términos definitivos con asesoría legal.
-        </div>
-      </div>
-      <div style="padding:14px 20px;border-top:1px solid #DBEAFE;background:#FFFFFF">
-        <button class="bt-about-close" style="width:100%;padding:13px;border:none;border-radius:12px;background:#3B82F6;color:#fff;font-weight:900;cursor:pointer">Entendido</button>
-      </div>
-    </div>`;
-
-  const close=()=>{
-    ov.style.opacity='0';
-    const card=ov.querySelector('.bt-about-card');
-    if(card)card.style.transform='translateY(14px)';
-    setTimeout(()=>ov.remove(),190);
-  };
-
-  document.body.appendChild(ov);
-  requestAnimationFrame(()=>{
-    ov.style.opacity='1';
-    const card=ov.querySelector('.bt-about-card');
-    if(card)card.style.transform='translateY(0)';
-  });
-
-  ov.querySelectorAll('.bt-about-close').forEach(b=>b.onclick=close);
-  ov.addEventListener('click',e=>{if(e.target===ov)close();});
-}
-
-
 function showAuth(tab){
-  document.body.classList.add('login-screen');
-  document.documentElement.classList.add('login-screen');
-  const appRoot=document.getElementById('app');
-  if(appRoot){appRoot.style.maxWidth='100%';appRoot.style.width='100%';appRoot.style.margin='0';}
-
+  setTimeout(()=>{ensureForgotFixedButton?.();injectForgotInsideLogin?.();},50);setTimeout(()=>injectForgotInsideLogin?.(),300);setTimeout(()=>injectForgotInsideLogin?.(),800);
+  forceShowNav();
   tab=tab||'login';
-
-  const nav=$('nav');
-  if(nav)nav.style.display='none';
-
-  const view=VIEW();
-  if(view){
-    view.style.setProperty('left','0','important');
-    view.style.setProperty('right','0','important');
-    view.style.setProperty('top','0','important');
-    view.style.setProperty('bottom','0','important');
-    view.style.setProperty('width','100vw','important');
-    view.style.setProperty('background','transparent','important');
-    view.style.setProperty('overflow','hidden','important');
-  }
-
-  const logo=`
-    <div class="bt-login-logo-block" style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:22px">
-      <div style="display:flex;align-items:center;justify-content:center;gap:10px">
-        <div class="bt-login-books" style="display:flex;gap:3px;align-items:flex-end;height:34px">
-          <div style="width:12px;height:27px;background:#DC2626;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
-          <div style="width:12px;height:32px;background:#F59E0B;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
-          <div style="width:12px;height:30px;background:#16A34A;border-radius:3px 3px 2px 2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative"></div>
-        </div>
-      </div>
-      <div class="bt-login-wordmark" style="font-family:Arial,system-ui,sans-serif;font-size:28px;line-height:1;font-weight:900;letter-spacing:-1px;color:#111827">
-        Book<span style="color:#0B5ED7">Trade</span>
-      </div>
-      <div class="bt-login-subtitle" style="font-size:15px;color:#6B7280;margin-top:8px">Intercambia libros, crea conexiones.</div>
-    </div>`;
+  const nav=$('nav');if(nav)nav.style.display='flex';
+  const view=VIEW();if(view){view.style.bottom='0';view.style.left=(window.innerWidth<=720?'78px':'96px');}
 
   setView(`
-    <div id="bt-login-screen" style="position:fixed;inset:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;position:fixed;overflow:hidden;box-sizing:border-box;background:url('/assets/login-bg-booktrade-full-clean-hd.jpg') center center/cover no-repeat;background-attachment:fixed;background-position:center center;z-index:1">
-      <div style="position:absolute;inset:0;background:rgba(12,18,28,.02);backdrop-filter:none"></div>
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.01),rgba(0,0,0,0),rgba(0,0,0,.04))"></div>
-
-      <div class="bt-login-card" style="position:relative;z-index:1;width:min(410px,90vw);background:rgba(255,255,255,.97);border:1px solid rgba(255,255,255,.78);border-radius:18px;padding:32px 32px 28px;box-shadow:0 28px 80px rgba(15,23,42,.28)">
-        ${logo}
-
+    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;position:relative;overflow:hidden;
+      background:url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=85&w=1400&auto=format') center center/cover">
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.10),rgba(0,0,0,.04),rgba(0,0,0,.16))"></div>
+      <button onclick="forceLogout()" style="position:absolute;top:14px;right:14px;z-index:999999;background:#FFFFFF;border:1px solid #BFDBFE;color:#6B7280;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(17,24,39,.10)">Cerrar sesión</button>
+      <div style="position:relative;z-index:1;text-align:center;margin-bottom:32px">
+        
+        <div id="login-logo-wrap" style="display:flex;justify-content:center;align-items:center;width:100%;margin:0 0 6px">
+          <img src="/assets/booktrade-logo.png" alt="BookTrade" style="width:min(680px,90vw);max-width:100%;height:auto;max-height:210px;object-fit:contain;filter:drop-shadow(0 8px 20px rgba(0,0,0,.32))">
+        </div>
+        <div style="font-size:14px;color:#FFFFFF;margin-top:4px;letter-spacing:.7px;text-transform:uppercase;font-weight:900;text-align:center;text-align:center;text-shadow:0 3px 16px rgba(0,0,0,.75)">Desliza, conecta, e intercambia historias</div>
+      </div>
+      <div style="position:relative;z-index:1;width:100%;max-width:400px;background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.55);border-radius:22px;padding:18px 18px;backdrop-filter:blur(8px);box-shadow:0 24px 70px rgba(17,24,39,.20)">
+        <div style="display:flex;background:#FFFFFF;border-radius:10px;padding:4px;margin-bottom:22px">
+          <button onclick="showAuth('login')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='login'?'background:#3B82F6;color:#FFFFFF':'background:transparent;color:#6B7280'}">Ingresar</button>
+          <button onclick="showAuth('register')" style="flex:1;padding:9px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;${tab==='register'?'background:#3B82F6;color:#FFFFFF':'background:transparent;color:#6B7280'}">Registrarse</button>
+        </div>
         ${tab==='login'?`
-          <div style="display:flex;flex-direction:column;gap:14px">
-            <div style="position:relative">
-              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">✉</div>
-              <input id="fi" type="text" placeholder="Email o nombre de usuario" autocomplete="username"
-                style="width:100%;height:52px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
-                onfocus="this.style.borderColor='#3B82F6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
-                onblur="this.style.borderColor='#D1D5DB';this.style.boxShadow='none'"
-                onkeydown="if(event.key==='Enter')doLogin()">
-            </div>
-
-            <div style="position:relative">
-              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">🔒</div>
-              <input id="fp" type="password" placeholder="Contraseña" autocomplete="current-password"
-                style="width:100%;height:52px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 46px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
-                onfocus="this.style.borderColor='#3B82F6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
-                onblur="this.style.borderColor='#D1D5DB';this.style.boxShadow='none'"
-                onkeydown="if(event.key==='Enter')doLogin()">
-              <button type="button" onclick="const p=$('fp');p.type=p.type==='password'?'text':'password'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#94A3B8;font-size:17px;cursor:pointer">👁</button>
-            </div>
-
-            <button id="btn-login" onclick="doLogin()"
-              style="width:100%;height:54px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 10px 20px rgba(59,130,246,.22)">Ingresar</button>
-
-            <button id="forgot-inline-link" type="button" onclick="showForgotPassword()"
-              style="width:100%;background:transparent;border:none;color:#3B82F6;font-size:14px;font-weight:800;margin-top:4px;cursor:pointer;padding:8px">¿Olvidaste tu contraseña?</button>
-
-            <button type="button" onclick="showAboutBookTrade()"
-              style="width:100%;background:transparent;border:1px solid #DBEAFE;color:#475569;font-size:13px;font-weight:800;margin-top:2px;cursor:pointer;padding:10px;border-radius:10px">Nosotros · Privacidad · Reglas</button>
-
-            <div style="display:flex;align-items:center;gap:16px;margin:8px 0 4px;color:#6B7280;font-size:13px">
-              <div style="height:1px;background:#E5E7EB;flex:1"></div>
-              <span>o</span>
-              <div style="height:1px;background:#E5E7EB;flex:1"></div>
-            </div>
-
-            <div style="text-align:center;font-size:14px;color:#6B7280;margin-top:2px">
-              ¿No tienes cuenta?
-              <button onclick="showAuth('register')" style="background:transparent;border:none;color:#3B82F6;font-weight:900;cursor:pointer;font-size:14px">Regístrate aquí</button>
-            </div>
-          </div>
+          <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Correo o usuario</div>
+          <input id="fi" type="text" placeholder="tucorreo@email.com" autocomplete="username"
+            style="width:100%;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box;margin-bottom:14px"
+            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'" onkeydown="if(event.key==='Enter')doLogin()">
+          <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Contraseña</div>
+          <input id="fp" type="password" placeholder="••••••••" autocomplete="current-password"
+            style="width:100%;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box;margin-bottom:14px"
+            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'" onkeydown="if(event.key==='Enter')doLogin()">
+          <button id="btn-login" onclick="doLogin()"
+            style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">Ingresar</button>
         `:`
-          <div style="display:flex;flex-direction:column;gap:14px">
-            <div style="position:relative">
-              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">👤</div>
-              <input id="fu" type="text" placeholder="Nombre de usuario" autocomplete="username"
-                style="width:100%;height:54px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box">
-            </div>
-            <div style="position:relative">
-              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">✉</div>
-              <input id="fe" type="email" placeholder="Correo electrónico" autocomplete="email"
-                style="width:100%;height:54px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box">
-            </div>
-            <div style="position:relative">
-              <div style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#94A3B8">🔒</div>
-              <input id="fp2" type="password" placeholder="Contraseña" autocomplete="new-password"
-                style="width:100%;height:54px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:10px;padding:0 16px 0 50px;font-size:15px;color:#111827;outline:none;box-sizing:border-box"
-                onkeydown="if(event.key==='Enter')doRegister()">
-            </div>
-            <button id="btn-reg" onclick="doRegister()"
-              style="width:100%;height:52px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 10px 20px rgba(59,130,246,.22)">Crear cuenta</button>
-            <div style="text-align:center;font-size:14px;color:#6B7280;margin-top:4px">
-              ¿Ya tienes cuenta?
-              <button onclick="showAuth('login')" style="background:transparent;border:none;color:#3B82F6;font-weight:900;cursor:pointer;font-size:14px">Ingresar</button>
-            </div>
-          </div>
+          <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Nombre de usuario</div>
+          <input id="fu" type="text" placeholder="mi_usuario" autocomplete="username"
+            style="width:100%;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box;margin-bottom:14px"
+            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'">
+          <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Correo electrónico</div>
+          <input id="fe" type="email" placeholder="tucorreo@email.com" autocomplete="email"
+            style="width:100%;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box;margin-bottom:14px"
+            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'">
+          <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Contraseña (mín. 6 caracteres)</div>
+          <input id="fp2" type="password" placeholder="••••••••" autocomplete="new-password"
+            style="width:100%;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box;margin-bottom:14px"
+            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'">
+          <button id="btn-reg" onclick="doRegister()"
+            style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">Crear cuenta</button>
         `}
       </div>
-    </div>
-  `);
+    </div>`);
 }
 
 async function doLogin(){
@@ -800,31 +581,45 @@ async function repairMyReceivedBooks(){
 }
 
 async function launchApp(){
-  document.body.classList.remove('login-screen');document.documentElement.classList.remove('login-screen');
+  document.body.classList.remove('login-screen');if(document.documentElement)document.documentElement.classList.remove('login-screen');
   const nav=$('nav');if(nav){nav.style.display='flex';nav.style.visibility='visible';nav.style.pointerEvents='auto';}
   try{localStorage.removeItem('bt_onboarding_done');}catch{}
   document.body.classList.add('logged-in');
   document.getElementById('forgot-fixed-btn')?.style.setProperty('display','none','important');
-  /* Mostrar nav */
+
   if(nav)nav.style.display='flex';
-  /* Restaurar #view con espacio para nav */
   const view=VIEW();if(view){view.style.bottom='0';view.style.left=(window.innerWidth<=720?'78px':'96px');}
 
-  try{if(!ME){try{ME=JSON.parse(localStorage.getItem('bs_user')||'null');}catch{};}if(!ME)rememberUser(await api('GET','/api/users/me'));}
-  catch(e){localStorage.removeItem('bs_token');TOKEN='';showAuth('login');return;}
-  await repairMyReceivedBooks();
-  try{MATCHES=await api('GET','/api/swipes/matches')||[];}catch{}
-  try{initSocket();}catch{}
-  updateBadge();
-  await loadNotifications();
-  await syncChatUnreadFromServer();
-  updateBadge();
-  if(window._notifPoll)clearInterval(window._notifPoll);window._notifPoll=setInterval(()=>{if(TOKEN)loadNotifications();},30000);
-  if(window._chatUnreadPoll)clearInterval(window._chatUnreadPoll);window._chatUnreadPoll=setInterval(()=>{if(TOKEN)syncChatUnreadFromServer();},15000);
-  await checkAdminAccess();
-  updateNavProfilePhoto();
+  try{
+    if(!ME){
+      try{ME=JSON.parse(localStorage.getItem('bs_user')||'null');}catch{}
+    }
+    if(!ME)rememberUser(await api('GET','/api/users/me'));
+  }catch(e){
+    localStorage.removeItem('bs_token');TOKEN='';showAuth('login');return;
+  }
+
+  // Mostrar Explorar inmediatamente. Lo demás carga en segundo plano.
   showDiscover();
-  setTimeout(()=>showOnboarding?.(),700);
+
+  runIdle(async()=>{
+    try{initSocket();}catch{}
+    try{await syncChatUnreadFromServer();}catch{}
+    try{await loadNotifications();}catch{}
+    try{await checkAdminAccess();}catch{}
+    try{updateNavProfilePhoto();}catch{}
+    try{MATCHES=await api('GET','/api/swipes/matches')||[];cacheSet('bt_matches',MATCHES);}catch{}
+    try{await repairMyReceivedBooks();}catch{}
+    try{updateBadge();}catch{}
+  },120);
+
+  if(window._notifPoll)clearInterval(window._notifPoll);
+  window._notifPoll=setInterval(()=>{if(TOKEN)loadNotifications();},45000);
+
+  if(window._chatUnreadPoll)clearInterval(window._chatUnreadPoll);
+  window._chatUnreadPoll=setInterval(()=>{if(TOKEN)syncChatUnreadFromServer();},20000);
+
+  setTimeout(()=>showOnboarding?.(),900);
 }
 
 /* ══════════════════════════════════════════════════
@@ -837,7 +632,7 @@ async function showDiscover(){
 
   setView(`
     <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;min-width:0">${bookTradeWordmarkHTML(.82)}</div>
+      <div style="display:flex;align-items:center;min-width:0"><img src="/assets/booktrade-logo-explore.png" alt="BookTrade" style="width:min(260px,58vw);max-width:100%;height:auto;max-height:82px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.16))"></div>
       <div id="qcnt" style="display:none;background:#3B82F6;color:#FFFFFF;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600"></div>
     </div>
     <div id="gbar" style="display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none">
@@ -848,23 +643,23 @@ async function showDiscover(){
         >${esc(g)}</button>`).join('')}
     </div>
     <div style="display:flex;gap:8px;padding:0 16px 10px">
-      <input id="cin" type="text" value="${esc(CITY)}" placeholder="🏙 Filtrar por comuna..."
+      <input id="cin" type="text" value="${esc(CITY)}" placeholder="🏙 Filtrar por ciudad..."
         style="flex:1;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:9px 14px;font-size:13px;color:#111827;outline:none"
         onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'"
         onkeydown="if(event.key==='Enter'){CITY=$('cin').value.trim();loadQueue()}">
       <button onclick="CITY=$('cin').value.trim();loadQueue()"
         style="padding:9px 16px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Buscar</button>
     </div>
-    <div style="display:flex;gap:8px;padding:0 16px 12px;max-width:400px;margin:0 auto;justify-content:center">
+    <div style="display:flex;gap:8px;padding:0 16px 12px">
       <button id="mode-swipe" onclick="setDiscoverMode('swipe')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='swipe'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='swipe'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='swipe'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">🔥 Deslizar</button>
       <button id="mode-catalog" onclick="setDiscoverMode('catalog')" style="flex:1;padding:10px;border-radius:12px;border:1px solid ${DISCOVER_MODE==='catalog'?'#3B82F6':'#BFDBFE'};background:${DISCOVER_MODE==='catalog'?'#3B82F6':'#EFF6FF'};color:${DISCOVER_MODE==='catalog'?'#FFFFFF':'#6B7280'};font-size:13px;font-weight:800">📚 Catálogo</button>
     </div>
-    <div style="position:relative;margin:0 auto;max-width:340px;width:min(340px,calc(100% - 44px));height:440px;min-height:440px" id="stack"></div>
-    <div id="swipe-actions" style="display:${DISCOVER_MODE==='swipe'?'flex':'none'};justify-content:center;align-items:center;gap:18px;padding:8px 16px 16px">
+    <div style="position:relative;margin:0 auto;max-width:380px;width:calc(100% - 32px);height:560px;min-height:560px" id="stack"></div>
+    <div id="swipe-actions" style="display:${DISCOVER_MODE==='swipe'?'flex':'none'};justify-content:center;align-items:center;gap:22px;padding:12px 16px 20px">
       <button onclick="swipeBtn('left')"
-        style="width:52px;height:52px;border-radius:50%;background:#FFFFFF;border:2px solid #D45A4A;color:#D45A4A;font-size:24px;display:flex;align-items:center;justify-content:center">✕</button>
+        style="width:60px;height:60px;border-radius:50%;background:#FFFFFF;border:2px solid #D45A4A;color:#D45A4A;font-size:24px;display:flex;align-items:center;justify-content:center">✕</button>
       <button onclick="swipeBtn('right')"
-        style="width:62px;height:62px;border-radius:50%;background:#3B82F6;border:none;color:#FFFFFF;font-size:28px;display:flex;align-items:center;justify-content:center">♥</button>
+        style="width:72px;height:72px;border-radius:50%;background:#3B82F6;border:none;color:#FFFFFF;font-size:28px;display:flex;align-items:center;justify-content:center">♥</button>
     </div>`);
 
   await loadQueue();
@@ -884,15 +679,33 @@ function setGenre(g){
 
 async function loadQueue(){
   const s=$('stack');if(!s)return;
-  s.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%"><div class="spin"></div></div>';
+  const cacheKey='bt_queue_'+ACTIVE_GENRE+'_'+CITY;
+  const cached=cacheGet(cacheKey,45000);
+
+  if(cached && Array.isArray(cached)){
+    QUEUE=cached;
+    drawStack();
+  }else{
+    s.innerHTML=quickLoader('Cargando libros...');
+  }
+
   try{
     let url='/api/books/discover';const p=[];
     if(ACTIVE_GENRE!=='Todos')p.push('genre='+encodeURIComponent(ACTIVE_GENRE));
     if(CITY)p.push('city='+encodeURIComponent(CITY));
     if(p.length)url+='?'+p.join('&');
-    QUEUE=await api('GET',url);
+
+    const fresh=await api('GET',url);
+    QUEUE=fresh||[];
+    cacheSet(cacheKey,QUEUE);
     drawStack();
-  }catch(e){s.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6B7280;font-size:14px;text-align:center;padding:20px">${esc(e.message)}</div>`;}
+  }catch(e){
+    if(!cached){
+      s.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6B7280;font-size:14px;text-align:center;padding:20px">${esc(e.message)}</div>`;
+    }else{
+      toast('Mostrando libros guardados mientras reconecta','error');
+    }
+  }
 }
 
 
@@ -912,7 +725,7 @@ function firstBookPhoto(book){
 function miniBookCover(book,label){
   const src=firstBookPhoto(book);
   return `<div style="display:flex;align-items:center;gap:10px;min-width:0">
-    <div style="width:42px;height:54px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;overflow:hidden;flex-shrink:0;box-shadow:0 5px 12px rgba(17,24,39,.10)">
+    <div style="width:42px;height:58px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;overflow:hidden;flex-shrink:0;box-shadow:0 5px 12px rgba(17,24,39,.10)">
       ${src?`<img src="${esc(cldThumb(src,120,170))}" alt="${esc(book?.title||'Libro')}" style="width:100%;height:100%;object-fit:cover">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:18px">📘</div>`}
     </div>
     <div style="min-width:0">
@@ -948,7 +761,7 @@ function drawCatalog(){
   s.style.height='auto';s.style.minHeight='420px';s.style.maxWidth='none';s.style.width='auto';s.style.margin='0 16px';
   if(cnt){cnt.style.display=QUEUE.length?'block':'none';cnt.textContent=QUEUE.length+' libros';}
   if(!QUEUE.length){s.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:10px;text-align:center;padding:20px"><div style="font-size:48px;opacity:.4">🔭</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">¡Todo explorado!</div><div style="font-size:13px;color:#6B7280">Vuelve pronto o cambia los filtros</div></div>';return;}
-  s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · <button onclick="event.stopPropagation();openPublicProfile('${book.owner?._id||book.owner?.id}')" style="border:none;background:transparent;color:#3B82F6;font-weight:800;padding:0;cursor:pointer">@${esc(book.owner?.username||'usuario')}</button></div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right',this)" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800;transition:all .15s">Me interesa</button></div></div></div>`}).join('')}</div>`;
+  s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · @${esc(book.owner?.username||'usuario')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right',this)" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800;transition:all .15s">Me interesa</button></div></div></div>`}).join('')}</div>`;
 }
 async function catalogSwipe(bookId,dir,btn){
   let beforeIds = new Set();
@@ -992,7 +805,7 @@ async function catalogSwipe(bookId,dir,btn){
 function drawStack(){
   if(DISCOVER_MODE==='catalog')return drawCatalog();
   const s=$('stack'),cnt=$('qcnt');if(!s)return;
-  s.style.height='440px';s.style.minHeight='440px';s.style.maxWidth='340px';s.style.width='min(340px,calc(100% - 44px))';s.style.margin='0 auto';const actions=$('swipe-actions');if(actions)actions.style.display='flex';
+  s.style.height='560px';s.style.minHeight='560px';s.style.maxWidth='380px';s.style.width='calc(100% - 32px)';s.style.margin='0 auto';const actions=$('swipe-actions');if(actions)actions.style.display='flex';
   if(!QUEUE.length){
     if(cnt)cnt.style.display='none';
     s.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;text-align:center;padding:20px"><div style="font-size:48px;opacity:.4">🔭</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">¡Todo explorado!</div><div style="font-size:13px;color:#6B7280">Vuelve pronto o cambia los filtros</div></div>';
@@ -1009,18 +822,18 @@ function drawStack(){
     card.innerHTML=`
       <div id="sl" style="position:absolute;top:28px;left:18px;padding:7px 16px;border-radius:6px;font-size:18px;font-weight:800;letter-spacing:2px;color:#4CAF7D;border:3px solid #4CAF7D;transform:rotate(-12deg);opacity:0;z-index:10;pointer-events:none">ME GUSTA</div>
       <div id="sn" style="position:absolute;top:28px;right:18px;padding:7px 16px;border-radius:6px;font-size:18px;font-weight:800;letter-spacing:2px;color:#D45A4A;border:3px solid #D45A4A;transform:rotate(12deg);opacity:0;z-index:10;pointer-events:none">PASO</div>
-      <div style="height:60%;background:${clr(book._id)};position:relative;overflow:hidden">
+      <div style="height:68%;background:${clr(book._id)};position:relative;overflow:hidden">
         ${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`
         :`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}
       </div>
-      <div style="padding:12px 14px">
-        <div style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(book.title)}</div>
-        <div style="font-size:12px;color:#6B7280;margin-bottom:6px">${esc(book.author)}</div>
+      <div style="padding:16px 18px">
+        <div style="font-family:Fraunces,serif;font-size:19px;font-weight:700;color:#111827;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(book.title)}</div>
+        <div style="font-size:13px;color:#6B7280;margin-bottom:8px">${esc(book.author)}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
           <span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span>
           <span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(240,228,205,.06);color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span>
         </div>
-        ${book.owner?`<div style="font-size:11px;color:#9CA3AF">📍 ${esc(book.owner.location||'—')} · <button onclick="event.stopPropagation();openPublicProfile('${book.owner._id||book.owner.id}')" style="border:none;background:transparent;color:#3B82F6;font-weight:800;padding:0;cursor:pointer">@${esc(book.owner.username)}</button></div>`:''}
+        ${book.owner?`<div style="font-size:11px;color:#9CA3AF">📍 ${esc(book.owner.location||'—')} · @${esc(book.owner.username)}</div>`:''}
       </div>`;
     if(isTop)attachDrag(card,book._id);
     s.appendChild(card);
@@ -1138,9 +951,7 @@ async function showBooks(){
   document.querySelector('.fab-btn')?.remove();
   setView(`
     <div style="padding:16px 20px 12px"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Mis Libros</div></div>
-    <div id="bgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,210px));justify-content:center;gap:16px;padding:0 16px 80px">
-      <div style="grid-column:1/-1;display:flex;justify-content:center;padding:40px"><div class="spin"></div></div>
-    </div>`);
+    <div id="bgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,210px));justify-content:center;gap:16px;padding:0 16px 80px">${quickLoader('Cargando libros...')}</div>`);
 
   const fab=document.createElement('button');
   fab.className='fab-btn';
@@ -1149,8 +960,18 @@ async function showBooks(){
   fab.onclick=()=>openBookModal(null);
   document.body.appendChild(fab);
 
-  try{await repairMyReceivedBooks();MY_BOOKS=await api('GET','/api/books/mine');drawBooksGrid();}
-  catch(e){toast(e.message,'error');}
+  const cached=cacheGet('bt_my_books',60000);
+  if(cached){MY_BOOKS=cached;drawBooksGrid();}
+
+  runIdle(()=>repairMyReceivedBooks(),60);
+
+  try{
+    MY_BOOKS=await api('GET','/api/books/mine');
+    cacheSet('bt_my_books',MY_BOOKS);
+    drawBooksGrid();
+  }catch(e){
+    if(!cached)toast(e.message,'error');
+  }
 }
 
 function drawBooksGrid(){
@@ -1163,7 +984,7 @@ function drawBooksGrid(){
       </div>
       <div style="padding:10px 12px">
         <div style="font-size:13px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.title)}</div>
-        <div style="font-size:11px;color:#6B7280;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.author)}</div><div style="font-size:10px;color:#94A3B8;margin-bottom:8px">Agregado: ${new Date(b.createdAt||b.updatedAt||Date.now()).toLocaleDateString('es-CL')}</div>
+        <div style="font-size:11px;color:#6B7280;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.author)}</div>
         <div style="display:flex;gap:6px">
           <button onclick="openBookModal('${b._id}')" style="flex:1;padding:7px 4px;border-radius:8px;font-size:11px;font-weight:500;border:1px solid #BFDBFE;color:#6B7280;background:#EFF6FF;cursor:pointer">Editar</button>
           <button onclick="deleteBook('${b._id}')" style="flex:1;padding:7px 4px;border-radius:8px;font-size:11px;font-weight:500;border:1px solid rgba(212,90,74,.2);color:rgba(212,90,74,.7);background:rgba(212,90,74,.06);cursor:pointer">Eliminar</button>
@@ -1214,7 +1035,7 @@ function openBookModal(idOrNull){
           </div>`).join('')}
         </div>
         <input type="file" id="bm-file" accept="image/*" style="display:none">
-        <div style="font-size:11px;color:#9CA3AF;margin-top:6px">Toca cada cuadro para elegir una foto real del ejemplar. Máximo 10MB por foto; la app la comprime antes de subirla a Cloudinary.</div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:6px">Toca cada cuadro para elegir una foto. Las imágenes se guardan en Cloudinary.</div>
       </div>
       <div style="margin-bottom:20px"><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Color de portada</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -1285,36 +1106,19 @@ function openBookModal(idOrNull){
 
   $('bm-file').addEventListener('change',async()=>{
     const f=$('bm-file').files[0];if(!f)return;
-    try{validateImageFile(f);}catch(e){toast(e.message,'error');$('bm-file').value='';return;}
-    const btn=$('bm-save');btn.disabled=true;btn.textContent='Comprimiendo imagen...';
+    if(f.size>10*1024*1024)return toast('Imagen muy grande (máx 10MB)','error');
+    const btn=$('bm-save');btn.disabled=true;btn.textContent='Subiendo a Cloudinary...';
     try{
       const url=await compressAndUploadImg(f,'books');
       bmFillSlot(activeSlot,url);state.photos[activeSlot]=url;
       const nx=state.photos.findIndex(x=>!x);if(nx!==-1)activeSlot=nx;
-    }catch(e){toast(e.message||'Error al procesar foto','error');}
+    }catch{toast('Error al procesar foto','error');}
     finally{btn.disabled=false;btn.textContent=state.editing?'Guardar cambios':'Agregar libro';}
   });
 }
 
 function bmFillSlot(i,src){const img=$('pi'+i),ph=$('pp'+i),rm=$('pr'+i),sl=$('ps'+i);if(!img)return;img.src=src;img.style.display='block';ph.style.display='none';rm.style.display='block';sl.style.borderStyle='solid';sl.style.borderColor='#3B82F6';}
 function bmField(label,id,type,val){return `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${label}</div><input id="${id}" type="${type}" value="${esc(val)}" style="width:100%;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;box-sizing:border-box" onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#BFDBFE'"/></div>`;}
-
-const MAX_IMAGE_ORIGINAL_BYTES = 10 * 1024 * 1024; // 10MB máximo por archivo original
-
-function prettyBytes(bytes){
-  const n=Number(bytes||0);
-  if(n>=1024*1024)return (n/(1024*1024)).toFixed(1)+' MB';
-  if(n>=1024)return Math.round(n/1024)+' KB';
-  return n+' bytes';
-}
-
-function validateImageFile(file){
-  if(!file)throw new Error('Selecciona una imagen');
-  if(!String(file.type||'').startsWith('image/'))throw new Error('El archivo debe ser una imagen');
-  if(file.size>MAX_IMAGE_ORIGINAL_BYTES){
-    throw new Error('La imagen pesa '+prettyBytes(file.size)+'. El máximo permitido es 10MB.');
-  }
-}
 
 async function uploadImageToCloudinary(dataUrl, folder='books'){
   const r = await api('POST','/api/upload/image',{ image:dataUrl, folder });
@@ -1323,88 +1127,32 @@ async function uploadImageToCloudinary(dataUrl, folder='books'){
 }
 
 async function compressAndUploadImg(file, folder='books'){
-  validateImageFile(file);
-
-  const opts = folder === 'profiles'
-    ? { maxSize: 720, quality: 0.82, maxCompressedBytes: 850 * 1024 }
-    : { maxSize: 1200, quality: 0.78, maxCompressedBytes: 1200 * 1024 };
-
-  const dataUrl = await compressImg(file, opts);
+  const dataUrl = await compressImg(file);
   return await uploadImageToCloudinary(dataUrl, folder);
 }
 
-async function compressImg(file,{maxSize=1200,quality=0.78,maxCompressedBytes=1200*1024}={}){
-  validateImageFile(file);
+async function compressImg(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const ratio=Math.min(900/img.width,900/img.height,1);const c=document.createElement('canvas');c.width=Math.round(img.width*ratio);c.height=Math.round(img.height*ratio);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.78));};img.onerror=rej;img.src=e.target.result;};r.onerror=rej;r.readAsDataURL(file);});}
 
-  const img = await new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=e=>{
-      const im=new Image();
-      im.onload=()=>resolve(im);
-      im.onerror=()=>reject(new Error('No se pudo leer la imagen'));
-      im.src=e.target.result;
-    };
-    reader.onerror=()=>reject(new Error('No se pudo leer el archivo'));
-    reader.readAsDataURL(file);
-  });
-
-  let width=img.naturalWidth||img.width;
-  let height=img.naturalHeight||img.height;
-
-  if(!width||!height)throw new Error('Imagen inválida');
-
-  const ratio=Math.min(maxSize/width,maxSize/height,1);
-  width=Math.max(1,Math.round(width*ratio));
-  height=Math.max(1,Math.round(height*ratio));
-
-  const canvas=document.createElement('canvas');
-  canvas.width=width;
-  canvas.height=height;
-
-  const ctx=canvas.getContext('2d',{alpha:false});
-  ctx.fillStyle='#FFFFFF';
-  ctx.fillRect(0,0,width,height);
-  ctx.imageSmoothingEnabled=true;
-  ctx.imageSmoothingQuality='high';
-  ctx.drawImage(img,0,0,width,height);
-
-  async function canvasToBlob(q){
-    return await new Promise((resolve,reject)=>{
-      canvas.toBlob(blob=>{
-        if(!blob)return reject(new Error('No se pudo comprimir la imagen'));
-        resolve(blob);
-      },'image/jpeg',q);
-    });
-  }
-
-  let q=quality;
-  let blob=await canvasToBlob(q);
-
-  // Si aun queda pesada, baja la calidad progresivamente sin perder demasiado.
-  while(blob.size>maxCompressedBytes && q>0.55){
-    q=Math.max(0.55,q-0.07);
-    blob=await canvasToBlob(q);
-  }
-
-  return await new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=()=>resolve(reader.result);
-    reader.onerror=()=>reject(new Error('No se pudo preparar la imagen comprimida'));
-    reader.readAsDataURL(blob);
-  });
-}
-
-
+/* ══════════════════════════════════════════════════
+   MATCHES
+   ══════════════════════════════════════════════════ */
 async function showMatches(){
   setNav('nb-matches');
   if(!requireLogin())return;
   document.querySelector('.fab-btn')?.remove();
-  setView(`<div style="padding:16px 20px 12px"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Matches</div><div style="font-size:12px;color:#6B7280;margin-top:2px">Personas con interés mutuo para intercambiar</div></div><div id="mlist" style="padding:0 16px 80px;display:flex;flex-direction:column;align-items:center;gap:14px"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
+  setView(`
+    <div style="padding:16px 20px 12px"><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Matches</div><div style="font-size:12px;color:#6B7280;margin-top:2px">Personas con interés mutuo para intercambiar</div></div>
+    <div id="mlist" style="padding:0 16px 80px;display:flex;flex-direction:column;align-items:center;gap:14px">${quickLoader('Cargando matches...')}</div>`);
+
+  const cached=cacheGet('bt_matches',60000);
+  if(cached){MATCHES=cached;drawMatches();}
+
   try{
     MATCHES=await api('GET','/api/swipes/matches')||[];
+    cacheSet('bt_matches',MATCHES);
     drawMatches();
   }catch(e){
-    toast(e.message,'error');
+    if(!cached)toast(e.message,'error');
   }
 }
 
@@ -1433,15 +1181,11 @@ function drawMatches(){
       <div style="margin:0 16px 10px;background:${isExchangeDone(m)?'#DCFCE7':'#EFF6FF'};border:1px solid ${isExchangeDone(m)?'#86EFAC':'#BFDBFE'};border-radius:10px;padding:10px;font-size:12px;color:${isExchangeDone(m)?'#166534':'#6B7280'}">
         Estado del intercambio: <strong style="color:${isExchangeDone(m)?'#166534':'#111827'}">${isExchangeDone(m)?'Intercambio hecho':(m.exchangeState?.label||'Coordinando')}</strong>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;padding:0 16px 16px;flex-wrap:wrap">
-        <div style="display:flex;gap:8px;justify-content:flex-start;flex:1;min-width:230px">
-          <button onclick="openChat(${i})" style="width:112px;padding:11px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">💬 Chat</button>
-          <button onclick="confirmExchange(${i})" style="width:112px;padding:11px;background:#10B981;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">✅ Hecho</button>
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;flex:1;min-width:230px">
-          <button onclick="reportUser('${m.matchedUser.id}','user')" style="width:112px;padding:11px;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">Reportar</button>
-          <button onclick="blockUser('${m.matchedUser.id}')" style="width:112px;padding:11px;background:#991B1B;color:#FFFFFF;border:1px solid #7F1D1D;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">Bloquear</button>
-        </div>
+      <div style="display:flex;gap:8px;padding:0 16px 16px;flex-wrap:wrap">
+        <button onclick="openChat(${i})" style="flex:1;padding:11px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">💬 Chat</button>
+        <button onclick="confirmExchange(${i})" style="flex:1;padding:11px;background:#10B981;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">✅ Intercambiado</button>
+        <button onclick="reportUser('${m.matchedUser.id}','user')" style="padding:11px;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Reportar</button>
+        <button onclick="blockUser('${m.matchedUser.id}')" style="padding:11px;background:#111827;color:#FFFFFF;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Bloquear</button>
       </div>
     </div>`).join('');
 }
@@ -1463,50 +1207,26 @@ async function showChats(){
   updateBadge();
   if(!requireLogin())return;
   document.querySelector('.fab-btn')?.remove();
-  setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Chats</div><div style="font-size:12px;color:#6B7280;margin-top:2px">Conversaciones con tus matches</div></div><button onclick="loadNotifications();showNotifications?.()" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#3B82F6;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800">🔔 ${NOTIFS?.unread||0}</button></div><div id="clist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:12px;max-width:560px;margin:0 auto;width:100%"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
-  try{await syncChatUnreadFromServer();MATCHES=await api('GET','/api/swipes/matches')||[];drawChats();}catch(e){toast(e.message,'error');}
-}
+  setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Chats</div><div style="font-size:12px;color:#6B7280;margin-top:2px">Conversaciones con tus matches</div></div><button onclick="loadNotifications();showNotifications?.()" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#3B82F6;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800">🔔 ${NOTIFS?.unread||0}</button></div><div id="clist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:12px;max-width:560px;margin:0 auto;width:100%">${quickLoader('Cargando chats...')}</div>`);
 
-const CHAT_PREVIEWS = {};
-async function loadChatPreview(room){
-  if(!room)return;
+  const cached=cacheGet('bt_matches',60000);
+  if(cached){MATCHES=cached;drawChats();}
+
+  runIdle(()=>syncChatUnreadFromServer(),40);
+
   try{
-    const msgs=await api('GET','/api/chat/'+room);
-    const last=Array.isArray(msgs)&&msgs.length?msgs[msgs.length-1]:null;
-    CHAT_PREVIEWS[room]=last||null;
-    const el=document.querySelector(`[data-preview-room="${CSS.escape(room)}"]`);
-    if(!el)return;
-    if(!last){
-      el.textContent='Sin mensajes aún';
-      return;
-    }
-    const mine=(last.sender?._id||last.sender?.id||last.sender||'').toString()===getCurrentUserId();
-    el.innerHTML=`${mine?'<span style="color:#3B82F6;font-weight:800">Tú: </span>':''}${esc(last.text||'')}`;
-    const ticks=document.querySelector(`[data-ticks-room="${CSS.escape(room)}"]`);
-    if(ticks)ticks.innerHTML=mine?'<span style="color:#3B82F6;font-weight:900">✓✓</span>':'';
-  }catch(e){}
+    MATCHES=await api('GET','/api/swipes/matches')||[];
+    cacheSet('bt_matches',MATCHES);
+    drawChats();
+  }catch(e){
+    if(!cached)toast(e.message,'error');
+  }
 }
-function loadChatPreviews(){
-  document.querySelectorAll('[data-preview-room]').forEach(el=>loadChatPreview(el.getAttribute('data-preview-room')));
-}
-
 function drawChats(){
   const c=$('clist');if(!c)return;
-  c.style.maxWidth='560px';
-  c.style.margin='0 auto';
-  c.style.width='100%';
   if(!MATCHES.length){c.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.45">💬</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin chats todavía</div><div style="font-size:13px;color:#6B7280">Cuando tengas matches, tus conversaciones aparecerán aquí.</div></div>`;return;}
-  c.innerHTML=MATCHES.map((m,i)=>{const r=matchRoomId(m);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:min(100%,560px);margin:0 auto;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)">
-    <div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div>
-    <div style="flex:1;min-width:0">
-      <div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div>
-      <div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div>
-      <div data-preview-room="${esc(r)}" style="font-size:12px;color:#334155;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cargando último mensaje...</div>
-      <div style="font-size:11px;color:#9CA3AF;margin-top:3px;display:flex;align-items:center;gap:6px"><span>${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando intercambio')}</span><span data-ticks-room="${esc(r)}"></span></div>
-    </div>
-    ${unread?`<span title="Mensajes sin leer" style="background:#EF4444;color:#fff;border-radius:999px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid #fff;box-shadow:0 6px 14px rgba(239,68,68,.28);flex-shrink:0">${unread>9?'9+':unread}</span>`:''}
-  </button>`}).join('');
-  loadChatPreviews();
+  const myId=getCurrentUserId();
+  c.innerHTML=MATCHES.map((m,i)=>{const r=matchRoomId(m);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:100%;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)"><div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div><div style="flex:1;min-width:0"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div><div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div><div style="font-size:11px;color:#9CA3AF;margin-top:3px">${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando intercambio')}</div></div>${unread?`<span title="Mensajes sin leer" style="background:#EF4444;color:#fff;border-radius:999px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid #fff;box-shadow:0 6px 14px rgba(239,68,68,.28);flex-shrink:0">${unread>9?'9+':unread}</span>`:''}</button>`}).join('');
 }
 
 async function showHistory(){
@@ -1515,14 +1235,14 @@ async function showHistory(){
   setView(`<div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between">
     <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827">Historial</div>
     <button onclick="showNotifications()" style="position:relative;background:#EFF6FF;border:1px solid #BFDBFE;color:#3B82F6;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700">🔔 <span>${NOTIFS?.unread||0}</span></button>
-  </div><div id="hlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:14px;max-width:560px;margin:0 auto;width:100%"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
+  </div><div id="hlist" style="padding:0 16px 80px;display:flex;flex-direction:column;gap:14px"><div style="display:flex;justify-content:center;padding:40px"><div class="spin"></div></div></div>`);
   try{HISTORY=await api('GET','/api/exchanges/history');drawHistory();}catch(e){toast(e.message,'error');}
 }
 function drawHistory(){
   const h=$('hlist');if(!h)return;
   if(!HISTORY.length){h.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.45">📜</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin historial aún</div><div style="font-size:13px;color:#6B7280">Cuando ambos confirmen un intercambio aparecerá aquí.</div></div>`;return;}
   const myId=getCurrentUserId();
-  h.innerHTML=HISTORY.map(x=>{const other=(String(x.requester?._id||x.requester?.id)===String(myId))?x.matchedUser:x.requester;const doneLabel=x.state?.label||'Intercambio hecho';return `<div style="position:relative;background:#FFFFFF;border:1px solid #BBF7D0;border-radius:16px;padding:16px;box-shadow:0 10px 28px rgba(22,101,52,.08);width:min(100%,560px);margin:0 auto;box-sizing:border-box">
+  h.innerHTML=HISTORY.map(x=>{const other=(String(x.requester?._id||x.requester?.id)===String(myId))?x.matchedUser:x.requester;const doneLabel=x.state?.label||'Intercambio hecho';return `<div style="position:relative;background:#FFFFFF;border:1px solid #BBF7D0;border-radius:16px;padding:16px;box-shadow:0 10px 28px rgba(22,101,52,.08)">
     <div title="Intercambio confirmado por ambas partes" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:#22C55E;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;box-shadow:0 8px 22px rgba(34,197,94,.35);z-index:2">✓</div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:44px;height:44px;border-radius:50%;background:#3B82F6;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;overflow:hidden">${other?.profilePhoto?`<img src="${esc(other.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(other?.username)}</div><div style="flex:1"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827">@${esc(other?.username||'Usuario')}</div><div style="font-size:12px;color:#6B7280">${levelEmoji(other?.level)} ${esc(other?.level||'Aficionado')} · ${other?.completedExchanges||0} intercambios</div></div><span style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;border-radius:999px;padding:4px 34px 4px 10px;font-size:11px;font-weight:900">Intercambio hecho</span></div>
     <div style="display:flex;gap:8px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px"><div style="flex:1"><div style="font-size:9px;color:#9CA3AF;font-weight:800;text-transform:uppercase">Tu libro</div><div style="font-weight:700;color:#111827;font-size:13px">${esc(x.myBook?.title||'—')}</div><div style="font-size:11px;color:#6B7280">${esc(x.myBook?.author||'')}</div></div><div style="font-size:20px;color:#3B82F6;display:flex;align-items:center">⇄</div><div style="flex:1;text-align:right"><div style="font-size:9px;color:#9CA3AF;font-weight:800;text-transform:uppercase">Recibido</div><div style="font-weight:700;color:#111827;font-size:13px">${esc(x.theirBook?.title||'—')}</div><div style="font-size:11px;color:#6B7280">${esc(x.theirBook?.author||'')}</div></div></div>
@@ -1554,15 +1274,14 @@ function openChat(idx){
   clearUnread(room);if($('clist'))drawChats();
 
   const ov=document.createElement('div');
-  ov.className='bt-chat-overlay';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:760px;left:50%;transform:translateX(-50%)';
   ov.innerHTML=`
-    <div id="cp" class="bt-chat-panel" style="width:100%;height:min(88vh,calc(100vh - 24px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
+    <div id="cp" style="width:100%;height:min(88vh,calc(100vh - 24px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #BFDBFE;flex-shrink:0;position:relative">
         <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#93C5FD;border-radius:2px"></div>
-        <button onclick="openPublicProfile('${m.matchedUser.id}')" style="width:38px;height:38px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;border:none;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</button>
+        <div style="width:38px;height:38px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">${ini(m.matchedUser.username)}</div>
         <div style="flex:1;min-width:0">
-          <button onclick="openPublicProfile('${m.matchedUser.id}')" style="font-size:15px;font-weight:700;color:#111827;border:none;background:transparent;padding:0;text-align:left;cursor:pointer">@${esc(m.matchedUser.username)}</button>
+          <div style="font-size:15px;font-weight:700;color:#111827">@${esc(m.matchedUser.username)}</div>
           <div style="font-size:11px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook?.title||'')} ⇄ ${esc(m.theirBook?.title||'')}</div>
           <div style="font-size:11px;margin-top:2px;font-weight:800;color:${isExchangeDone(m)?'#166534':'#64748B'}">${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando')}</div>
         </div>
@@ -1660,7 +1379,7 @@ function appendMsg2(msg){
 
   el.style.cssText = `max-width:78%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.4;word-break:break-word;align-self:${mine?'flex-end':'flex-start'};${mine?'background:#3B82F6;color:#FFFFFF;border-bottom-right-radius:4px':'background:#DBEAFE;color:#111827;border:1px solid #BFDBFE;border-bottom-left-radius:4px'}`;
 
-  el.innerHTML = `<div>${esc(msg.text)}</div><div style="font-size:10px;opacity:.75;margin-top:3px;${mine?'text-align:right':''}">${fmtT(msg.createdAt || new Date())}${mine?' <span style="font-weight:900;margin-left:4px">✓✓</span>':''}</div>`;
+  el.innerHTML = `<div>${esc(msg.text)}</div><div style="font-size:10px;opacity:.6;margin-top:3px;${mine?'text-align:right':''}">${fmtT(msg.createdAt || new Date())}</div>`;
 
   b.appendChild(el);
   b.scrollTop = b.scrollHeight;
@@ -1742,7 +1461,7 @@ async function showProfile(){
   document.querySelector('.fab-btn')?.remove();
   setView(`<div style="display:flex;justify-content:center;padding:60px"><div class="spin"></div></div>`);
   try{
-    const u=await api('GET','/api/users/me');rememberUser({...ME,...u});
+    const u=await api('GET','/api/users/me');cacheSet('bt_profile',u);rememberUser({...ME,...u});
     let sg=[...(u.favoriteGenres||[])];
     setView(`
       <div style="padding:0 16px 80px">
@@ -1762,7 +1481,7 @@ async function showProfile(){
           <div style="font-size:11px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Nivel de usuario</div>
           ${(()=>{const p=u.levelProgress||nextLevelInfo(u.completedExchanges);return `<div style="font-family:Fraunces,serif;font-size:20px;font-weight:800;color:#111827">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${u.completedExchanges||0} intercambios realizados · ${p.next?`faltan ${p.remaining} para ${p.next}`:'nivel máximo alcanzado'} · Verificación: ${esc(u.verificationStatus||'pending')}</div><div style="height:10px;background:#DBEAFE;border-radius:999px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${Math.max(0,Math.min(100,p.percent||0))}%;background:#3B82F6;border-radius:999px"></div></div>`})()}
         </div>
-        <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Foto de rostro / perfil</div><div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px;margin-bottom:16px"><input type="file" id="pf-file" accept="image/*" style="width:100%;font-size:13px;color:#6B7280"><div style="font-size:11px;color:#9CA3AF;margin-top:8px">Sube una foto clara de tu rostro. Máximo 10MB; la app la comprime antes de subirla. Quedará pendiente de verificación.</div></div>
+        <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Foto de rostro / perfil</div><div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px;margin-bottom:16px"><input type="file" id="pf-file" accept="image/*" style="width:100%;font-size:13px;color:#6B7280"><div style="font-size:11px;color:#9CA3AF;margin-top:8px">Sube una foto clara de tu rostro. Quedará pendiente de verificación.</div></div>
         <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Sobre mí</div>
         <textarea id="pb" rows="3" placeholder="Cuéntale a otros qué tipo de lector eres..." style="width:100%;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:13px 16px;font-size:15px;color:#111827;outline:none;resize:none;margin-bottom:12px;box-sizing:border-box;line-height:1.5;font-family:inherit">${esc(u.bio||'')}</textarea>
         <input id="pl" type="text" value="${esc(u.location||'')}" placeholder="Ej: Concepción, Chile"
@@ -1774,17 +1493,15 @@ async function showProfile(){
             style="padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid;transition:all .15s;
             ${sg.includes(g)?'background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35);color:#3B82F6':'background:#EFF6FF;border-color:#BFDBFE;color:#6B7280'}">${g}</button>`).join('')}
         </div>
-        <div style="max-width:400px;margin:0 auto;display:flex;flex-direction:column;gap:10px">
-          <button id="psave" onclick="pgSave()" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">Guardar cambios</button>
-          ${IS_ADMIN?`${IS_ADMIN?`<button onclick="window.location.href='/admin'" style="width:100%;padding:14px;background:#111827;color:#FFFFFF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer">⚙️ Abrir panel admin</button>`:''}`:''}
-          <button onclick="openAdminContactForm({type:'contact_admin'})" style="width:100%;padding:13px;background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer">Contactar administrador</button>
-          <button onclick="deleteMyAccount()" style="width:100%;padding:14px;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;font-size:14px;color:#991B1B;font-weight:800;cursor:pointer">Eliminar cuenta</button>
-          <button onclick="doLogout()" style="width:100%;padding:14px;background:transparent;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;color:#6B7280;cursor:pointer">Cerrar sesión</button>
-        </div>
+        <button id="psave" onclick="pgSave()" style="width:100%;padding:14px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px">Guardar cambios</button>
+        ${IS_ADMIN?`${IS_ADMIN?`<button onclick="window.location.href='/admin'" style="width:100%;padding:14px;background:#111827;color:#FFFFFF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px">⚙️ Abrir panel admin</button>`:''}`:''}
+        <button onclick="openAdminContactForm({type:'contact_admin'})" style="width:100%;padding:13px;background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;font-weight:800;margin-top:10px;cursor:pointer">Contactar administrador</button>
+        <button onclick="deleteMyAccount()" style="width:100%;padding:14px;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;font-size:14px;color:#991B1B;font-weight:800;cursor:pointer;margin-bottom:10px">Eliminar cuenta</button>
+        <button onclick="doLogout()" style="width:100%;padding:14px;background:transparent;border:1px solid #BFDBFE;border-radius:12px;font-size:14px;color:#6B7280;cursor:pointer">Cerrar sesión</button>
       </div>`);
     window._pg=sg;
     window.pgToggle=g=>{const has=window._pg.includes(g);if(has)window._pg=window._pg.filter(x=>x!==g);else window._pg.push(g);const btn=$('pg-'+g);if(!btn)return;const on=window._pg.includes(g);btn.style.background=on?'rgba(59,130,246,.12)':'#EFF6FF';btn.style.borderColor=on?'rgba(59,130,246,.35)':'#BFDBFE';btn.style.color=on?'#3B82F6':'#6B7280';};
-    window.pgSave=async()=>{const btn=$('psave');btn.disabled=true;btn.textContent='Guardando...';try{let profilePhoto;const file=$('pf-file')?.files?.[0];if(file){validateImageFile(file);btn.textContent='Comprimiendo foto...';profilePhoto=await compressAndUploadImg(file,'profiles');btn.textContent='Guardando...';}const payload={bio:$('pb').value.trim(),location:$('pl').value.trim(),favoriteGenres:window._pg};if(profilePhoto)payload.profilePhoto=profilePhoto;const updated=await api('PUT','/api/users/me',payload);rememberUser({...ME,...updated});updateNavProfilePhoto();toast('Perfil actualizado ✓','success');showProfile();}catch(e){toast(e.message,'error');}finally{btn.disabled=false;btn.textContent='Guardar cambios';}};
+    window.pgSave=async()=>{const btn=$('psave');btn.disabled=true;btn.textContent='Guardando...';try{let profilePhoto;const file=$('pf-file')?.files?.[0];if(file)profilePhoto=await compressAndUploadImg(file,'profiles');const payload={bio:$('pb').value.trim(),location:$('pl').value.trim(),favoriteGenres:window._pg};if(profilePhoto)payload.profilePhoto=profilePhoto;const updated=await api('PUT','/api/users/me',payload);rememberUser({...ME,...updated});updateNavProfilePhoto();toast('Perfil actualizado ✓','success');showProfile();}catch(e){toast(e.message,'error');}finally{btn.disabled=false;btn.textContent='Guardar cambios';}};
   }catch(e){toast(e.message,'error');}
 }
 
@@ -1983,32 +1700,3 @@ try{
   window.showNotifications=showNotifications;
   window.forceLogout=forceLogout;
 }catch(e){console.warn('global exports error',e);}
-
-
-/* ── BookTrade safe navigation bridge v5 ───────────────── */
-window.btGo = function(section){
-  const map = {
-    discover: 'showDiscover',
-    books: 'showBooks',
-    matches: 'showMatches',
-    chats: 'showChats',
-    history: 'showHistory',
-    profile: 'showProfile'
-  };
-  const fnName = map[section] || section;
-  const fn = window[fnName];
-  if (typeof fn === 'function') return fn();
-  alert('La app todavía está cargando. Recarga con ?fresh=navfix5');
-};
-
-try{
-  if (typeof showDiscover === 'function') window.showDiscover = showDiscover;
-  if (typeof showBooks === 'function') window.showBooks = showBooks;
-  if (typeof showMatches === 'function') window.showMatches = showMatches;
-  if (typeof showChats === 'function') window.showChats = showChats;
-  if (typeof showHistory === 'function') window.showHistory = showHistory;
-  if (typeof showProfile === 'function') window.showProfile = showProfile;
-  if (typeof showAboutBookTrade === 'function') window.showAboutBookTrade = showAboutBookTrade;
-  if (typeof openPublicProfile === 'function') window.openPublicProfile = openPublicProfile;
-}catch(e){ console.warn('BookTrade nav export warning:', e); }
-
