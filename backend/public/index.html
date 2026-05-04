@@ -9,7 +9,93 @@
 #nb-chat-badge{position:absolute;top:6px;right:10px;background:#EF4444;color:#fff;border-radius:999px;min-width:19px;height:19px;display:none;align-items:center;justify-content:center;font-size:10px;font-weight:900;border:2px solid #fff;z-index:20;box-shadow:0 4px 10px rgba(239,68,68,.35)}
 .spin{width:32px;height:32px;border:3px solid #BFDBFE;border-top-color:#3B82F6;border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@keyframes matchPop{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}input,textarea,select,button{font-family:'DM Sans',sans-serif}button{cursor:pointer}a{text-decoration:none}
 @media(max-width:720px){#app{max-width:100%}#view{left:78px}#nav{left:0!important;width:78px!important;max-width:78px!important;padding:8px 5px!important}.nb{min-height:58px;font-size:9px;border-radius:14px}.nb svg{width:21px;height:21px}}
-</style></head><body><div id="app"><div id="view"></div></div><div id="nav">
+
+body.login-screen #nav{display:none!important;visibility:hidden!important;pointer-events:none!important}
+body.login-screen #view{left:0!important;right:0!important;top:0!important;bottom:0!important;background:transparent!important;width:100vw!important}
+
+html.login-screen,body.login-screen{margin:0!important;width:100%!important;height:100%!important;overflow:hidden!important;background:#111827!important}
+body.login-screen #app{max-width:100%!important;width:100%!important;margin:0!important}
+body.login-screen #view{position:fixed!important;inset:0!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100vh!important;background:transparent!important;overflow:hidden!important}
+body.login-screen #nav{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;max-width:0!important}
+
+
+@media(max-width:720px){
+  body.login-screen #bt-login-screen{
+    align-items:flex-start!important;
+    justify-content:center!important;
+    padding:22px 16px!important;
+    background-size:cover!important;
+    background-position:center center!important;
+  }
+  body.login-screen .bt-login-card{
+    width:min(340px,88vw)!important;
+    padding:22px 22px 20px!important;
+    border-radius:16px!important;
+    margin-top:18px!important;
+    box-shadow:0 18px 46px rgba(15,23,42,.22)!important;
+  }
+  body.login-screen .bt-login-logo-block{
+    gap:5px!important;
+    margin-bottom:16px!important;
+  }
+  body.login-screen .bt-login-books{
+    height:25px!important;
+    transform:scale(.82)!important;
+    transform-origin:center bottom!important;
+  }
+  body.login-screen .bt-login-wordmark{
+    font-size:23px!important;
+    letter-spacing:-.7px!important;
+  }
+  body.login-screen .bt-login-subtitle{
+    font-size:12.5px!important;
+    margin-top:5px!important;
+  }
+  body.login-screen #bt-login-screen input{
+    height:46px!important;
+    font-size:14px!important;
+    border-radius:9px!important;
+  }
+  body.login-screen #bt-login-screen button{
+    min-height:0!important;
+  }
+  body.login-screen #btn-login,
+  body.login-screen #btn-reg{
+    height:48px!important;
+    font-size:15px!important;
+    border-radius:9px!important;
+  }
+  body.login-screen #forgot-inline-link{
+    font-size:13px!important;
+    padding:4px!important;
+    margin-top:0!important;
+  }
+}
+@media(max-width:390px){
+  body.login-screen #bt-login-screen{
+    padding:16px 12px!important;
+  }
+  body.login-screen .bt-login-card{
+    width:min(315px,88vw)!important;
+    padding:18px 18px 18px!important;
+    margin-top:12px!important;
+  }
+  body.login-screen .bt-login-wordmark{
+    font-size:21px!important;
+  }
+  body.login-screen .bt-login-subtitle{
+    font-size:12px!important;
+  }
+  body.login-screen #bt-login-screen input{
+    height:43px!important;
+  }
+  body.login-screen #btn-login,
+  body.login-screen #btn-reg{
+    height:45px!important;
+  }
+}
+
+</style></head><body class="login-screen"><div id="app"><div id="view"></div></div><div id="nav">
 <button class="nb" id="nb-discover" onclick="window.showDiscover?showDiscover():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Explorar</span></button>
 <button class="nb" id="nb-books" onclick="window.showBooks?showBooks():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Libros</span></button>
 <button class="nb" id="nb-matches" onclick="window.showMatches?showMatches():alert('app.js todavía no cargó')"><span id="nb-notif-badge">0</span><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nb-mlabel">Matches</span></button>
@@ -22,9 +108,9 @@
   <span>Perfil</span>
 </button>
 </div><div id="toasts" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:340px;width:90%"></div>
-<script>window.__BOOKTRADE_VERSION__="admin-wide-final-v1";setInterval(function(){var nav=document.getElementById('nav'),view=document.getElementById('view'),app=document.getElementById('app'),small=window.innerWidth<=720;if(app){app.style.setProperty('max-width','1180px','important');app.style.setProperty('width','100%','important')}if(nav&&!window.__CHAT_OPEN__){nav.style.setProperty('display','flex','important');nav.style.setProperty('z-index','999999','important');nav.style.setProperty('flex-direction','column','important')}if(view){view.style.setProperty('bottom','0','important');view.style.setProperty('left',small?'78px':'96px','important')}},500);</script>
+<script>window.__BOOKTRADE_VERSION__="admin-wide-final-v1";setInterval(function(){var nav=document.getElementById('nav'),view=document.getElementById('view'),app=document.getElementById('app'),small=window.innerWidth<=720;if(document.body.classList.contains('login-screen')||document.documentElement.classList.contains('login-screen')){if(nav){nav.style.setProperty('display','none','important');nav.style.setProperty('visibility','hidden','important');nav.style.setProperty('pointer-events','none','important');nav.style.setProperty('width','0','important');nav.style.setProperty('max-width','0','important')}if(view){view.style.setProperty('position','fixed','important');view.style.setProperty('inset','0','important');view.style.setProperty('left','0','important');view.style.setProperty('right','0','important');view.style.setProperty('width','100vw','important');view.style.setProperty('height','100vh','important');view.style.setProperty('background','transparent','important');view.style.setProperty('overflow','hidden','important')}if(app){app.style.setProperty('max-width','100%','important');app.style.setProperty('width','100%','important');app.style.setProperty('margin','0','important')}return;}if(app){app.style.setProperty('max-width','1180px','important');app.style.setProperty('width','100%','important')}if(nav&&!window.__CHAT_OPEN__){nav.style.setProperty('display','flex','important');nav.style.setProperty('z-index','999999','important');nav.style.setProperty('flex-direction','column','important')}if(view){view.style.setProperty('bottom','0','important');view.style.setProperty('left',small?'78px':'96px','important')}},500);</script>
 
 
 
 
-<script src="/socket.io/socket.io.js"></script><script>if(typeof io==='undefined'){document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>')}</script><script src="./app.js?v=speed-ui-cache-v1"></script></body></html>
+<script src="/socket.io/socket.io.js"></script><script>if(typeof io==='undefined'){document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>')}</script><script src="./app.js?v=speed-keep-login-v1"></script></body></html>
