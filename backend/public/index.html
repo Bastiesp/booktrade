@@ -95,13 +95,64 @@ body.login-screen #nav{display:none!important;visibility:hidden!important;pointe
   }
 }
 
-</style></head><body class="login-screen"><div id="app"><div id="view"></div></div><div id="nav">
-<button class="nb" id="nb-discover" onclick="window.showDiscover?showDiscover():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Explorar</span></button>
-<button class="nb" id="nb-books" onclick="window.showBooks?showBooks():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Libros</span></button>
-<button class="nb" id="nb-matches" onclick="window.showMatches?showMatches():alert('app.js todavía no cargó')"><span id="nb-notif-badge">0</span><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nb-mlabel">Matches</span></button>
-<button class="nb" id="nb-chats" onclick="window.showChats?showChats():alert('app.js todavía no cargó')"><span id="nb-chat-badge">0</span><svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span>Chats</span></button>
-<button class="nb" id="nb-history" onclick="window.showHistory?showHistory():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l3 2"/></svg><span>Historial</span></button>
-<button class="nb" id="nb-profile" onclick="window.showProfile?showProfile():alert('app.js todavía no cargó')">
+
+@media(max-width:720px){
+  .bt-chat-overlay{
+    left:0!important;
+    right:0!important;
+    width:100vw!important;
+    max-width:100vw!important;
+    transform:none!important;
+    padding:0!important;
+    align-items:flex-end!important;
+  }
+  .bt-chat-panel{
+    width:100vw!important;
+    max-width:100vw!important;
+    height:min(92vh,calc(100vh - 8px))!important;
+    border-radius:18px 18px 0 0!important;
+    border-left:none!important;
+    border-right:none!important;
+  }
+  .bt-chat-panel #cmsgs{
+    padding:14px 12px!important;
+  }
+}
+@media(max-width:390px){
+  .bt-chat-panel{
+    height:min(94vh,calc(100vh - 4px))!important;
+  }
+}
+
+
+@media(max-width:720px){
+  .bt-about-modal{padding:12px!important;align-items:center!important}
+  .bt-about-card{width:94vw!important;max-height:86vh!important;border-radius:20px!important}
+}
+
+</style>
+<script>
+window.btGo = window.btGo || function(section){
+  var map={discover:'showDiscover',books:'showBooks',matches:'showMatches',chats:'showChats',history:'showHistory',profile:'showProfile'};
+  var fnName=map[section]||section;
+  var fn=window[fnName];
+  if(typeof fn==='function') return fn();
+  setTimeout(function(){
+    fn=window[fnName];
+    if(typeof fn==='function') return fn();
+    alert('La app todavía está cargando. Recarga con ?fresh=navfix5');
+  },350);
+};
+window.addEventListener('error',function(e){console.error('BookTrade JS runtime error:',e.message,e.filename,e.lineno,e.colno);});
+</script>
+
+</head><body class="login-screen"><div id="app"><div id="view"></div></div><div id="nav">
+<button class="nb" id="nb-discover" onclick="btGo('discover')"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Explorar</span></button>
+<button class="nb" id="nb-books" onclick="btGo('books')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Libros</span></button>
+<button class="nb" id="nb-matches" onclick="btGo('matches')"><span id="nb-notif-badge">0</span><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nb-mlabel">Matches</span></button>
+<button class="nb" id="nb-chats" onclick="btGo('chats')"><span id="nb-chat-badge">0</span><svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span>Chats</span></button>
+<button class="nb" id="nb-history" onclick="btGo('history')"><svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l3 2"/></svg><span>Historial</span></button>
+<button class="nb" id="nb-profile" onclick="btGo('profile')">
   <span id="nav-profile-avatar" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden">
     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
   </span>
@@ -113,4 +164,4 @@ body.login-screen #nav{display:none!important;visibility:hidden!important;pointe
 
 
 
-<script src="/socket.io/socket.io.js"></script><script>if(typeof io==='undefined'){document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>')}</script><script src="./app.js?v=explore-new-logo-v1"></script></body></html>
+<script src="/socket.io/socket.io.js"></script><script>if(typeof io==='undefined'){document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>')}</script><script src="./app.js?v=generos-nuevos-v1"></script></body></html>
