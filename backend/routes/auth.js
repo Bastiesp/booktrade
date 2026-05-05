@@ -53,22 +53,40 @@ function appBaseUrl(req) {
 }
 
 async function sendResetEmail(email, resetUrl) {
-  /*
-    Variables recomendadas en Render:
-    APP_URL=https://tu-app.onrender.com
-    SMTP_HOST=smtp.gmail.com
-    SMTP_PORT=587
-    SMTP_USER=booktrade.app@gmail.com
-    SMTP_PASS=contraseña-de-aplicación
-    MAIL_FROM=BookTrade <booktrade.app@gmail.com>
+  function getSmtpStatus() {
+    let nodemailerInstalled = false;
+    try {
+      require.resolve('nodemailer');
+      nodemailerInstalled = true;
+    } catch {}
 
-    Si SMTP no está configurado, el link aparecerá en logs de Render.
-  */
-  const hasSmtp = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+    return {
+      nodemailerInstalled,
+      hasSmtpHost: Boolean(process.env.SMTP_HOST),
+      hasSmtpPort: Boolean(process.env.SMTP_PORT),
+      hasSmtpUser: Boolean(process.env.SMTP_USER),
+      hasSmtpPass: Boolean(process.env.SMTP_PASS),
+      hasMailFrom: Boolean(process.env.MAIL_FROM),
+      hasAppUrl: Boolean(process.env.APP_URL),
+      smtpHost: process.env.SMTP_HOST || null,
+      smtpPort: process.env.SMTP_PORT || null,
+      smtpUser: process.env.SMTP_USER ? process.env.SMTP_USER.replace(/(.{2}).+(@.*)/, '$1***$2') : null,
+      mailFrom: process.env.MAIL_FROM || null
+    };
+  }
 
-  if (!hasSmtp) {
+  const status = typeof smtpStatus === 'function' ? smtpStatus() : getSmtpStatus();
+
+  console.log('📨 SMTP status:', JSON.stringify(status));
+  console.log('🔗 Reset URL generado para:', email, resetUrl);
+
+  if (!status.hasSmtpHost || !status.hasSmtpUser || !status.hasSmtpPass) {
     console.log('🔐 LINK RECUPERACIÓN BOOKTRADE:', email, resetUrl);
-    return { sent: false, logged: true };
+    return { sent: false, logged: true, reason: 'SMTP no configurado' };
+  }
+
+  if (!status.nodemailerInstalled) {
+    throw new Error('Nodemailer no está instalado. Revisa package.json y redeploy.');
   }
 
   const nodemailer = require('nodemailer');
@@ -85,6 +103,8 @@ async function sendResetEmail(email, resetUrl) {
     greetingTimeout: 10000,
     socketTimeout: 15000
   });
+
+  console.log('📨 Intentando enviar correo de recuperación a:', email);
 
   const sendPromise = transporter.sendMail({
     from: process.env.MAIL_FROM || `BookTrade <${process.env.SMTP_USER}>`,
@@ -110,10 +130,44 @@ async function sendResetEmail(email, resetUrl) {
     setTimeout(() => reject(new Error('Timeout enviando correo SMTP')), 18000)
   );
 
-  await Promise.race([sendPromise, timeoutPromise]);
+  const info = await Promise.race([sendPromise, timeoutPromise]);
 
-  return { sent: true };
+  console.log('✅ Correo de recuperación enviado:', {
+    accepted: info.accepted,
+    rejected: info.rejected,
+    response: info.response
+  });
+
+  return { sent: true, info };
 }
+
+
+function smtpStatus() {
+  let nodemailerInstalled = false;
+  try {
+    require.resolve('nodemailer');
+    nodemailerInstalled = true;
+  } catch {}
+
+  return {
+    nodemailerInstalled,
+    hasSmtpHost: Boolean(process.env.SMTP_HOST),
+    hasSmtpPort: Boolean(process.env.SMTP_PORT),
+    hasSmtpUser: Boolean(process.env.SMTP_USER),
+    hasSmtpPass: Boolean(process.env.SMTP_PASS),
+    hasMailFrom: Boolean(process.env.MAIL_FROM),
+    hasAppUrl: Boolean(process.env.APP_URL),
+    smtpHost: process.env.SMTP_HOST || null,
+    smtpPort: process.env.SMTP_PORT || null,
+    smtpUser: process.env.SMTP_USER ? process.env.SMTP_USER.replace(/(.{2}).+(@.*)/, '$1***$2') : null,
+    mailFrom: process.env.MAIL_FROM || null
+  };
+}
+
+router.get('/smtp-status', (_req, res) => {
+  res.json({ ok: true, ...smtpStatus() });
+});
+
 
 /* POST /api/auth/register */
 router.post('/register', async (req, res) => {
@@ -242,8 +296,10 @@ router.post('/login', async (req, res) => {
 
 /* POST /api/auth/forgot-password */
 router.post('/forgot-password', async (req, res) => {
+  const requestId = crypto.randomBytes(4).toString('hex');
   try {
     const email = String(req.body.email || '').toLowerCase().trim();
+    console.log(`📩 [${requestId}] Solicitud recuperación contraseña recibida:`, email || '(sin email)');
 
     if (!email) {
       return res.status(400).json({ error: 'Ingresa tu correo' });
@@ -276,7 +332,7 @@ router.post('/forgot-password', async (req, res) => {
 
     res.json(generic);
   } catch (err) {
-    console.error('POST /api/auth/forgot-password error:', err);
+    console.error(`❌ [${typeof requestId !== 'undefined' ? requestId : 'noid'}] POST /api/auth/forgot-password error:`, {message:err.message,code:err.code,command:err.command,response:err.response,responseCode:err.responseCode,stack:err.stack});
     res.status(500).json({ error: 'No se pudo enviar el correo de recuperación' });
   }
 });
