@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BookTrade SMTP Test</title>
+<style>
+body{font-family:Arial,sans-serif;background:#EFF6FF;color:#111827;padding:24px}
+.card{max-width:520px;margin:40px auto;background:white;border:1px solid #BFDBFE;border-radius:18px;padding:22px;box-shadow:0 18px 50px rgba(15,23,42,.12)}
+input,button{width:100%;box-sizing:border-box;padding:13px;border-radius:12px;font-size:15px;margin:8px 0}
+input{border:1px solid #BFDBFE}
+button{border:0;background:#3B82F6;color:#fff;font-weight:900}
+pre{white-space:pre-wrap;background:#0F172A;color:#fff;border-radius:12px;padding:12px;font-size:12px;overflow:auto}
+</style>
+</head>
+<body>
+<div class="card">
+<h2>Test correo recuperación BookTrade</h2>
+<p>Esta pantalla prueba directo el backend, sin depender del login.</p>
+<input id="email" placeholder="correo@gmail.com"/>
+<button onclick="testStatus()">1. Probar SMTP status</button>
+<button onclick="testSend()">2. Probar envío debug</button>
+<pre id="out">Resultado...</pre>
+</div>
+<script>
+async function show(url){
+  const out=document.getElementById('out');
+  out.textContent='Consultando '+url+'...';
+  try{
+    const r=await fetch(url);
+    const txt=await r.text();
+    out.textContent='HTTP '+r.status+'\n'+txt;
+  }catch(e){
+    out.textContent='ERROR: '+e.message;
+  }
+}
+function testStatus(){ show('/api/auth/smtp-status?fresh='+Date.now()); }
+function testSend(){
+  const email=document.getElementById('email').value.trim();
+  if(!email){alert('Ingresa correo');return;}
+  show('/api/auth/debug-forgot?email='+encodeURIComponent(email)+'&fresh='+Date.now());
+}
+</script>
+</body>
+</html>
