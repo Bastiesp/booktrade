@@ -16,10 +16,11 @@ pre{white-space:pre-wrap;background:#0F172A;color:#fff;border-radius:12px;paddin
 <body>
 <div class="card">
 <h2>Test correo recuperación BookTrade</h2>
-<p>Esta pantalla prueba directo el backend, sin depender del login.</p>
+<p>Esta pantalla prueba directo el backend desde server.js.</p>
 <input id="email" placeholder="correo@gmail.com"/>
-<button onclick="testStatus()">1. Probar SMTP status</button>
-<button onclick="testSend()">2. Probar envío debug</button>
+<button onclick="testStatus()">1. Probar /api/auth/smtp-status</button>
+<button onclick="testStatus2()">2. Probar /api/smtp-status</button>
+<button onclick="testSend()">3. Probar envío debug</button>
 <pre id="out">Resultado...</pre>
 </div>
 <script>
@@ -30,11 +31,10 @@ async function show(url){
     const r=await fetch(url);
     const txt=await r.text();
     out.textContent='HTTP '+r.status+'\n'+txt;
-  }catch(e){
-    out.textContent='ERROR: '+e.message;
-  }
+  }catch(e){ out.textContent='ERROR: '+e.message; }
 }
 function testStatus(){ show('/api/auth/smtp-status?fresh='+Date.now()); }
+function testStatus2(){ show('/api/smtp-status?fresh='+Date.now()); }
 function testSend(){
   const email=document.getElementById('email').value.trim();
   if(!email){alert('Ingresa correo');return;}
