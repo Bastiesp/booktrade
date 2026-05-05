@@ -5,6 +5,7 @@ const crypto   = require('crypto');
 const User     = require('../models/User');
 
 const router = express.Router();
+console.log('✅ AUTH ROUTE DEBUG VERSION CARGADA: smtp-status + debug-forgot');
 
 const TERMS_VERSION = 'booktrade-legal-v1';
 
@@ -336,6 +337,77 @@ router.post('/forgot-password', async (req, res) => {
     res.status(500).json({ error: 'No se pudo enviar el correo de recuperación' });
   }
 });
+
+
+/*
+  GET /api/auth/debug-forgot?email=correo@dominio.com
+  Endpoint temporal de diagnóstico para tablet/navegador.
+*/
+router.get('/debug-forgot', async (req, res) => {
+  const requestId = crypto.randomBytes(4).toString('hex');
+
+  try {
+    const email = String(req.query.email || '').toLowerCase().trim();
+
+    console.log(`🧪 [${requestId}] DEBUG FORGOT endpoint ejecutado. Email:`, email || '(sin email)');
+
+    const status = typeof smtpStatus === 'function' ? smtpStatus() : {
+      nodemailerInstalled: (() => { try { require.resolve('nodemailer'); return true; } catch { return false; } })(),
+      hasSmtpHost: Boolean(process.env.SMTP_HOST),
+      hasSmtpPort: Boolean(process.env.SMTP_PORT),
+      hasSmtpUser: Boolean(process.env.SMTP_USER),
+      hasSmtpPass: Boolean(process.env.SMTP_PASS),
+      hasMailFrom: Boolean(process.env.MAIL_FROM),
+      hasAppUrl: Boolean(process.env.APP_URL),
+      smtpHost: process.env.SMTP_HOST || null,
+      smtpPort: process.env.SMTP_PORT || null,
+      smtpUser: process.env.SMTP_USER ? process.env.SMTP_USER.replace(/(.{2}).+(@.*)/, '$1***$2') : null,
+      mailFrom: process.env.MAIL_FROM || null
+    };
+
+    if (!email) {
+      return res.json({
+        ok: true,
+        reachedBackend: true,
+        message: 'Endpoint debug activo. Agrega ?email=tu-correo@gmail.com para probar envío.',
+        smtp: status
+      });
+    }
+
+    const resetUrl = `${process.env.APP_URL || `${req.protocol}://${req.get('host')}`}/reset-password.html?token=debug-${requestId}`;
+
+    await sendResetEmail(email, resetUrl);
+
+    res.json({
+      ok: true,
+      reachedBackend: true,
+      message: 'Se ejecutó intento de envío. Revisa si llegó correo y revisa logs de Render.',
+      email,
+      smtp: status,
+      debugResetUrl: resetUrl
+    });
+  } catch (err) {
+    console.error(`❌ [${requestId}] DEBUG FORGOT error:`, {
+      message: err.message,
+      code: err.code,
+      command: err.command,
+      response: err.response,
+      responseCode: err.responseCode,
+      stack: err.stack
+    });
+
+    res.status(500).json({
+      ok: false,
+      reachedBackend: true,
+      error: err.message,
+      code: err.code || null,
+      command: err.command || null,
+      response: err.response || null,
+      responseCode: err.responseCode || null
+    });
+  }
+});
+
 
 /* POST /api/auth/reset-password */
 router.post('/reset-password', async (req, res) => {
