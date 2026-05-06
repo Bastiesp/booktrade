@@ -26,11 +26,28 @@ const matchRoomId=(m)=>{const users=[getCurrentUserId(),m?.matchedUser?.id].map(
 /* ── Insignia de verificación Booktrade ─────────── */
 function userIsVerified(u){
   if(!u)return false;
+
+  const status=String(
+    u.verificationStatus ||
+    u.verifiedStatus ||
+    u.profilePhotoStatus ||
+    u.photoStatus ||
+    u.status ||
+    ''
+  ).toLowerCase();
+
   return Boolean(
     u.verified === true ||
     u.isVerified === true ||
     u.profileVerified === true ||
-    u.verificationStatus === 'verified'
+    u.photoApproved === true ||
+    u.profilePhotoApproved === true ||
+    u.facePhotoApproved === true ||
+    u.avatarApproved === true ||
+    status === 'verified' ||
+    status === 'approved' ||
+    status === 'aprobado' ||
+    status === 'verificado'
   );
 }
 function verifiedBadgeInline(extra=''){
@@ -57,6 +74,23 @@ function userAvatarVerifiedHtml(u,size=48,fontSize=18,photoOverride=''){
     ${avatarVerifiedBadgeInline(u)}
   </span>`;
 }
+
+
+function injectVerifiedBadgeStyles(){
+  if(document.getElementById('bt-verified-badge-style'))return;
+  const st=document.createElement('style');
+  st.id='bt-verified-badge-style';
+  st.textContent=`
+    .bt-verified-line{display:inline-flex;align-items:center;gap:5px;vertical-align:middle;max-width:100%}
+    .bt-verified-badge{width:16px;height:16px;min-width:16px;border-radius:999px;background:#1877F2;color:#fff;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;box-shadow:0 0 0 2px #fff}
+    .bt-verified-badge svg{width:10px;height:10px;display:block}
+    .bt-avatar-wrap{position:relative}
+    .bt-avatar-verified{position:absolute;right:-2px;bottom:-2px;width:17px;height:17px;border-radius:999px;background:#1877F2;color:#fff;border:2px solid #fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(24,119,242,.32)}
+    .bt-avatar-verified svg{width:10px;height:10px;display:block}
+  `;
+  document.head.appendChild(st);
+}
+injectVerifiedBadgeStyles();
 
 
 
