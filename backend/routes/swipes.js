@@ -8,6 +8,8 @@ const Exchange=require('../models/Exchange');
 
 const router=express.Router();
 
+const USER_PUBLIC_FIELDS='username email location profilePhoto level completedExchanges verified isVerified profileVerified photoApproved profilePhotoApproved facePhotoApproved avatarApproved verificationStatus verifiedStatus profilePhotoStatus photoStatus status';
+
 function makeMatchKey(userA,userB,bookA,bookB){
   const users=[String(userA),String(userB)].sort();
   const books=[String(bookA),String(bookB)].sort();
@@ -56,7 +58,19 @@ function userSummary(user){
     location:user?.location,
     profilePhoto:user?.profilePhoto,
     level:user?.level,
-    completedExchanges:user?.completedExchanges
+    completedExchanges:user?.completedExchanges,
+    verified:user?.verified,
+    isVerified:user?.isVerified,
+    profileVerified:user?.profileVerified,
+    photoApproved:user?.photoApproved,
+    profilePhotoApproved:user?.profilePhotoApproved,
+    facePhotoApproved:user?.facePhotoApproved,
+    avatarApproved:user?.avatarApproved,
+    verificationStatus:user?.verificationStatus,
+    verifiedStatus:user?.verifiedStatus,
+    profilePhotoStatus:user?.profilePhotoStatus,
+    photoStatus:user?.photoStatus,
+    status:user?.status
   };
 }
 
@@ -70,7 +84,7 @@ router.post('/',auth,async(req,res)=>{
 
     const book=await Book.findById(bookId)
       .select('_id owner title author photos')
-      .populate('owner','username email location profilePhoto level completedExchanges');
+      .populate('owner',USER_PUBLIC_FIELDS);
 
     if(!book)return res.status(404).json({error:'Libro no encontrado'});
     if(String(book.owner._id)===String(req.userId)){
@@ -169,8 +183,8 @@ router.get('/matches',auth,async(req,res)=>{
     // Esto evita que, después de cambiar dueños de libros, aparezca mi foto
     // o el mismo libro en "Tú das" y "Recibes".
     const exchanges=await Exchange.find({participants:req.userId})
-      .populate('requester','username email location profilePhoto level completedExchanges')
-      .populate('matchedUser','username email location profilePhoto level completedExchanges')
+      .populate('requester',USER_PUBLIC_FIELDS)
+      .populate('matchedUser',USER_PUBLIC_FIELDS)
       .populate('myBook','title author photos')
       .populate('theirBook','title author photos')
       .sort({updatedAt:-1})
@@ -206,7 +220,7 @@ router.get('/matches',auth,async(req,res)=>{
         .populate({
           path:'book',
           select:'_id title author photos owner',
-          populate:{path:'owner',select:'username email location profilePhoto level completedExchanges'}
+          populate:{path:'owner',select:USER_PUBLIC_FIELDS}
         })
         .sort({createdAt:-1})
         .limit(500)

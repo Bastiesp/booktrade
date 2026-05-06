@@ -4,6 +4,8 @@ const Message = require('../models/Message');
 
 const router = express.Router();
 
+const USER_PUBLIC_FIELDS = 'username email location profilePhoto verified isVerified profileVerified photoApproved profilePhotoApproved facePhotoApproved avatarApproved verificationStatus verifiedStatus profilePhotoStatus photoStatus status';
+
 /* GET /api/chat/:roomId — historial de mensajes */
 router.get('/:roomId', auth, async (req, res) => {
   try {
@@ -16,7 +18,7 @@ router.get('/:roomId', auth, async (req, res) => {
     const messages = await Message.find({ roomId })
       .sort({ createdAt: 1 })
       .limit(100)
-      .populate('sender', 'username email');
+      .populate('sender', USER_PUBLIC_FIELDS);
 
     res.json(messages);
   } catch (err) {
@@ -41,7 +43,7 @@ router.post('/:roomId', auth, async (req, res) => {
       text: text.trim().slice(0, 500)
     });
 
-    await msg.populate('sender', 'username email');
+    await msg.populate('sender', USER_PUBLIC_FIELDS);
 
     res.status(201).json(msg);
   } catch (err) {
