@@ -102,6 +102,95 @@ body:not(.login-screen) #view{
   -webkit-overflow-scrolling:touch!important;
 }
 
+
+/* ─────────────────────────────────────────────
+   Booktrade — Insignia azul de usuario verificado
+   Se usa junto a nombres, palabra Verified y fotos de perfil.
+───────────────────────────────────────────── */
+.bt-user-line,
+.bt-verified-line{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  vertical-align:middle!important;
+}
+.bt-verified-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:17px!important;
+  height:17px!important;
+  min-width:17px!important;
+  border-radius:50%!important;
+  background:linear-gradient(135deg,#1D9BF0,#1877F2)!important;
+  color:#FFFFFF!important;
+  box-shadow:0 2px 7px rgba(29,155,240,.35)!important;
+  flex-shrink:0!important;
+  line-height:1!important;
+}
+.bt-verified-badge svg{
+  width:11px!important;
+  height:11px!important;
+  display:block!important;
+  stroke:currentColor!important;
+}
+.bt-avatar-wrap{
+  position:relative!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-shrink:0!important;
+}
+.bt-avatar-wrap>img{
+  display:block!important;
+}
+.bt-avatar-verified{
+  position:absolute!important;
+  right:-2px!important;
+  bottom:-2px!important;
+  width:16px!important;
+  height:16px!important;
+  min-width:16px!important;
+  border-radius:50%!important;
+  background:linear-gradient(135deg,#1D9BF0,#1877F2)!important;
+  color:#FFFFFF!important;
+  border:2px solid #FFFFFF!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-shadow:0 2px 7px rgba(15,23,42,.28)!important;
+  z-index:3!important;
+}
+.bt-avatar-verified svg{
+  width:9px!important;
+  height:9px!important;
+  display:block!important;
+  stroke:currentColor!important;
+}
+#nav-profile-avatar{
+  position:relative!important;
+  overflow:visible!important;
+}
+#nav-profile-avatar img{
+  width:28px!important;
+  height:28px!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  display:block!important;
+}
+#nav-profile-avatar .bt-avatar-verified{
+  width:14px!important;
+  height:14px!important;
+  min-width:14px!important;
+  right:-3px!important;
+  bottom:-3px!important;
+  border-width:2px!important;
+}
+#nav-profile-avatar .bt-avatar-verified svg{
+  width:8px!important;
+  height:8px!important;
+}
+
 </style></head><body class="login-screen"><div id="app"><div id="view"></div></div><div id="nav">
 <button class="nb" id="nb-discover" onclick="window.showDiscover?showDiscover():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Explorar</span></button>
 <button class="nb" id="nb-books" onclick="window.showBooks?showBooks():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Libros</span></button>
@@ -120,4 +209,62 @@ body:not(.login-screen) #view{
 
 
 
-<script src="/socket.io/socket.io.js"></script><script>if(typeof io==='undefined'){document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>')}</script><script src="./app.js?v=explore-logo-scrollfix-v1"></script></body></html>
+
+<script>
+/* Booktrade — helpers globales para mostrar verificación en app.js */
+(function(){
+  function esc(value){
+    return String(value || '')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#039;');
+  }
+
+  function isVerified(user){
+    if(!user) return false;
+    return Boolean(
+      user.verified === true ||
+      user.isVerified === true ||
+      user.profileVerified === true ||
+      user.verificationStatus === 'verified'
+    );
+  }
+
+  function badgeHtml(className){
+    return '<span class="bt-verified-badge '+(className || '')+'" title="Usuario verificado" aria-label="Usuario verificado">' +
+      '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>' +
+      '</svg></span>';
+  }
+
+  function avatarBadgeHtml(user){
+    if(!isVerified(user)) return '';
+    return '<span class="bt-avatar-verified" title="Usuario verificado" aria-label="Usuario verificado">' +
+      '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>' +
+      '</svg></span>';
+  }
+
+  function nameHtml(user, fallback){
+    var name = (user && (user.username || user.name || user.email)) || fallback || 'Usuario';
+    return '<span class="bt-user-line"><span>'+esc(name)+'</span>'+(isVerified(user) ? badgeHtml('') : '')+'</span>';
+  }
+
+  function avatarHtml(user, className){
+    var photo = user && (user.profilePhoto || user.photo || user.avatar || user.image || user.profileImage);
+    var name = (user && (user.username || user.name)) || 'Usuario';
+    var src = photo || ('https://ui-avatars.com/api/?name='+encodeURIComponent(name || 'Booktrade')+'&background=f97316&color=fff');
+    return '<span class="bt-avatar-wrap"><img src="'+esc(src)+'" alt="'+esc(name)+'" class="'+esc(className || 'avatar')+'">'+avatarBadgeHtml(user)+'</span>';
+  }
+
+  window.btIsUserVerified = isVerified;
+  window.btVerifiedBadgeHtml = badgeHtml;
+  window.btAvatarVerifiedBadgeHtml = avatarBadgeHtml;
+  window.btUserNameWithVerifiedHtml = nameHtml;
+  window.btProfileAvatarHtml = avatarHtml;
+})();
+</script>
+
+<script src="/socket.io/socket.io.js"></script><script>if(typeof io==='undefined'){document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>')}</script><script src="./app.js?v=verified-badge-v2"></script></body></html>

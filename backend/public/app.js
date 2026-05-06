@@ -23,6 +23,42 @@ const roomId=(...a)=>a.map(String).sort().join('_');
 const matchRoomId=(m)=>{const users=[getCurrentUserId(),m?.matchedUser?.id].map(String).sort().join('_');const books=[m?.myBook?.id,m?.theirBook?.id].map(String).sort().join('_');return `match_${users}_${books}`;};
 
 
+/* ── Insignia de verificación Booktrade ─────────── */
+function userIsVerified(u){
+  if(!u)return false;
+  return Boolean(
+    u.verified === true ||
+    u.isVerified === true ||
+    u.profileVerified === true ||
+    u.verificationStatus === 'verified'
+  );
+}
+function verifiedBadgeInline(extra=''){
+  return `<span class="bt-verified-badge ${extra}" title="Usuario verificado" aria-label="Usuario verificado"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>`;
+}
+function avatarVerifiedBadgeInline(u){
+  if(!userIsVerified(u))return '';
+  return `<span class="bt-avatar-verified" title="Usuario verificado" aria-label="Usuario verificado"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>`;
+}
+function userHandleVerified(u,prefix='@'){
+  const name=esc(u?.username||u?.name||'Usuario');
+  return `<span class="bt-verified-line"><span>${prefix}${name}</span>${userIsVerified(u)?verifiedBadgeInline():''}</span>`;
+}
+function userVerifiedLabel(u){
+  return userIsVerified(u)
+    ? `<span class="bt-verified-line"><span>Verified</span>${verifiedBadgeInline()}</span>`
+    : `<span>No verificado</span>`;
+}
+function userAvatarVerifiedHtml(u,size=48,fontSize=18,photoOverride=''){
+  const photo=photoOverride || u?.profilePhoto || u?.photo || u?.avatar || u?.image || '';
+  const name=u?.username||u?.name||'Usuario';
+  return `<span class="bt-avatar-wrap" style="width:${size}px;height:${size}px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:${fontSize}px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;overflow:visible;flex-shrink:0">
+    ${photo?`<img src="${esc(photo)}" alt="${esc(name)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block">`:ini(name)}
+    ${avatarVerifiedBadgeInline(u)}
+  </span>`;
+}
+
+
 
 /* ── Optimización de carga visual ───────────────── */
 const CACHE_TTL = 60 * 1000;
@@ -191,10 +227,10 @@ async function openPublicProfile(userId){
     ov.innerHTML=`<div style="width:100%;background:#FFFFFF;border-radius:24px 24px 0 0;border:1px solid #BFDBFE;padding:24px;max-height:86vh;overflow:auto">
       <div style="width:44px;height:4px;background:#93C5FD;border-radius:8px;margin:0 auto 18px"></div>
       <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
-        <div style="width:76px;height:76px;border-radius:50%;background:#3B82F6;color:#fff;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;overflow:hidden">${u.profilePhoto?`<img src="${esc(u.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(u.username)}</div>
+        ${userAvatarVerifiedHtml(u,76,26,u.profilePhoto?cldThumb(u.profilePhoto,520,720):'')}
         <div style="flex:1">
-          <div style="font-family:Fraunces,serif;font-size:24px;font-weight:800;color:#111827">@${esc(u.username)}</div>
-          <div style="font-size:13px;color:#6B7280;margin-top:3px">📍 ${esc(u.location||'Sin comuna')} · ${u.verificationStatus==='verified'?'✅ Verificado':'🕒 No verificado'}</div>
+          <div style="font-family:Fraunces,serif;font-size:24px;font-weight:800;color:#111827">${userHandleVerified(u,'@')}</div>
+          <div style="font-size:13px;color:#6B7280;margin-top:3px">📍 ${esc(u.location||'Sin comuna')} · ${userVerifiedLabel(u)}</div>
           <div style="font-size:13px;color:#6B7280;margin-top:3px">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))} · ${ratingText(u)}</div>
         </div>
       </div>
@@ -222,12 +258,11 @@ async function loadNotifications(){if(!TOKEN)return;try{NOTIFS=await api('GET','
 function updateNavProfilePhoto(){
   const el=document.getElementById('nav-profile-avatar');
   if(!el)return;
-  const photo=ME?.profilePhoto;
-  const verified=ME?.verificationStatus==='verified';
-  if(photo && verified){
-    el.innerHTML=`<img src="${esc(cldThumb(photo,520,720))}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #3B82F6">`;
+  if(ME?.profilePhoto){
+    const photo=cldThumb(ME.profilePhoto,520,720);
+    el.innerHTML=`<img src="${esc(photo)}" alt="${esc(ME?.username||'Perfil')}">${avatarVerifiedBadgeInline(ME)}`;
   }else{
-    el.innerHTML=`<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    el.innerHTML=`<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${avatarVerifiedBadgeInline(ME)}`;
   }
 }
 
@@ -878,7 +913,7 @@ function drawCatalog(){
   s.style.height='auto';s.style.minHeight='420px';s.style.maxWidth='none';s.style.width='auto';s.style.margin='0 16px';
   if(cnt){cnt.style.display=QUEUE.length?'block':'none';cnt.textContent=QUEUE.length+' libros';}
   if(!QUEUE.length){s.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:10px;text-align:center;padding:20px"><div style="font-size:48px;opacity:.4">🔭</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">¡Todo explorado!</div><div style="font-size:13px;color:#6B7280">Vuelve pronto o cambia los filtros</div></div>';return;}
-  s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · @${esc(book.owner?.username||'usuario')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right',this)" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800;transition:all .15s">Me interesa</button></div></div></div>`}).join('')}</div>`;
+  s.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding-bottom:22px">${QUEUE.map(book=>{const photo=book.photos?.[0];return `<div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:18px;overflow:hidden;box-shadow:0 10px 26px rgba(17,24,39,.05)"><div style="height:210px;background:${clr(book._id)};position:relative;overflow:hidden">${photo?`<img src="${esc(cldThumb(photo,520,720))}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:rgba(255,255,255,.9)">${esc(book.title)}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;font-style:italic">${esc(book.author)}</div></div>`}</div><div style="padding:14px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:700;color:#111827;line-height:1.25">${esc(book.title)}</div><div style="font-size:13px;color:#6B7280;margin:4px 0 10px">${esc(book.author)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span><span style="padding:4px 10px;border-radius:20px;font-size:11px;background:#EFF6FF;color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span></div><div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">📍 ${esc(book.owner?.location||'—')} · ${userHandleVerified(book.owner,'@')}</div><div style="display:flex;gap:8px"><button onclick="catalogSwipe('${book._id}','left')" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(212,90,74,.25);background:#FFFFFF;color:#D45A4A;font-weight:800">Paso</button><button onclick="catalogSwipe('${book._id}','right',this)" style="flex:1;padding:10px;border-radius:10px;border:none;background:#3B82F6;color:#FFFFFF;font-weight:800;transition:all .15s">Me interesa</button></div></div></div>`}).join('')}</div>`;
 }
 async function catalogSwipe(bookId,dir,btn){
   let beforeIds = new Set();
@@ -950,7 +985,7 @@ function drawStack(){
           <span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(59,130,246,.12);color:#3B82F6;border:1px solid rgba(59,130,246,.2)">${esc(book.genre)}</span>
           <span style="padding:4px 10px;border-radius:20px;font-size:11px;background:rgba(240,228,205,.06);color:#6B7280;border:1px solid #BFDBFE">${esc(book.condition)}</span>
         </div>
-        ${book.owner?`<div style="font-size:11px;color:#9CA3AF">📍 ${esc(book.owner.location||'—')} · @${esc(book.owner.username)}</div>`:''}
+        ${book.owner?`<div style="font-size:11px;color:#9CA3AF">📍 ${esc(book.owner.location||'—')} · ${userHandleVerified(book.owner,'@')}</div>`:''}
       </div>`;
     if(isTop)attachDrag(card,book._id);
     s.appendChild(card);
@@ -1280,9 +1315,9 @@ function drawMatches(){
     <div style="position:relative;background:#FFFFFF;border:1px solid ${isExchangeDone(m)?'#BBF7D0':'#BFDBFE'};border-radius:16px;overflow:hidden;width:min(100%,560px);box-shadow:0 10px 28px rgba(17,24,39,.06)">
       ${(isExchangeDone(m))?`<div title="Intercambio confirmado" style="position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;background:#22C55E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:900;z-index:3;box-shadow:0 8px 22px rgba(34,197,94,.35)">✓</div>`:''}
       <div style="display:flex;align-items:center;gap:12px;padding:16px 16px 12px">
-        <button onclick="openPublicProfile('${m.matchedUser.id}')" style="width:48px;height:48px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:none;overflow:hidden">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</button>
+        <button onclick="openPublicProfile('${m.matchedUser.id}')" style="width:48px;height:48px;border-radius:50%;background:transparent;color:#FFFFFF;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:none;overflow:visible;padding:0">${userAvatarVerifiedHtml(m.matchedUser,48,18,m.matchedUser.profilePhoto?cldThumb(m.matchedUser.profilePhoto,160,160):'')}</button>
         <div style="flex:1;min-width:0">
-          <button onclick="openPublicProfile('${m.matchedUser.id}')" style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827;border:none;background:transparent;padding:0;text-align:left">@${esc(m.matchedUser.username)}</button>
+          <button onclick="openPublicProfile('${m.matchedUser.id}')" style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827;border:none;background:transparent;padding:0;text-align:left">${userHandleVerified(m.matchedUser,'@')}</button>
           ${m.matchedUser.location?`<div style="font-size:12px;color:#6B7280;margin-top:1px">📍 ${esc(m.matchedUser.location)}</div>`:''}
         </div>
         <span style="background:#3B82F6;color:#FFFFFF;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700">✓ Match</span>
@@ -1362,9 +1397,9 @@ function drawChats(){
   c.style.width='100%';
   if(!MATCHES.length){c.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;gap:10px;text-align:center"><div style="font-size:48px;opacity:.45">💬</div><div style="font-family:Fraunces,serif;font-size:20px;color:#111827">Sin chats todavía</div><div style="font-size:13px;color:#6B7280">Cuando tengas matches, tus conversaciones aparecerán aquí.</div></div>`;return;}
   c.innerHTML=MATCHES.map((m,i)=>{const r=matchRoomId(m);const unread=UNREAD[r]||0;return `<button onclick="openChat(${i})" style="width:min(100%,560px);margin:0 auto;display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:16px;padding:14px;text-align:left;box-shadow:0 8px 24px rgba(17,24,39,.04)">
-    <div style="width:52px;height:52px;border-radius:50%;background:#3B82F6;color:#fff;font-family:Fraunces,serif;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${m.matchedUser.profilePhoto?`<img src="${esc(m.matchedUser.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(m.matchedUser.username)}</div>
+    ${userAvatarVerifiedHtml(m.matchedUser,52,18,m.matchedUser.profilePhoto?cldThumb(m.matchedUser.profilePhoto,160,160):'')}
     <div style="flex:1;min-width:0">
-      <div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">@${esc(m.matchedUser.username)}</div>
+      <div style="font-family:Fraunces,serif;font-size:17px;font-weight:800;color:#111827">${userHandleVerified(m.matchedUser,'@')}</div>
       <div style="font-size:12px;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook.title)} ⇄ ${esc(m.theirBook.title)}</div>
       <div data-preview-room="${esc(r)}" style="font-size:12px;color:#334155;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cargando último mensaje...</div>
       <div style="font-size:11px;color:#9CA3AF;margin-top:3px;display:flex;align-items:center;gap:6px"><span>${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando intercambio')}</span><span data-ticks-room="${esc(r)}"></span></div>
@@ -1389,7 +1424,7 @@ function drawHistory(){
   const myId=getCurrentUserId();
   h.innerHTML=HISTORY.map(x=>{const other=(String(x.requester?._id||x.requester?.id)===String(myId))?x.matchedUser:x.requester;const doneLabel=x.state?.label||'Intercambio hecho';return `<div style="position:relative;background:#FFFFFF;border:1px solid #BBF7D0;border-radius:16px;padding:16px;box-shadow:0 10px 28px rgba(22,101,52,.08);width:min(100%,560px);margin:0 auto;box-sizing:border-box">
     <div title="Intercambio confirmado por ambas partes" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:#22C55E;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;box-shadow:0 8px 22px rgba(34,197,94,.35);z-index:2">✓</div>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:44px;height:44px;border-radius:50%;background:#3B82F6;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;overflow:hidden">${other?.profilePhoto?`<img src="${esc(other.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(other?.username)}</div><div style="flex:1"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827">@${esc(other?.username||'Usuario')}</div><div style="font-size:12px;color:#6B7280">${levelEmoji(other?.level)} ${esc(other?.level||'Aficionado')} · ${other?.completedExchanges||0} intercambios</div></div><span style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;border-radius:999px;padding:4px 34px 4px 10px;font-size:11px;font-weight:900">Intercambio hecho</span></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">${userAvatarVerifiedHtml(other,44,16,other?.profilePhoto?cldThumb(other.profilePhoto,140,140):'')}<div style="flex:1"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:700;color:#111827">${userHandleVerified(other,'@')}</div><div style="font-size:12px;color:#6B7280">${levelEmoji(other?.level)} ${esc(other?.level||'Aficionado')} · ${other?.completedExchanges||0} intercambios</div></div><span style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;border-radius:999px;padding:4px 34px 4px 10px;font-size:11px;font-weight:900">Intercambio hecho</span></div>
     <div style="display:flex;gap:8px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px"><div style="flex:1"><div style="font-size:9px;color:#9CA3AF;font-weight:800;text-transform:uppercase">Tu libro</div><div style="font-weight:700;color:#111827;font-size:13px">${esc(x.myBook?.title||'—')}</div><div style="font-size:11px;color:#6B7280">${esc(x.myBook?.author||'')}</div></div><div style="font-size:20px;color:#3B82F6;display:flex;align-items:center">⇄</div><div style="flex:1;text-align:right"><div style="font-size:9px;color:#9CA3AF;font-weight:800;text-transform:uppercase">Recibido</div><div style="font-weight:700;color:#111827;font-size:13px">${esc(x.theirBook?.title||'—')}</div><div style="font-size:11px;color:#6B7280">${esc(x.theirBook?.author||'')}</div></div></div>
     <div style="font-size:11px;color:#166534;margin-top:4px;font-weight:800">✅ ${esc(doneLabel)} · confirmado por ambas partes</div><div style="font-size:11px;color:#9CA3AF;margin-top:4px">Fecha: ${new Date(x.completedAt||x.updatedAt).toLocaleDateString('es-CL')}</div></div>`}).join('');
 }
@@ -1424,9 +1459,9 @@ function openChat(idx){
     <div id="cp" style="width:100%;height:min(88vh,calc(100vh - 24px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #BFDBFE;flex-shrink:0;position:relative">
         <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#93C5FD;border-radius:2px"></div>
-        <div style="width:38px;height:38px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">${ini(m.matchedUser.username)}</div>
+        ${userAvatarVerifiedHtml(m.matchedUser,38,14,m.matchedUser.profilePhoto?cldThumb(m.matchedUser.profilePhoto,120,120):'')}
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:700;color:#111827">@${esc(m.matchedUser.username)}</div>
+          <div style="font-size:15px;font-weight:700;color:#111827">${userHandleVerified(m.matchedUser,'@')}</div>
           <div style="font-size:11px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.myBook?.title||'')} ⇄ ${esc(m.theirBook?.title||'')}</div>
           <div style="font-size:11px;margin-top:2px;font-weight:800;color:${isExchangeDone(m)?'#166534':'#64748B'}">${isExchangeDone(m)?'✅ Intercambio hecho':(m.exchangeState?.label||'Coordinando')}</div>
         </div>
@@ -1612,10 +1647,10 @@ async function showProfile(){
       <div style="padding:0 16px 80px">
         <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:#111827;padding:16px 0 12px">Mi Perfil</div>
         <div style="background:#FFFFFF;border:1px solid #BFDBFE;border-radius:14px;padding:20px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
-          <div style="width:64px;height:64px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">${u.profilePhoto?`<img src="${esc(u.profilePhoto)}" style="width:100%;height:100%;object-fit:cover">`:ini(u.username)}</div>
+          ${userAvatarVerifiedHtml(u,64,22,u.profilePhoto?cldThumb(u.profilePhoto,180,180):'')}
           <div>
-            <div style="font-family:Fraunces,serif;font-size:20px;font-weight:700;color:#111827">@${esc(u.username)}</div>
-            <div style="font-size:13px;color:#6B7280;margin-top:2px">${esc(u.email)}</div>
+            <div style="font-family:Fraunces,serif;font-size:20px;font-weight:700;color:#111827">${userHandleVerified(u,'@')}</div>
+            <div style="font-size:13px;color:#6B7280;margin-top:2px">${esc(u.email)} · ${userVerifiedLabel(u)}</div>
             <div style="display:flex;gap:16px;margin-top:8px">
               <div><div style="font-size:18px;font-weight:600;color:#3B82F6">${u.totalBooks||0}</div><div style="font-size:11px;color:#6B7280">Libros</div></div>
               <div><div style="font-size:18px;font-weight:600;color:#3B82F6">${MATCHES.length}</div><div style="font-size:11px;color:#6B7280">Matches</div></div><div><div style="font-size:18px;font-weight:600;color:#3B82F6">${u.completedExchanges||0}</div><div style="font-size:11px;color:#6B7280">Intercambios</div></div>
@@ -1624,7 +1659,7 @@ async function showProfile(){
         </div>
         <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:14px;padding:14px;margin-bottom:16px">
           <div style="font-size:11px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Nivel de usuario</div>
-          ${(()=>{const p=u.levelProgress||nextLevelInfo(u.completedExchanges);return `<div style="font-family:Fraunces,serif;font-size:20px;font-weight:800;color:#111827">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${u.completedExchanges||0} intercambios realizados · ${p.next?`faltan ${p.remaining} para ${p.next}`:'nivel máximo alcanzado'} · Verificación: ${esc(u.verificationStatus||'pending')}</div><div style="height:10px;background:#DBEAFE;border-radius:999px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${Math.max(0,Math.min(100,p.percent||0))}%;background:#3B82F6;border-radius:999px"></div></div>`})()}
+          ${(()=>{const p=u.levelProgress||nextLevelInfo(u.completedExchanges);return `<div style="font-family:Fraunces,serif;font-size:20px;font-weight:800;color:#111827">${levelEmoji(u.level)} ${esc(u.level||levelFor(u.completedExchanges))}</div><div style="font-size:12px;color:#6B7280;margin-top:3px">${u.completedExchanges||0} intercambios realizados · ${p.next?`faltan ${p.remaining} para ${p.next}`:'nivel máximo alcanzado'} · Verificación: ${userVerifiedLabel(u)}</div><div style="height:10px;background:#DBEAFE;border-radius:999px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${Math.max(0,Math.min(100,p.percent||0))}%;background:#3B82F6;border-radius:999px"></div></div>`})()}
         </div>
         <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Foto de rostro / perfil</div><div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px;margin-bottom:16px"><input type="file" id="pf-file" accept="image/*" style="width:100%;font-size:13px;color:#6B7280"><div style="font-size:11px;color:#9CA3AF;margin-top:8px">Sube una foto clara de tu rostro. Quedará pendiente de verificación.</div></div>
         <div style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Sobre mí</div>
@@ -1692,7 +1727,7 @@ function showMatchModal(match){
       <button class="bt-match-x" type="button" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:999px;border:1px solid #BFDBFE;background:#EFF6FF;color:#1F2937;font-size:20px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
       <div style="font-size:62px;line-height:1;margin-bottom:14px;animation:matchPop .5s ease">🎉</div>
       <div style="font-family:Fraunces,serif;font-size:27px;font-weight:900;color:#3B82F6;margin-bottom:8px">¡Es un Match!</div>
-      <div style="font-size:14px;color:#6B7280;margin-bottom:22px;line-height:1.5">Tú y <strong style="color:#111827">@${esc(match?.matchedUser?.username||'usuario')}</strong> quieren intercambiar libros</div>
+      <div style="font-size:14px;color:#6B7280;margin-bottom:22px;line-height:1.5">Tú y <strong style="color:#111827">${userHandleVerified(match?.matchedUser,'@')}</strong> quieren intercambiar libros</div>
       <div style="display:flex;align-items:center;gap:12px;background:#EFF6FF;border-radius:16px;padding:14px;margin-bottom:20px;text-align:left;border:1px solid #BFDBFE">
         ${matchPopupBook(match?.myBook,'Tú das','left')}
         <span style="font-size:24px;color:#3B82F6;font-weight:900;flex-shrink:0">⇄</span>
