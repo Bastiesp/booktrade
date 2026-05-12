@@ -504,6 +504,70 @@ async function sendForgotPassword(){
 }
 
 
+
+/* ── Login: botón Nosotros / documentos legales ───────── */
+function authLegalButtonHtml(){
+  return `
+    <div id="bt-login-legal-box" style="margin-top:16px;padding-top:13px;border-top:1px solid #E5E7EB;text-align:center">
+      <button type="button" onclick="openBooktradeAboutModal()"
+        style="display:inline-flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:40px;background:#EFF6FF;border:1px solid #BFDBFE;color:#2563EB;border-radius:999px;font-size:13px;font-weight:900;cursor:pointer;padding:10px 12px;box-shadow:0 8px 20px rgba(37,99,235,.08)">
+        <span style="font-size:15px">ℹ️</span>
+        <span>Nosotros, términos y comunidad</span>
+      </button>
+    </div>`;
+}
+
+function openBooktradeAboutModal(){
+  document.getElementById('bt-about-modal')?.remove();
+  const ov=document.createElement('div');
+  ov.id='bt-about-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.62);backdrop-filter:blur(4px);z-index:2147483500;display:flex;align-items:center;justify-content:center;padding:18px';
+  ov.innerHTML=`
+    <div style="width:min(560px,94vw);max-height:84vh;overflow-y:auto;background:#FFFFFF;border:1px solid #BFDBFE;border-radius:22px;padding:22px;box-shadow:0 24px 70px rgba(15,23,42,.28);color:#111827">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px">
+        <div>
+          <div style="font-family:Fraunces,serif;font-size:25px;font-weight:900;color:#111827;line-height:1.1">BookTrade</div>
+          <div style="font-size:13px;color:#64748B;margin-top:4px;font-weight:700">Nosotros, términos, protección de datos y reglas de comunidad</div>
+        </div>
+        <button type="button" onclick="closeBooktradeAboutModal()" style="width:36px;height:36px;border-radius:999px;border:1px solid #BFDBFE;background:#EFF6FF;color:#111827;font-size:22px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0">×</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;color:#475569;line-height:1.55">
+        <section style="background:#F8FAFC;border:1px solid #DBEAFE;border-radius:16px;padding:14px">
+          <h3 style="font-family:Fraunces,serif;font-size:18px;color:#111827;margin:0 0 8px">Nosotros</h3>
+          <p style="margin:0 0 8px">BookTrade es una comunidad creada para conectar personas que quieren intercambiar libros de forma simple, cercana y responsable.</p>
+          <p style="margin:0">Nuestro objetivo es fomentar la lectura, darle una segunda vida a los libros usados y ayudar a que cada historia llegue a un nuevo lector.</p>
+        </section>
+
+        <section style="background:#F8FAFC;border:1px solid #DBEAFE;border-radius:16px;padding:14px">
+          <h3 style="font-family:Fraunces,serif;font-size:18px;color:#111827;margin:0 0 8px">Términos y condiciones</h3>
+          <p style="margin:0 0 8px">Al usar BookTrade aceptas utilizar la plataforma de manera honesta, respetuosa y bajo tu responsabilidad.</p>
+          <p style="margin:0">BookTrade facilita el contacto entre usuarios, pero cada intercambio debe ser coordinado directamente entre las personas involucradas. No está permitido publicar información falsa, suplantar identidades, realizar cobros engañosos ni usar la app para fines distintos al intercambio de libros.</p>
+        </section>
+
+        <section style="background:#F8FAFC;border:1px solid #DBEAFE;border-radius:16px;padding:14px">
+          <h3 style="font-family:Fraunces,serif;font-size:18px;color:#111827;margin:0 0 8px">Política de protección de datos</h3>
+          <p style="margin:0 0 8px">Los datos de cuenta, perfil, libros, fotos y mensajes se usan para permitir el funcionamiento normal de BookTrade: publicar libros, hacer matches, conversar, verificar perfiles y mejorar la seguridad.</p>
+          <p style="margin:0">BookTrade no vende datos personales. La información visible dentro de la app se limita a la necesaria para coordinar intercambios y construir confianza entre usuarios.</p>
+        </section>
+
+        <section style="background:#F8FAFC;border:1px solid #DBEAFE;border-radius:16px;padding:14px">
+          <h3 style="font-family:Fraunces,serif;font-size:18px;color:#111827;margin:0 0 8px">Reglas de la comunidad</h3>
+          <p style="margin:0 0 8px">Trata a otros usuarios con respeto. No se permite acoso, amenazas, insultos, discriminación, spam ni intentos de estafa.</p>
+          <p style="margin:0">Publica solo libros reales, describe su estado con honestidad y coordina los intercambios en lugares seguros. Los usuarios que incumplan estas reglas podrán ser reportados, bloqueados o eliminados por administración.</p>
+        </section>
+      </div>
+
+      <button type="button" onclick="closeBooktradeAboutModal()" style="width:100%;margin-top:18px;padding:13px;background:#3B82F6;color:#FFFFFF;border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer">Entendido</button>
+    </div>`;
+  ov.addEventListener('click',e=>{if(e.target===ov)closeBooktradeAboutModal();});
+  document.body.appendChild(ov);
+}
+
+function closeBooktradeAboutModal(){
+  document.getElementById('bt-about-modal')?.remove();
+}
+
 function showAuth(tab){
   document.body.classList.add('login-screen');
   document.documentElement.classList.add('login-screen');
@@ -586,6 +650,7 @@ function showAuth(tab){
               ¿No tienes cuenta?
               <button onclick="showAuth('register')" style="background:transparent;border:none;color:#3B82F6;font-weight:900;cursor:pointer;font-size:14px">Regístrate aquí</button>
             </div>
+            ${authLegalButtonHtml()}
           </div>
         `:`
           <div style="display:flex;flex-direction:column;gap:14px">
@@ -611,6 +676,7 @@ function showAuth(tab){
               ¿Ya tienes cuenta?
               <button onclick="showAuth('login')" style="background:transparent;border:none;color:#3B82F6;font-weight:900;cursor:pointer;font-size:14px">Ingresar</button>
             </div>
+            ${authLegalButtonHtml()}
           </div>
         `}
       </div>
@@ -1895,6 +1961,8 @@ setInterval(forceShowNav,1000);
 
 window.showForgotPassword=showForgotPassword;
 window.sendForgotPassword=sendForgotPassword;
+window.openBooktradeAboutModal=openBooktradeAboutModal;
+window.closeBooktradeAboutModal=closeBooktradeAboutModal;
 
 
 
