@@ -57,9 +57,19 @@ function avatarVerifiedBadgeInline(u){
   if(!userIsVerified(u))return '';
   return `<span class="bt-avatar-verified" title="Usuario verificado" aria-label="Usuario verificado"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>`;
 }
+function publicProfileIdOf(u){
+  const id=u?._id || u?.id || u?.userId || u?.uid || u?.ownerId || '';
+  return id?String(id):'';
+}
+function publicProfileClickAttrs(u){
+  const id=publicProfileIdOf(u);
+  if(!id)return '';
+  return ` role="button" tabindex="0" onclick="event.stopPropagation();openPublicProfile('${esc(id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openPublicProfile('${esc(id)}')}" style="cursor:pointer"`;
+}
 function userHandleVerified(u,prefix='@'){
   const name=esc(u?.username||u?.name||'Usuario');
-  return `<span class="bt-verified-line"><span>${prefix}${name}</span>${userIsVerified(u)?verifiedBadgeInline():''}</span>`;
+  const pref=esc(prefix);
+  return `<span class="bt-verified-line bt-profile-click"${publicProfileClickAttrs(u)}><span>${pref}${name}</span>${userIsVerified(u)?verifiedBadgeInline():''}</span>`;
 }
 function userVerifiedLabel(u){
   return userIsVerified(u)
@@ -69,7 +79,7 @@ function userVerifiedLabel(u){
 function userAvatarVerifiedHtml(u,size=48,fontSize=18,photoOverride=''){
   const photo=photoOverride || u?.profilePhoto || u?.photo || u?.avatar || u?.image || '';
   const name=u?.username||u?.name||'Usuario';
-  return `<span class="bt-avatar-wrap" style="width:${size}px;height:${size}px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:${fontSize}px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;overflow:visible;flex-shrink:0">
+  return `<span class="bt-avatar-wrap bt-profile-click"${publicProfileClickAttrs(u)} style="width:${size}px;height:${size}px;border-radius:50%;background:#3B82F6;color:#FFFFFF;font-family:Fraunces,serif;font-size:${fontSize}px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;overflow:visible;flex-shrink:0">
     ${photo?`<img src="${esc(photo)}" alt="${esc(name)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block">`:ini(name)}
     ${avatarVerifiedBadgeInline(u)}
   </span>`;
@@ -87,6 +97,8 @@ function injectVerifiedBadgeStyles(){
     .bt-avatar-wrap{position:relative}
     .bt-avatar-verified{position:absolute;right:-2px;bottom:-2px;width:17px;height:17px;border-radius:999px;background:#1877F2;color:#fff;border:2px solid #fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(24,119,242,.32)}
     .bt-avatar-verified svg{width:10px;height:10px;display:block}
+    .bt-profile-click{cursor:pointer}
+    .bt-profile-click:focus-visible{outline:2px solid #3B82F6;outline-offset:3px;border-radius:999px}
   `;
   document.head.appendChild(st);
 }
@@ -172,6 +184,7 @@ function restoreAppLayoutAfterLogin(){
 }
 
 function forceShowNav(){
+  if(window.__CHAT_OPEN__)return;
   const nav=document.getElementById('nav');
   const view=document.getElementById('view');
   const app=document.getElementById('app');
@@ -230,7 +243,25 @@ function requireLogin(){
 }
 
 
+function closeActiveChat({restoreNav=true,instant=false}={}){
+  const overlays=[...document.querySelectorAll('.bt-chat-overlay')];
+  overlays.forEach(ov=>{
+    const panel=ov.querySelector('#cp');
+    if(instant){
+      ov.remove();
+    }else{
+      ov.style.opacity='0';
+      if(panel)panel.style.transform='translateY(40px)';
+      setTimeout(()=>ov.remove(),220);
+    }
+  });
+  window._cRoom=null;
+  window.__CHAT_OPEN__=false;
+  if(restoreNav && typeof forceShowNav==='function')setTimeout(()=>forceShowNav(),instant?0:240);
+}
+
 function setNav(id){
+  closeActiveChat({restoreNav:false,instant:true});
   restoreAppLayoutAfterLogin();
   ['nb-discover','nb-books','nb-matches','nb-chats','nb-history','nb-profile'].forEach(n=>{
     const b=$(n);if(b)b.className='nb'+(n===id?' active':'');
@@ -257,7 +288,8 @@ async function openPublicProfile(userId){
     const u=await api('GET','/api/users/'+userId+'/public');
     const p=u.levelProgress||nextLevelInfo(u.completedExchanges);
     const ov=document.createElement('div');
-    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000003;display:flex;align-items:flex-end;max-width:1180px;margin:0 auto;left:50%;transform:translateX(-50%)';
+    ov.className='bt-public-profile-overlay';
+    ov.style.cssText='position:fixed;top:0;bottom:0;left:50%;right:auto;width:100vw;max-width:960px;background:rgba(0,0,0,.45);z-index:1000003;display:flex;align-items:flex-end;transform:translateX(-50%);padding:0;box-sizing:border-box';
     ov.innerHTML=`<div style="width:100%;background:#FFFFFF;border-radius:24px 24px 0 0;border:1px solid #BFDBFE;padding:24px;max-height:86vh;overflow:auto">
       <div style="width:44px;height:4px;background:#93C5FD;border-radius:8px;margin:0 auto 18px"></div>
       <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
@@ -1547,6 +1579,7 @@ async function openChatByMatchId(matchId){
 
 function openChat(idx){
   const m=MATCHES[idx];if(!m)return;
+  closeActiveChat({restoreNav:false,instant:true});
   window.__CHAT_OPEN__=true;
   const navChat=$('nav');if(navChat)navChat.style.setProperty('display','none','important');
   const myId=(ME?._id||ME?.id||'').toString();
@@ -1554,9 +1587,10 @@ function openChat(idx){
   clearUnread(room);if($('clist'))drawChats();
 
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;max-width:760px;left:50%;transform:translateX(-50%)';
+  ov.className='bt-chat-overlay';
+  ov.style.cssText='position:fixed;top:0;bottom:0;left:50%;right:auto;width:100vw;max-width:960px;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000002;display:flex;align-items:flex-end;opacity:0;transition:opacity .25s;transform:translateX(-50%);padding:0;box-sizing:border-box';
   ov.innerHTML=`
-    <div id="cp" style="width:100%;height:min(88vh,calc(100vh - 24px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s">
+    <div id="cp" style="width:100%;height:min(92vh,calc(100vh - 12px));background:#FFFFFF;border-radius:22px 22px 0 0;border:1px solid #BFDBFE;display:flex;flex-direction:column;transform:translateY(40px);transition:transform .25s;box-sizing:border-box">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #BFDBFE;flex-shrink:0;position:relative">
         <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#93C5FD;border-radius:2px"></div>
         ${userAvatarVerifiedHtml(m.matchedUser,38,14,m.matchedUser.profilePhoto?cldThumb(m.matchedUser.profilePhoto,120,120):'')}
@@ -1583,7 +1617,7 @@ function openChat(idx){
   document.body.appendChild(ov);
   requestAnimationFrame(()=>{ov.style.opacity='1';$('cp').style.transform='translateY(0)';});
 
-  const closeChat=()=>{ov.style.opacity='0';$('cp').style.transform='translateY(40px)';setTimeout(()=>{ov.remove();window._cRoom=null;window.__CHAT_OPEN__=false;if(typeof forceShowNav==='function')forceShowNav();},280);};
+  const closeChat=()=>closeActiveChat({restoreNav:true,instant:false});
   $('chat-close-btn').onclick=closeChat;
   ov.addEventListener('click',e=>{if(e.target===ov)closeChat();});
 
@@ -1983,4 +2017,6 @@ try{
   window.showProfile=showProfile;
   window.showNotifications=showNotifications;
   window.forceLogout=forceLogout;
+  window.openPublicProfile=openPublicProfile;
+  window.closeActiveChat=closeActiveChat;
 }catch(e){console.warn('global exports error',e);}
