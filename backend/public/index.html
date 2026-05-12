@@ -1,250 +1,270 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<meta name="theme-color" content="#FFFFFF"/>
-<title>Booktrade</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:#FFFFFF;font-family:'DM Sans',sans-serif;color:#111827;overflow:hidden}
-#app{position:fixed;inset:0;max-width:480px;margin:0 auto;overflow:hidden;background:#FFFFFF;height:100vh}
-#view{position:absolute;top:0;left:0;right:0;bottom:68px;overflow-y:auto;overflow-x:hidden;background:#FFFFFF}
-#view::-webkit-scrollbar{display:none}
-#nav{position:fixed!important;bottom:0!important;left:50%!important;transform:translateX(-50%)!important;width:100%!important;max-width:480px!important;height:68px!important;background:#FFFFFF!important;border-top:1px solid #FED7AA!important;display:flex!important;align-items:center!important;padding:0 4px!important;z-index:999999!important;box-shadow:0 -8px 24px rgba(17,24,39,.06)!important}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:100%;border:none;background:transparent;cursor:pointer;color:#9CA3AF;font-size:10px;font-weight:500;font-family:inherit;transition:color .2s,transform .2s;padding:0}
-.nb.active{color:#F97316;font-weight:700}
-.nb:active{transform:scale(.96)}
-.nb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.spin{width:32px;height:32px;border:3px solid #FED7AA;border-top-color:#F97316;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}} @keyframes matchPop{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
-input,textarea,select,button{font-family:'DM Sans',sans-serif}button{cursor:pointer}a{text-decoration:none}
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/><meta name="theme-color" content="#FFFFFF"/><title>BookTrade</title><link rel="preconnect" href="https://fonts.googleapis.com"/><link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/><style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{height:100%;background:#FFFFFF;font-family:'DM Sans',sans-serif;color:#111827;overflow:hidden}
+#app{position:fixed;inset:0;width:100%;max-width:1180px;margin:0 auto;overflow:hidden;background:#FFFFFF;height:100vh}
+#view{position:absolute;top:0;left:96px;right:0;bottom:0;overflow-y:auto;overflow-x:hidden;background:#FFFFFF}#view::-webkit-scrollbar{display:none}
+#nav{position:fixed!important;top:0!important;bottom:auto!important;left:max(0px,calc(50% - 590px))!important;transform:none!important;width:96px!important;max-width:96px!important;height:100vh!important;background:#FFFFFF!important;border-right:1px solid #BFDBFE!important;border-top:none!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;padding:10px 8px!important;z-index:999999!important;box-shadow:8px 0 24px rgba(17,24,39,.06)!important}
+.nb{width:100%;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:none;background:transparent;cursor:pointer;color:#9CA3AF;font-size:11px;font-weight:700;font-family:inherit;transition:color .2s,transform .2s,background .2s;padding:8px 4px;border-radius:16px;position:relative}.nb.active{color:#3B82F6;background:#EFF6FF;font-weight:900}.nb svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#nb-notif-badge{position:absolute;top:7px;right:14px;background:#EF4444;color:#fff;border-radius:999px;min-width:17px;height:17px;display:none;align-items:center;justify-content:center;font-size:9px;font-weight:900;border:2px solid #fff}
+#nb-chat-badge{position:absolute;top:6px;right:10px;background:#EF4444;color:#fff;border-radius:999px;min-width:19px;height:19px;display:none;align-items:center;justify-content:center;font-size:10px;font-weight:900;border:2px solid #fff;z-index:20;box-shadow:0 4px 10px rgba(239,68,68,.35)}
+.spin{width:32px;height:32px;border:3px solid #BFDBFE;border-top-color:#3B82F6;border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@keyframes matchPop{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}input,textarea,select,button{font-family:'DM Sans',sans-serif}button{cursor:pointer}a{text-decoration:none}
+@media(max-width:720px){#app{max-width:100%}#view{left:78px}#nav{left:0!important;width:78px!important;max-width:78px!important;padding:8px 5px!important}.nb{min-height:58px;font-size:9px;border-radius:14px}.nb svg{width:21px;height:21px}}
 
-/* Módulo legal login — Nosotros / Términos / Privacidad / Comunidad */
-#bt-legal-links{
-  margin-top:18px;
-  padding-top:16px;
-  border-top:1px solid rgba(254,215,170,.75);
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  justify-content:center;
-}
-#bt-legal-links button{
-  border:1px solid #FED7AA;
-  background:#FFF7ED;
-  color:#6B7280;
-  padding:8px 10px;
-  border-radius:999px;
-  font-size:11px;
-  font-weight:700;
-  cursor:pointer;
-  line-height:1;
-}
-#bt-legal-links button:active{transform:scale(.97)}
-#bt-info-modal{
-  position:fixed;
-  inset:0;
-  z-index:10000050;
-  background:rgba(17,24,39,.66);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:18px;
-}
-#bt-info-modal.bt-open{display:flex}
-.bt-info-card{
-  width:min(92vw,520px);
-  max-height:82vh;
-  overflow-y:auto;
-  background:#FFFFFF;
-  color:#111827;
-  border:1px solid #FED7AA;
-  border-radius:22px;
-  box-shadow:0 24px 70px rgba(0,0,0,.35);
-  padding:24px;
-  position:relative;
-}
-.bt-info-close{
-  position:absolute;
-  top:12px;
-  right:14px;
-  width:34px;
-  height:34px;
-  border:0;
-  border-radius:50%;
-  background:#F97316;
-  color:#FFFFFF;
-  font-size:23px;
-  font-weight:700;
-  line-height:34px;
-}
-.bt-info-card h2{
-  font-family:'Fraunces',serif;
-  color:#F97316;
-  font-size:24px;
-  margin:0 42px 14px 0;
-}
-.bt-info-card p{
-  color:#374151;
-  line-height:1.55;
-  font-size:14px;
-  margin-bottom:12px;
-}
-.bt-info-card ul{
-  padding-left:18px;
-  color:#374151;
-  font-size:14px;
-  line-height:1.55;
-  margin-bottom:12px;
-}
-.bt-info-card li{margin-bottom:8px}
-</style>
-</head>
-<body>
-<div id="app">
-  <div id="view"></div>
-</div>
+body.login-screen #nav{display:none!important;visibility:hidden!important;pointer-events:none!important}
+body.login-screen #view{left:0!important;right:0!important;top:0!important;bottom:0!important;background:transparent!important;width:100vw!important}
 
-<div id="nav">
-  <button class="nb" id="nb-discover" onclick="window.showDiscover?showDiscover():alert('app.js todavía no cargó')">
-    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Descubrir</span>
-  </button>
-  <button class="nb" id="nb-books" onclick="window.showBooks?showBooks():alert('app.js todavía no cargó')">
-    <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Mis Libros</span>
-  </button>
-  <button class="nb" id="nb-matches" onclick="window.showMatches?showMatches():alert('app.js todavía no cargó')">
-    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nb-mlabel">Matches</span>
-  </button>
-  <button class="nb" id="nb-profile" onclick="window.showProfile?showProfile():alert('app.js todavía no cargó')">
-    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span>
-  </button>
-</div>
+html.login-screen,body.login-screen{margin:0!important;width:100%!important;height:100%!important;overflow:hidden!important;background:#111827!important}
+body.login-screen #app{max-width:100%!important;width:100%!important;margin:0!important}
+body.login-screen #view{position:fixed!important;inset:0!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100vh!important;background:transparent!important;overflow:hidden!important}
+body.login-screen #nav{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;max-width:0!important}
 
-<div id="toasts" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:340px;width:90%"></div>
 
-<div id="bt-info-modal" onclick="if(event.target===this)btCloseInfoModal()">
-  <div class="bt-info-card">
-    <button class="bt-info-close" type="button" onclick="btCloseInfoModal()">×</button>
-    <h2 id="bt-info-title">Booktrade</h2>
-    <div id="bt-info-body"></div>
-  </div>
-</div>
+@media(max-width:720px){
+  body.login-screen #bt-login-screen{
+    align-items:flex-start!important;
+    justify-content:center!important;
+    padding:22px 16px!important;
+    background-size:cover!important;
+    background-position:center center!important;
+  }
+  body.login-screen .bt-login-card{
+    width:min(340px,88vw)!important;
+    padding:22px 22px 20px!important;
+    border-radius:16px!important;
+    margin-top:18px!important;
+    box-shadow:0 18px 46px rgba(15,23,42,.22)!important;
+  }
+  body.login-screen .bt-login-logo-block{
+    gap:5px!important;
+    margin-bottom:16px!important;
+  }
+  body.login-screen .bt-login-books{
+    height:25px!important;
+    transform:scale(.82)!important;
+    transform-origin:center bottom!important;
+  }
+  body.login-screen .bt-login-wordmark{
+    font-size:23px!important;
+    letter-spacing:-.7px!important;
+  }
+  body.login-screen .bt-login-subtitle{
+    font-size:12.5px!important;
+    margin-top:5px!important;
+  }
+  body.login-screen #bt-login-screen input{
+    height:46px!important;
+    font-size:14px!important;
+    border-radius:9px!important;
+  }
+  body.login-screen #bt-login-screen button{
+    min-height:0!important;
+  }
+  body.login-screen #btn-login,
+  body.login-screen #btn-reg{
+    height:48px!important;
+    font-size:15px!important;
+    border-radius:9px!important;
+  }
+  body.login-screen #forgot-inline-link{
+    font-size:13px!important;
+    padding:4px!important;
+    margin-top:0!important;
+  }
+}
+@media(max-width:390px){
+  body.login-screen #bt-login-screen{
+    padding:16px 12px!important;
+  }
+  body.login-screen .bt-login-card{
+    width:min(315px,88vw)!important;
+    padding:18px 18px 18px!important;
+    margin-top:12px!important;
+  }
+  body.login-screen .bt-login-wordmark{
+    font-size:21px!important;
+  }
+  body.login-screen .bt-login-subtitle{
+    font-size:12px!important;
+  }
+  body.login-screen #bt-login-screen input{
+    height:43px!important;
+  }
+  body.login-screen #btn-login,
+  body.login-screen #btn-reg{
+    height:45px!important;
+  }
+}
+
+
+body:not(.login-screen) #view{
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+
+
+/* ─────────────────────────────────────────────
+   Booktrade — Insignia azul de usuario verificado
+   Se usa junto a nombres, palabra Verified y fotos de perfil.
+───────────────────────────────────────────── */
+.bt-user-line,
+.bt-verified-line{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  vertical-align:middle!important;
+}
+.bt-verified-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:17px!important;
+  height:17px!important;
+  min-width:17px!important;
+  border-radius:50%!important;
+  background:linear-gradient(135deg,#1D9BF0,#1877F2)!important;
+  color:#FFFFFF!important;
+  box-shadow:0 2px 7px rgba(29,155,240,.35)!important;
+  flex-shrink:0!important;
+  line-height:1!important;
+}
+.bt-verified-badge svg{
+  width:11px!important;
+  height:11px!important;
+  display:block!important;
+  stroke:currentColor!important;
+}
+.bt-avatar-wrap{
+  position:relative!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-shrink:0!important;
+}
+.bt-avatar-wrap>img{
+  display:block!important;
+}
+.bt-avatar-verified{
+  position:absolute!important;
+  right:-2px!important;
+  bottom:-2px!important;
+  width:16px!important;
+  height:16px!important;
+  min-width:16px!important;
+  border-radius:50%!important;
+  background:linear-gradient(135deg,#1D9BF0,#1877F2)!important;
+  color:#FFFFFF!important;
+  border:2px solid #FFFFFF!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-shadow:0 2px 7px rgba(15,23,42,.28)!important;
+  z-index:3!important;
+}
+.bt-avatar-verified svg{
+  width:9px!important;
+  height:9px!important;
+  display:block!important;
+  stroke:currentColor!important;
+}
+#nav-profile-avatar{
+  position:relative!important;
+  overflow:visible!important;
+}
+#nav-profile-avatar img{
+  width:28px!important;
+  height:28px!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  display:block!important;
+}
+#nav-profile-avatar .bt-avatar-verified{
+  width:14px!important;
+  height:14px!important;
+  min-width:14px!important;
+  right:-3px!important;
+  bottom:-3px!important;
+  border-width:2px!important;
+}
+#nav-profile-avatar .bt-avatar-verified svg{
+  width:8px!important;
+  height:8px!important;
+}
+
+</style></head><body class="login-screen"><div id="app"><div id="view"></div></div><div id="nav">
+<button class="nb" id="nb-discover" onclick="window.showDiscover?showDiscover():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span>Explorar</span></button>
+<button class="nb" id="nb-books" onclick="window.showBooks?showBooks():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg><span>Libros</span></button>
+<button class="nb" id="nb-matches" onclick="window.showMatches?showMatches():alert('app.js todavía no cargó')"><span id="nb-notif-badge">0</span><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nb-mlabel">Matches</span></button>
+<button class="nb" id="nb-chats" onclick="window.showChats?showChats():alert('app.js todavía no cargó')"><span id="nb-chat-badge">0</span><svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span>Chats</span></button>
+<button class="nb" id="nb-history" onclick="window.showHistory?showHistory():alert('app.js todavía no cargó')"><svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l3 2"/></svg><span>Historial</span></button>
+<button class="nb" id="nb-profile" onclick="window.showProfile?showProfile():alert('app.js todavía no cargó')">
+  <span id="nav-profile-avatar" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  </span>
+  <span>Perfil</span>
+</button>
+</div><div id="toasts" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:999999;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:340px;width:90%"></div>
+<script>window.__BOOKTRADE_VERSION__="admin-wide-final-v1";setInterval(function(){var nav=document.getElementById('nav'),view=document.getElementById('view'),app=document.getElementById('app'),small=window.innerWidth<=720;if(document.body.classList.contains('login-screen')||document.documentElement.classList.contains('login-screen')){if(nav){nav.style.setProperty('display','none','important');nav.style.setProperty('visibility','hidden','important');nav.style.setProperty('pointer-events','none','important');nav.style.setProperty('width','0','important');nav.style.setProperty('max-width','0','important')}if(view){view.style.setProperty('position','fixed','important');view.style.setProperty('inset','0','important');view.style.setProperty('left','0','important');view.style.setProperty('right','0','important');view.style.setProperty('width','100vw','important');view.style.setProperty('height','100vh','important');view.style.setProperty('background','transparent','important');view.style.setProperty('overflow','hidden','important')}if(app){app.style.setProperty('max-width','100%','important');app.style.setProperty('width','100%','important');app.style.setProperty('margin','0','important')}return;}if(app){app.style.setProperty('max-width','1180px','important');app.style.setProperty('width','100%','important')}if(nav&&!window.__CHAT_OPEN__){nav.style.setProperty('display','flex','important');nav.style.setProperty('z-index','999999','important');nav.style.setProperty('flex-direction','column','important')}if(view){view.style.setProperty('bottom','0','important');view.style.setProperty('left',small?'78px':'96px','important')}},500);</script>
+
+
+
+
 
 <script>
-window.__BOOKSWIPE_VERSION__ = "1776997209-legal-login";
-
-setInterval(function(){
-  var nav=document.getElementById('nav');
-  var view=document.getElementById('view');
-  if(nav && !window.__CHAT_OPEN__){nav.style.setProperty('display','flex','important');nav.style.setProperty('z-index','999999','important');}
-  if(view){view.style.setProperty('bottom','68px','important');}
-},500);
-
-/* Módulo legal recuperado para el login */
+/* Booktrade — helpers globales para mostrar verificación en app.js */
 (function(){
-  var legalContent = {
-    nosotros: {
-      title: 'Nosotros',
-      html: '<p><b>Booktrade</b> es una plataforma creada para conectar personas que quieren intercambiar libros de forma simple, cercana y segura.</p><p>Nuestro objetivo es fomentar la lectura, darle nueva vida a los libros usados y crear una comunidad lectora activa.</p><p>La app permite publicar libros, descubrir otros usuarios, generar matches y coordinar intercambios mediante chat.</p>'
-    },
-    terminos: {
-      title: 'Términos y condiciones',
-      html: '<p>Al usar Booktrade aceptas utilizar la plataforma de manera responsable, respetuosa y honesta.</p><ul><li>Debes publicar libros reales y datos verdaderos.</li><li>Cada intercambio debe ser coordinado directamente entre los usuarios.</li><li>Booktrade facilita el contacto, pero no se hace responsable por acuerdos externos entre usuarios.</li><li>La administración podrá moderar, bloquear o eliminar cuentas que incumplan las reglas.</li></ul>'
-    },
-    privacidad: {
-      title: 'Política de protección de datos',
-      html: '<p>La información de los usuarios se utiliza únicamente para el funcionamiento de la plataforma.</p><ul><li>No vendemos datos personales.</li><li>Las fotos, mensajes y datos de perfil se usan para permitir matches, chats, verificación y seguridad dentro de Booktrade.</li><li>El usuario puede solicitar revisión o eliminación de su información contactando a soporte.</li><li>Las fotos de perfil pueden ser revisadas por administración antes de mostrarse públicamente.</li></ul>'
-    },
-    comunidad: {
-      title: 'Reglas de la comunidad',
-      html: '<p>Booktrade busca mantener una comunidad segura, respetuosa y enfocada en la lectura.</p><ul><li>No se permite acosar, insultar, amenazar o discriminar a otros usuarios.</li><li>No se permite publicar contenido falso, ofensivo, ilegal o ajeno al intercambio de libros.</li><li>No se permite usar la plataforma para estafas, spam o fines comerciales no autorizados.</li><li>Los usuarios pueden ser reportados, bloqueados o eliminados por administración si incumplen estas reglas.</li></ul>'
-    }
-  };
-
-  window.btOpenInfoModal = function(type){
-    var data = legalContent[type];
-    if(!data) return;
-    var modal = document.getElementById('bt-info-modal');
-    var title = document.getElementById('bt-info-title');
-    var body = document.getElementById('bt-info-body');
-    if(!modal || !title || !body) return;
-    title.textContent = data.title;
-    body.innerHTML = data.html;
-    modal.classList.add('bt-open');
-  };
-
-  window.btCloseInfoModal = function(){
-    var modal = document.getElementById('bt-info-modal');
-    if(modal) modal.classList.remove('bt-open');
-  };
-
-  window.btInjectLegalLinks = function(){
-    var view = document.getElementById('view');
-    if(!view) return;
-    var txt = view.textContent || '';
-    var looksLikeAuth = (txt.indexOf('Ingresar') !== -1 && (txt.indexOf('Registrarse') !== -1 || txt.indexOf('Crear cuenta') !== -1));
-    if(!looksLikeAuth) return;
-    if(document.getElementById('bt-legal-links')) return;
-
-    var divs = Array.prototype.slice.call(view.querySelectorAll('div'));
-    var target = divs.find(function(el){
-      var st = el.getAttribute('style') || '';
-      var t = el.textContent || '';
-      return st.indexOf('max-width:400px') !== -1 && t.indexOf('Ingresar') !== -1;
-    });
-
-    if(!target){
-      target = divs.find(function(el){
-        var t = el.textContent || '';
-        return t.indexOf('Ingresar') !== -1 && t.indexOf('Registrarse') !== -1;
-      });
-    }
-    if(!target) return;
-
-    var links = document.createElement('div');
-    links.id = 'bt-legal-links';
-    links.innerHTML =
-      '<button type="button" onclick="btOpenInfoModal(\\'nosotros\\')">Nosotros</button>' +
-      '<button type="button" onclick="btOpenInfoModal(\\'terminos\\')">Términos</button>' +
-      '<button type="button" onclick="btOpenInfoModal(\\'privacidad\\')">Protección de datos</button>' +
-      '<button type="button" onclick="btOpenInfoModal(\\'comunidad\\')">Reglas comunidad</button>';
-    target.appendChild(links);
-  };
-
-  function patchShowAuth(){
-    if(window.__BT_LEGAL_PATCHED__) return;
-    if(typeof window.showAuth !== 'function') return;
-    var original = window.showAuth;
-    window.showAuth = function(tab){
-      var result = original.apply(this, arguments);
-      setTimeout(window.btInjectLegalLinks, 0);
-      setTimeout(window.btInjectLegalLinks, 80);
-      return result;
-    };
-    window.__BT_LEGAL_PATCHED__ = true;
+  function esc(value){
+    return String(value || '')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#039;');
   }
 
-  window.addEventListener('load', function(){
-    patchShowAuth();
-    setTimeout(window.btInjectLegalLinks, 100);
-    setTimeout(window.btInjectLegalLinks, 500);
-  });
+  function isVerified(user){
+    if(!user) return false;
+    return Boolean(
+      user.verified === true ||
+      user.isVerified === true ||
+      user.profileVerified === true ||
+      user.verificationStatus === 'verified'
+    );
+  }
 
-  setInterval(function(){
-    patchShowAuth();
-    window.btInjectLegalLinks();
-  }, 700);
+  function badgeHtml(className){
+    return '<span class="bt-verified-badge '+(className || '')+'" title="Usuario verificado" aria-label="Usuario verificado">' +
+      '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>' +
+      '</svg></span>';
+  }
+
+  function avatarBadgeHtml(user){
+    if(!isVerified(user)) return '';
+    return '<span class="bt-avatar-verified" title="Usuario verificado" aria-label="Usuario verificado">' +
+      '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>' +
+      '</svg></span>';
+  }
+
+  function nameHtml(user, fallback){
+    var name = (user && (user.username || user.name || user.email)) || fallback || 'Usuario';
+    return '<span class="bt-user-line"><span>'+esc(name)+'</span>'+(isVerified(user) ? badgeHtml('') : '')+'</span>';
+  }
+
+  function avatarHtml(user, className){
+    var photo = user && (user.profilePhoto || user.photo || user.avatar || user.image || user.profileImage);
+    var name = (user && (user.username || user.name)) || 'Usuario';
+    var src = photo || ('https://ui-avatars.com/api/?name='+encodeURIComponent(name || 'Booktrade')+'&background=f97316&color=fff');
+    return '<span class="bt-avatar-wrap"><img src="'+esc(src)+'" alt="'+esc(name)+'" class="'+esc(className || 'avatar')+'">'+avatarBadgeHtml(user)+'</span>';
+  }
+
+  window.btIsUserVerified = isVerified;
+  window.btVerifiedBadgeHtml = badgeHtml;
+  window.btAvatarVerifiedBadgeHtml = avatarBadgeHtml;
+  window.btUserNameWithVerifiedHtml = nameHtml;
+  window.btProfileAvatarHtml = avatarHtml;
 })();
 </script>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-if (typeof io === 'undefined') {
-  document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>');
-}
-</script>
-<script src="./app.js?v=1776997209-legal-login"></script>
-</body>
-</html>
+
+<script src="/socket.io/socket.io.js"></script><script>if(typeof io==='undefined'){document.write('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>')}</script><script src="./app.js?v=verified-badge-v2"></script></body></html>
