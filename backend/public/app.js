@@ -64,7 +64,7 @@ function publicProfileIdOf(u){
 function publicProfileClickAttrs(u){
   const id=publicProfileIdOf(u);
   if(!id)return '';
-  return ` role="button" tabindex="0" onclick="event.stopPropagation();openPublicProfile('${esc(id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openPublicProfile('${esc(id)}')}" style="cursor:pointer"`;
+  return ` role="button" tabindex="0" onclick="event.stopPropagation();openPublicProfile('${esc(id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openPublicProfile('${esc(id)}')}"`;
 }
 function userHandleVerified(u,prefix='@'){
   const name=esc(u?.username||u?.name||'Usuario');
